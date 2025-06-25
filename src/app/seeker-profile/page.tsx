@@ -21,6 +21,22 @@ type Company = {
   jobs: Job[];
 };
 
+type Experience = {
+    id: number;
+    role: string;
+    company: string;
+    dates: string;
+    description: string;
+};
+
+type Education = {
+    id: number;
+    institution: string;
+    degree: string;
+    dates: string;
+    description: string;
+};
+
 export default function SeekerProfilePage() {
   const [companies, setCompanies] = useState<Company[]>([
     { 
@@ -31,6 +47,14 @@ export default function SeekerProfilePage() {
       ] 
     },
     { id: 2, name: 'Stripe', jobs: [{ id: 1, url: '' }] },
+  ]);
+
+  const [experiences, setExperiences] = useState<Experience[]>([
+    { id: Date.now(), role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
+  ]);
+  
+  const [educations, setEducations] = useState<Education[]>([
+    { id: Date.now(), institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
   ]);
 
   const addCompany = () => {
@@ -69,6 +93,30 @@ export default function SeekerProfilePage() {
     ));
   };
 
+  const addExperience = () => {
+    setExperiences([...experiences, {id: Date.now(), role: '', company: '', dates: '', description: ''}]);
+  };
+
+  const removeExperience = (id: number) => {
+      setExperiences(experiences.filter(e => e.id !== id));
+  };
+
+  const updateExperience = (id: number, field: keyof Experience, value: string) => {
+      setExperiences(experiences.map(e => e.id === id ? {...e, [field]: value} : e));
+  };
+
+  const addEducation = () => {
+      setEducations([...educations, {id: Date.now(), institution: '', degree: '', dates: '', description: ''}]);
+  };
+
+  const removeEducation = (id: number) => {
+      setEducations(educations.filter(e => e.id !== id));
+  };
+
+  const updateEducation = (id: number, field: keyof Education, value: string) => {
+      setEducations(educations.map(e => e.id === id ? {...e, [field]: value} : e));
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
       <Card className="w-full max-w-2xl">
@@ -101,26 +149,82 @@ export default function SeekerProfilePage() {
             />
           </div>
 
-          <div className="space-y-2">
-             <Label htmlFor="experience" className="flex items-center gap-2 font-medium">
-                <Briefcase className="h-4 w-4 text-primary" /> Work Experience
+          <div className="space-y-4">
+            <Label className="flex items-center gap-2 font-medium text-base">
+                <Briefcase className="h-5 w-5 text-primary" /> Work Experience
             </Label>
-            <Textarea 
-                id="experience" 
-                placeholder="Detail your work experience here. e.g.,&#10;Product Manager at TechCorp (Jan 2020 - Present)&#10;- Managed the product lifecycle...&#10;- Increased user engagement by 15%..."
-                className="min-h-[150px]"
-            />
+            <div className="space-y-4">
+                {experiences.map((exp) => (
+                    <Card key={exp.id} className="p-4 bg-muted/20 border-dashed">
+                        <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
+                            <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} aria-label="Remove Experience">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                             <div className="space-y-2">
+                                <Label htmlFor={`exp-role-${exp.id}`}>Role</Label>
+                                <Input id={`exp-role-${exp.id}`} placeholder="e.g., Product Manager" value={exp.role} onChange={(e) => updateExperience(exp.id, 'role', e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor={`exp-company-${exp.id}`}>Company</Label>
+                                <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)} />
+                            </div>
+                        </div>
+                         <div className="space-y-2 mb-4">
+                            <Label htmlFor={`exp-dates-${exp.id}`}>Dates</Label>
+                            <Input id={`exp-dates-${exp.id}`} placeholder="e.g., Jan 2020 - Present" value={exp.dates} onChange={(e) => updateExperience(exp.id, 'dates', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor={`exp-desc-${exp.id}`}>Description</Label>
+                            <Textarea id={`exp-desc-${exp.id}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => updateExperience(exp.id, 'description', e.target.value)} className="min-h-[100px]" />
+                        </div>
+                    </Card>
+                ))}
+            </div>
+            <Button variant="secondary" onClick={addExperience} className="w-full">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Work Experience
+            </Button>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="education" className="flex items-center gap-2 font-medium">
-                <GraduationCap className="h-4 w-4 text-primary" /> Education
+          <div className="space-y-4">
+            <Label className="flex items-center gap-2 font-medium text-base">
+                <GraduationCap className="h-5 w-5 text-primary" /> Education
             </Label>
-            <Textarea 
-                id="education" 
-                placeholder="List your degrees and certifications. e.g.,&#10;M.S. in Human-Computer Interaction - Carnegie Mellon University (2018-2020)&#10;B.S. in Computer Science - University of Example (2014-2018)" 
-                className="min-h-[120px]"
-            />
+            <div className="space-y-4">
+                {educations.map((edu) => (
+                    <Card key={edu.id} className="p-4 bg-muted/20 border-dashed">
+                        <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
+                             <Button variant="ghost" size="icon" onClick={() => removeEducation(edu.id)} aria-label="Remove Education">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                             <div className="space-y-2">
+                                <Label htmlFor={`edu-institution-${edu.id}`}>Institution</Label>
+                                <Input id={`edu-institution-${edu.id}`} placeholder="e.g., Carnegie Mellon University" value={edu.institution} onChange={(e) => updateEducation(edu.id, 'institution', e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor={`edu-degree-${edu.id}`}>Degree</Label>
+                                <Input id={`edu-degree-${edu.id}`} placeholder="e.g., M.S. in HCI" value={edu.degree} onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)} />
+                            </div>
+                        </div>
+                        <div className="space-y-2 mb-4">
+                            <Label htmlFor={`edu-dates-${edu.id}`}>Dates</Label>
+                            <Input id={`edu-dates-${edu.id}`} placeholder="e.g., 2018 - 2020" value={edu.dates} onChange={(e) => updateEducation(edu.id, 'dates', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor={`edu-desc-${edu.id}`}>Description / Notes</Label>
+                            <Textarea id={`edu-desc-${edu.id}`} placeholder="Describe any relevant coursework, activities, or honors..." value={edu.description} onChange={(e) => updateEducation(edu.id, 'description', e.target.value)} className="min-h-[80px]" />
+                        </div>
+                    </Card>
+                ))}
+            </div>
+            <Button variant="secondary" onClick={addEducation} className="w-full">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Education
+            </Button>
           </div>
 
            <div className="space-y-2">
