@@ -1,7 +1,7 @@
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, UserCircle } from "lucide-react";
 
 export default function DashboardLayout({
@@ -24,6 +24,12 @@ export default function DashboardLayout({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="flex flex-col p-0">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation Menu</SheetTitle>
+              <SheetDescription>
+                A list of links to navigate the application.
+              </SheetDescription>
+            </SheetHeader>
             <div className="flex h-16 items-center border-b px-6">
               <Logo />
             </div>
