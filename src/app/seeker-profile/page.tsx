@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, Upload } from "lucide-react";
 import Link from 'next/link';
+import { Switch } from "@/components/ui/switch";
 
 export default function SeekerProfilePage() {
   return (
@@ -37,6 +38,16 @@ export default function SeekerProfilePage() {
               <Label htmlFor="salary">Expected Salary (USD)</Label>
               <Input id="salary" type="number" placeholder="e.g., 150000" defaultValue="150000" />
             </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-1">
+              <Label htmlFor="salary-visibility" className="font-medium">Show Salary on Profile</Label>
+              <p className="text-xs text-muted-foreground">
+                Enable this to let referrers see your desired compensation.
+              </p>
+            </div>
+            <Switch id="salary-visibility" defaultChecked />
           </div>
 
           <div className="space-y-2">
