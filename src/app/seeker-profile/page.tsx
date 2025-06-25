@@ -127,7 +127,7 @@ export default function SeekerProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input id="name" placeholder="e.g., Jane Doe" defaultValue="Jane Doe" />
@@ -135,6 +135,19 @@ export default function SeekerProfilePage() {
              <div className="space-y-2">
               <Label htmlFor="role">Target Role</Label>
               <Input id="role" placeholder="e.g., Senior Product Manager" defaultValue="Senior Product Manager" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="salary">Expected Salary (USD)</Label>
+              <Input id="salary" type="number" placeholder="e.g., 150000" defaultValue="150000" />
+            </div>
+            <div className="flex items-center space-x-3 rounded-lg border p-2">
+                <Switch id="salary-visibility" defaultChecked />
+                <div className="grid gap-0.5">
+                    <Label htmlFor="salary-visibility" className="text-sm font-medium leading-none">Show on Profile</Label>
+                    <p className="text-xs text-muted-foreground">
+                        Visible to referrers.
+                    </p>
+                </div>
             </div>
           </div>
           
@@ -225,21 +238,6 @@ export default function SeekerProfilePage() {
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Education
             </Button>
-          </div>
-
-           <div className="space-y-2">
-              <Label htmlFor="salary">Expected Salary (USD)</Label>
-              <Input id="salary" type="number" placeholder="e.g., 150000" defaultValue="150000" />
-            </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-1">
-              <Label htmlFor="salary-visibility" className="font-medium">Show Salary on Profile</Label>
-              <p className="text-xs text-muted-foreground">
-                Enable this to let referrers see your desired compensation.
-              </p>
-            </div>
-            <Switch id="salary-visibility" defaultChecked />
           </div>
 
           <div className="space-y-4">
