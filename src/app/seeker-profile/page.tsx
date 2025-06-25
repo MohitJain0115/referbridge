@@ -50,11 +50,11 @@ export default function SeekerProfilePage() {
   ]);
 
   const [experiences, setExperiences] = useState<Experience[]>([
-    { id: Date.now(), role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
+    { id: 1, role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
   ]);
   
   const [educations, setEducations] = useState<Education[]>([
-    { id: Date.now(), institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
+    { id: 1, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
   ]);
 
   const addCompany = () => {
