@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap } from "lucide-react";
 import Link from 'next/link';
 import { Switch } from "@/components/ui/switch";
 
@@ -29,6 +29,39 @@ export default function SeekerProfilePage() {
             </div>
           </div>
           
+          <div className="space-y-2">
+            <Label htmlFor="about" className="flex items-center gap-2 font-medium">
+                <User className="h-4 w-4 text-primary" /> About Me
+            </Label>
+            <Textarea 
+                id="about" 
+                placeholder="A brief summary about your professional background, skills, and career aspirations." 
+                className="min-h-[100px]"
+            />
+          </div>
+
+          <div className="space-y-2">
+             <Label htmlFor="experience" className="flex items-center gap-2 font-medium">
+                <Briefcase className="h-4 w-4 text-primary" /> Work Experience
+            </Label>
+            <Textarea 
+                id="experience" 
+                placeholder="Detail your work experience here. e.g.,&#10;Product Manager at TechCorp (Jan 2020 - Present)&#10;- Managed the product lifecycle...&#10;- Increased user engagement by 15%..."
+                className="min-h-[150px]"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="education" className="flex items-center gap-2 font-medium">
+                <GraduationCap className="h-4 w-4 text-primary" /> Education
+            </Label>
+            <Textarea 
+                id="education" 
+                placeholder="List your degrees and certifications. e.g.,&#10;M.S. in Human-Computer Interaction - Carnegie Mellon University (2018-2020)&#10;B.S. in Computer Science - University of Example (2014-2018)" 
+                className="min-h-[120px]"
+            />
+          </div>
+
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="companies">Preferred Companies</Label>
