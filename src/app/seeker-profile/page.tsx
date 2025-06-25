@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2 } from "lucide-react";
 import Link from 'next/link';
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 type Job = {
   id: number;
@@ -38,6 +39,7 @@ type Education = {
 };
 
 export default function SeekerProfilePage() {
+  const [isSalaryVisible, setIsSalaryVisible] = useState(true);
   const [companies, setCompanies] = useState<Company[]>([
     { 
       id: 1, 
@@ -127,27 +129,41 @@ export default function SeekerProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="e.g., Jane Doe" defaultValue="Jane Doe" />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" placeholder="e.g., Jane Doe" defaultValue="Jane Doe" />
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="role">Target Role</Label>
+                <Input id="role" placeholder="e.g., Senior Product Manager" defaultValue="Senior Product Manager" />
+              </div>
             </div>
-             <div className="space-y-2">
-              <Label htmlFor="role">Target Role</Label>
-              <Input id="role" placeholder="e.g., Senior Product Manager" defaultValue="Senior Product Manager" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="salary">Expected Salary (USD)</Label>
-              <Input id="salary" type="number" placeholder="e.g., 150000" defaultValue="150000" />
-            </div>
-            <div className="flex items-center space-x-3 rounded-lg border p-2">
-                <Switch id="salary-visibility" defaultChecked />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+              <div className="space-y-2">
+                <Label htmlFor="salary">Expected Salary (USD)</Label>
+                <Input
+                  id="salary"
+                  type="number"
+                  placeholder="e.g., 150000"
+                  defaultValue="150000"
+                  className={cn("transition-all", !isSalaryVisible && "blur-sm")}
+                />
+              </div>
+              <div className="flex items-center space-x-3">
+                <Switch
+                  id="salary-visibility"
+                  checked={isSalaryVisible}
+                  onCheckedChange={setIsSalaryVisible}
+                />
                 <div className="grid gap-0.5">
-                    <Label htmlFor="salary-visibility" className="text-sm font-medium leading-none">Show on Profile</Label>
-                    <p className="text-xs text-muted-foreground">
-                        Visible to referrers.
-                    </p>
+                  <Label htmlFor="salary-visibility" className="text-sm font-medium leading-none cursor-pointer">Show on Profile</Label>
+                  <p className="text-xs text-muted-foreground">
+                      Visible to referrers.
+                  </p>
                 </div>
+              </div>
             </div>
           </div>
           
