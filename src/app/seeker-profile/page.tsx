@@ -135,9 +135,17 @@ export default function SeekerProfilePage() {
                 <Label htmlFor="name">Full Name</Label>
                 <Input id="name" placeholder="e.g., Jane Doe" defaultValue="Jane Doe" />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="current-role">Current Role</Label>
+                <Input id="current-role" placeholder="e.g., Product Manager" defaultValue="Product Manager" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="current-experience">Experience in Current Role</Label>
+                <Input id="current-experience" placeholder="e.g., 3 years" defaultValue="3 years" />
+              </div>
                <div className="space-y-2">
-                <Label htmlFor="role">Target Role</Label>
-                <Input id="role" placeholder="e.g., Senior Product Manager" defaultValue="Senior Product Manager" />
+                <Label htmlFor="target-role">Target Role</Label>
+                <Input id="target-role" placeholder="e.g., Senior Product Manager" defaultValue="Senior Product Manager" />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
