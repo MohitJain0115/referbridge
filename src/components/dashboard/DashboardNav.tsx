@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Home, User, Users, FileText, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function DashboardNav() {
+export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const view = searchParams.get('view') || 'seeker';
@@ -36,6 +36,7 @@ export function DashboardNav() {
           <Link
             key={item.name}
             href={item.href}
+            onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
               isActive && "bg-muted text-primary"

@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from "react";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
@@ -9,10 +12,12 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-        <Sheet>
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
             <Button
               variant="outline"
@@ -34,7 +39,7 @@ export default function DashboardLayout({
               <Logo />
             </div>
             <div className="flex-1">
-                <DashboardNav />
+                <DashboardNav onNavigate={() => setIsSheetOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
