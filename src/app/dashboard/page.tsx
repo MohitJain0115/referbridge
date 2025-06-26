@@ -3,23 +3,11 @@ import { ReferrerDashboard } from '@/components/dashboard/ReferrerDashboard';
 import { SeekerDashboard } from '@/components/dashboard/SeekerDashboard';
 import { DashboardToggle } from '@/components/dashboard/DashboardToggle';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SettingsPage } from '@/components/dashboard/SettingsPage';
 
 export const dynamic = 'force-dynamic';
 
-function DashboardContent({ view }: { view: string | null }) {
-  if (view === 'referrer') {
-    return <ReferrerDashboard />;
-  }
-  return <SeekerDashboard />;
-}
-
-export default function DashboardPage({
-  searchParams,
-}: {
-  searchParams: { view?: string };
-}) {
-  const view = searchParams.view || 'seeker';
-
+function MainDashboard({ view }: { view: string }) {
   return (
     <>
       <div className="flex items-center justify-between">
@@ -29,9 +17,22 @@ export default function DashboardPage({
         </div>
         <DashboardToggle currentView={view} />
       </div>
-      <Suspense fallback={<Skeleton className="h-[500px] w-full" />}>
-        <DashboardContent view={view} />
-      </Suspense>
+      {view === 'referrer' ? <ReferrerDashboard /> : <SeekerDashboard />}
     </>
+  );
+}
+
+export default function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { view?: string; page?: string };
+}) {
+  const view = searchParams.view || 'seeker';
+  const page = searchParams.page || null;
+
+  return (
+    <Suspense fallback={<Skeleton className="h-[500px] w-full" />}>
+      {page === 'settings' ? <SettingsPage /> : <MainDashboard view={view} />}
+    </Suspense>
   );
 }
