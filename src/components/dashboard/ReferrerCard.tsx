@@ -19,11 +19,11 @@ type ReferrerCardProps = {
 export function ReferrerCard({ referrer }: ReferrerCardProps) {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [jobUrl, setJobUrl] = useState("");
+  const [jobInfo, setJobInfo] = useState("");
 
   const handleSendRequest = () => {
     // In a real app, this would send the request to a backend.
-    console.log(`Sending profile to ${referrer.name} for job: ${jobUrl}`);
+    console.log(`Sending profile to ${referrer.name} for job (link/ID): ${jobInfo}`);
     
     toast({
       title: "Profile Sent!",
@@ -31,7 +31,7 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
     });
 
     setIsDialogOpen(false);
-    setJobUrl("");
+    setJobInfo("");
   };
 
   return (
@@ -82,17 +82,17 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
               <DialogHeader>
                   <DialogTitle>Share your profile with {referrer.name}</DialogTitle>
                   <DialogDescription>
-                      Your full profile and resume will be shared with {referrer.name} for their consideration. You can optionally add a link to a specific job posting to increase your chances.
+                      Your full profile and resume will be shared with {referrer.name} for their consideration. You can optionally add a job link or ID to increase your chances.
                   </DialogDescription>
               </DialogHeader>
               <div className="py-2">
-                  <Label htmlFor="job-url">Job Post URL (Optional)</Label>
+                  <Label htmlFor="job-info">Job Link or ID (Optional)</Label>
                   <Input
-                      id="job-url"
-                      placeholder="https://www.company.com/careers/..."
+                      id="job-info"
+                      placeholder="Paste job link or enter Job ID..."
                       className="mt-2"
-                      value={jobUrl}
-                      onChange={(e) => setJobUrl(e.target.value)}
+                      value={jobInfo}
+                      onChange={(e) => setJobInfo(e.target.value)}
                   />
               </div>
               <DialogFooter>
