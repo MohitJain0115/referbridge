@@ -82,11 +82,11 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
               <DialogHeader>
                   <DialogTitle>Share your profile with {referrer.name}</DialogTitle>
                   <DialogDescription>
-                      Enter the URL of the job posting you're interested in. Your full profile and resume will be shared with {referrer.name} for their consideration.
+                      Your full profile and resume will be shared with {referrer.name} for their consideration. You can optionally add a link to a specific job posting to increase your chances.
                   </DialogDescription>
               </DialogHeader>
               <div className="py-2">
-                  <Label htmlFor="job-url">Job Post URL</Label>
+                  <Label htmlFor="job-url">Job Post URL (Optional)</Label>
                   <Input
                       id="job-url"
                       placeholder="https://www.company.com/careers/..."
@@ -97,7 +97,7 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
               </div>
               <DialogFooter>
                   <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleSendRequest} disabled={!jobUrl}>
+                  <Button onClick={handleSendRequest}>
                       <Send className="mr-2 h-4 w-4" />
                       Share Profile
                   </Button>
