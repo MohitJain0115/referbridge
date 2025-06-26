@@ -71,13 +71,13 @@ export default function SeekerProfilePage() {
 
   const [experiences, setExperiences] = useState<Experience[]>(
     [
-      { id: 1, role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
+      { id: 101, role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
     ]
   );
 
   const [educations, setEducations] = useState<Education[]>(
     [
-      { id: 1, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
+      { id: 201, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
     ]
   );
 
@@ -266,7 +266,7 @@ export default function SeekerProfilePage() {
                   </div>
                 </button>
               </DialogTrigger>
-              <DialogContent className="p-0 border-0 bg-transparent shadow-none w-auto [&>[data-radix-dialog-close]]:text-white">
+              <DialogContent className="p-4 border-0 bg-transparent shadow-none w-auto [&>[data-radix-dialog-close]]:text-white">
                   <DialogHeader className="sr-only">
                     <DialogTitle>Profile Picture Preview</DialogTitle>
                     <DialogDescription>
