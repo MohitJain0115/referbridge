@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Briefcase, Sparkles, Users, Send } from "lucide-react";
@@ -19,19 +19,19 @@ type ReferrerCardProps = {
 export function ReferrerCard({ referrer }: ReferrerCardProps) {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [message, setMessage] = useState("");
+  const [jobUrl, setJobUrl] = useState("");
 
   const handleSendRequest = () => {
     // In a real app, this would send the request to a backend.
-    console.log(`Sending request to ${referrer.name} with message: ${message}`);
+    console.log(`Sending profile to ${referrer.name} for job: ${jobUrl}`);
     
     toast({
-      title: "Request Sent!",
-      description: `Your referral request has been sent to ${referrer.name}.`,
+      title: "Profile Sent!",
+      description: `Your profile and resume have been shared with ${referrer.name}.`,
     });
 
     setIsDialogOpen(false);
-    setMessage("");
+    setJobUrl("");
   };
 
   return (
@@ -80,26 +80,26 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
           </DialogTrigger>
           <DialogContent>
               <DialogHeader>
-                  <DialogTitle>Request a Referral from {referrer.name}</DialogTitle>
+                  <DialogTitle>Share your profile with {referrer.name}</DialogTitle>
                   <DialogDescription>
-                      Write a brief, personalized message explaining why you're a great fit for a role at {referrer.company}.
+                      Enter the URL of the job posting you're interested in. Your full profile and resume will be shared with {referrer.name} for their consideration.
                   </DialogDescription>
               </DialogHeader>
               <div className="py-2">
-                  <Label htmlFor="message" className="sr-only">Your Message</Label>
-                  <Textarea
-                      id="message"
-                      placeholder="Hi, I saw you work at..."
-                      className="mt-2 min-h-[120px]"
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
+                  <Label htmlFor="job-url">Job Post URL</Label>
+                  <Input
+                      id="job-url"
+                      placeholder="https://www.company.com/careers/..."
+                      className="mt-2"
+                      value={jobUrl}
+                      onChange={(e) => setJobUrl(e.target.value)}
                   />
               </div>
               <DialogFooter>
                   <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleSendRequest} disabled={!message}>
+                  <Button onClick={handleSendRequest} disabled={!jobUrl}>
                       <Send className="mr-2 h-4 w-4" />
-                      Send Request
+                      Share Profile
                   </Button>
               </DialogFooter>
           </DialogContent>
