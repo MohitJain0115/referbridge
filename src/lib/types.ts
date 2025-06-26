@@ -10,3 +10,14 @@ export type Candidate = {
   status: 'Pending' | 'Viewed' | 'Referred' | 'Not a Fit';
   jobPostUrl: string;
 };
+
+export type Referrer = {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+  company: string;
+  location: string;
+  referrals: number;
+  connections: number;
+};

@@ -38,8 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { KeyRound, Loader2, LogOut, Trash2 } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { KeyRound, Loader2, Trash2 } from "lucide-react";
 
 
 const passwordChangeSchema = z.object({
@@ -70,14 +69,6 @@ export function SettingsPage() {
       confirmPassword: "",
     },
   });
-
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
-    router.push("/login");
-  };
 
   const handleDeleteAccount = () => {
     toast({
@@ -139,7 +130,7 @@ export function SettingsPage() {
         <CardHeader>
           <CardTitle>Account Actions</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
            <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Change Password</p>
@@ -213,39 +204,6 @@ export function SettingsPage() {
                 </Form>
               </DialogContent>
             </Dialog>
-          </div>
-          
-          <Separator />
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Log Out</p>
-              <p className="text-sm text-muted-foreground">
-                End your current session.
-              </p>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log Out
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    You will be returned to the login page.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleLogout}>
-                    Log Out
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </div>
         </CardContent>
       </Card>

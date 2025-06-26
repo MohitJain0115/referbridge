@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Home, User, Users, FileText, Settings } from "lucide-react";
+import { Users, FileText, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -12,8 +12,8 @@ export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
   const currentPage = searchParams.get('page');
 
   const seekerNav = [
-    { name: "Dashboard", href: "/dashboard?view=seeker", icon: Home, page: null },
-    { name: "My Profile", href: "/seeker-profile", icon: User },
+    { name: "Find Referrers", href: "/dashboard?view=seeker", icon: Users, page: null },
+    { name: "My Referrals", href: "/dashboard?view=seeker&page=referred", icon: FileText, page: "referred" },
     { name: "Settings", href: "/dashboard?view=seeker&page=settings", icon: Settings, page: "settings" },
   ];
 
@@ -28,9 +28,7 @@ export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
       {navItems.map((item) => {
-        const isActive =
-          item.href.startsWith('/seeker-profile') ? pathname === item.href :
-          (pathname === '/dashboard' && item.page === currentPage);
+        const isActive = (pathname === '/dashboard' && item.page === currentPage);
 
         return (
           <Link

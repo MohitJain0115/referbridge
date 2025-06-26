@@ -1,4 +1,4 @@
-import type { Candidate } from './types';
+import type { Candidate, Referrer } from './types';
 
 export const mockCandidates: Candidate[] = [
   {
@@ -72,5 +72,68 @@ export const mockCandidates: Candidate[] = [
     location: 'New York, NY',
     status: 'Viewed',
     jobPostUrl: 'https://example.com/job/6',
+  },
+];
+
+export const mockReferrers: Referrer[] = [
+  {
+    id: 'r1',
+    name: 'John Smith',
+    avatar: 'https://placehold.co/100x100.png',
+    role: 'Senior Software Engineer',
+    company: 'TechCorp',
+    location: 'San Francisco, CA',
+    referrals: 12,
+    connections: 500,
+  },
+  {
+    id: 'r2',
+    name: 'Emily Jones',
+    avatar: 'https://placehold.co/100x100.png',
+    role: 'Engineering Manager',
+    company: 'InnovateX',
+    location: 'New York, NY',
+    referrals: 8,
+    connections: 450,
+  },
+  {
+    id: 'r3',
+    name: 'Michael Brown',
+    avatar: 'https://placehold.co/100x100.png',
+    role: 'Recruiter',
+    company: 'Creative Solutions',
+    location: 'Austin, TX',
+    referrals: 25,
+    connections: 1200,
+  },
+  {
+    id: 'r4',
+    name: 'Jessica Davis',
+    avatar: 'https://placehold.co/100x100.png',
+    role: 'Product Lead',
+    company: 'DataDriven Inc.',
+    location: 'Chicago, IL',
+    referrals: 5,
+    connections: 700,
+  },
+  {
+    id: 'r5',
+    name: 'David Wilson',
+    avatar: 'https://placehold.co/100x100.png',
+    role: 'Senior DevOps Engineer',
+    company: 'CloudWorks',
+    location: 'Seattle, WA',
+    referrals: 9,
+    connections: 600,
+  },
+   {
+    id: 'r6',
+    name: 'Sarah Miller',
+    avatar: 'https://placehold.co/100x100.png',
+    role: 'Data Scientist',
+    company: 'TechCorp',
+    location: 'San Francisco, CA',
+    referrals: 7,
+    connections: 300,
   },
 ];
