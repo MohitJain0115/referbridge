@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,41 +76,6 @@ export function SettingsPage() {
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" defaultValue="jane.doe@example.com" readOnly />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Settings</CardTitle>
-          <CardDescription>
-            Choose what you want to be notified about.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <Label htmlFor="candidate-notifications" className="font-semibold">
-                New Candidate Matches
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Receive an email when a new candidate matches your criteria.
-                (Referrer only)
-              </p>
-            </div>
-            <Switch id="candidate-notifications" />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <Label htmlFor="status-notifications" className="font-semibold">
-                Referral Status Updates
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified when the status of your referral request changes.
-                (Seeker only)
-              </p>
-            </div>
-            <Switch id="status-notifications" defaultChecked />
           </div>
         </CardContent>
       </Card>
