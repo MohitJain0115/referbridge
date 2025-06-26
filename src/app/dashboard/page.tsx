@@ -4,6 +4,8 @@ import { SeekerDashboard } from '@/components/dashboard/SeekerDashboard';
 import { DashboardToggle } from '@/components/dashboard/DashboardToggle';
 import { Skeleton } from '@/components/ui/skeleton';
 
+export const dynamic = 'force-dynamic';
+
 function DashboardContent({ view }: { view: string | null }) {
   if (view === 'referrer') {
     return <ReferrerDashboard />;
