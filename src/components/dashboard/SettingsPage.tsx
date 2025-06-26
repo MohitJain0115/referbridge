@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -29,6 +30,7 @@ import { LogOut, Trash2 } from "lucide-react";
 export function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   const handleLogout = () => {
     toast({
@@ -45,6 +47,10 @@ export function SettingsPage() {
       variant: "destructive",
     });
     router.push("/");
+  };
+
+  const resetDeleteConfirmation = () => {
+    setDeleteConfirmation("");
   };
 
   return (
@@ -110,14 +116,11 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-destructive">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
-          <CardDescription>
-            These actions are permanent and cannot be undone.
-          </CardDescription>
+          <CardTitle>Account Actions</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Log Out</p>
@@ -125,11 +128,40 @@ export function SettingsPage() {
                 End your current session.
               </p>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Log Out
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log Out
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    You will be returned to the login page.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleLogout}>
+                    Log Out
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          <CardDescription>
+            This action is permanent and cannot be undone.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Delete Account</p>
@@ -137,7 +169,7 @@ export function SettingsPage() {
                 Permanently delete your account and all associated data.
               </p>
             </div>
-            <AlertDialog>
+            <AlertDialog onOpenChange={(open) => !open && resetDeleteConfirmation()}>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive">
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -150,12 +182,23 @@ export function SettingsPage() {
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete
                     your account and remove your data from our servers.
+                    <br />
+                    <br />
+                    Please type <strong>delete</strong> below to confirm.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <Input
+                  id="delete-confirm"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="delete"
+                  className="mt-2"
+                />
+                <AlertDialogFooter className="mt-4">
+                  <AlertDialogCancel onClick={resetDeleteConfirmation}>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteAccount}
+                    disabled={deleteConfirmation.toLowerCase() !== 'delete'}
                     className="bg-destructive hover:bg-destructive/90"
                   >
                     Yes, delete account
