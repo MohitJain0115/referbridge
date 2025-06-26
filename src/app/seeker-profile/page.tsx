@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Loader2 } from "lucide-react";
 import Link from 'next/link';
+import Image from 'next/image';
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -48,6 +48,11 @@ export default function SeekerProfilePage() {
   const [isImporting, setIsImporting] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [linkedinUrl, setLinkedinUrl] = useState("");
+  
+  const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const profilePicInputRef = useRef<HTMLInputElement>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
 
   const [about, setAbout] = useState(
     "Passionate Product Manager with 3 years of experience in fast-paced tech environments. Skilled in user research, agile methodologies, and cross-functional team leadership. Eager to leverage my skills to build innovative products that users love."
@@ -66,14 +71,14 @@ export default function SeekerProfilePage() {
 
   const [experiences, setExperiences] = useState<Experience[]>(
     [
-      { role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
-    ].map((e, i) => ({ ...e, id: i + 1 }))
+      { id: 1, role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
+    ]
   );
 
   const [educations, setEducations] = useState<Education[]>(
     [
-      { institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
-    ].map((e, i) => ({ ...e, id: i + 1 }))
+      { id: 1, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
+    ]
   );
 
   const addCompany = () => {
@@ -136,6 +141,38 @@ export default function SeekerProfilePage() {
       setEducations(educations.map(e => e.id === id ? {...e, [field]: value} : e));
   };
 
+  const handleProfilePicChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePic(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+        toast({
+            title: "Invalid File Type",
+            description: "Please select an image file.",
+            variant: "destructive",
+        })
+    }
+  };
+
+  const handleResumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+            title: "File Too Large",
+            description: "Please select a file smaller than 5MB.",
+            variant: "destructive",
+        });
+        return;
+      }
+      setResumeFile(file);
+    }
+  };
+
   const handleImport = async () => {
     if (!linkedinUrl) {
         toast({ title: "Please enter a URL", variant: "destructive" });
@@ -143,7 +180,7 @@ export default function SeekerProfilePage() {
     }
     setIsFetching(true);
     try {
-        const result = await importFromLinkedIn({ url: linkedinUrl });
+        const result: LinkedInProfileOutput = await importFromLinkedIn({ url: linkedinUrl });
         if (result) {
             setAbout(result.aboutMe || "");
 
@@ -194,7 +231,7 @@ export default function SeekerProfilePage() {
                            <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
                            <Input 
                              id="linkedin-url" 
-                             placeholder="https://www.linkedin.com/in/your-profile/" 
+                             placeholder="https://www.linkedin.com/in/your-profile/"
                              value={linkedinUrl}
                              onChange={(e) => setLinkedinUrl(e.target.value)}
                              disabled={isFetching}
@@ -212,6 +249,27 @@ export default function SeekerProfilePage() {
             </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="flex flex-col items-center gap-4 border-b pb-6">
+              <Image
+                  src={profilePic}
+                  alt="Profile Picture"
+                  width={128}
+                  height={128}
+                  className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
+                  data-ai-hint="person avatar"
+              />
+              <input 
+                  type="file" 
+                  ref={profilePicInputRef} 
+                  onChange={handleProfilePicChange}
+                  className="hidden" 
+                  accept="image/*"
+              />
+              <Button variant="outline" onClick={() => profilePicInputRef.current?.click()}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Photo
+              </Button>
+          </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -398,9 +456,16 @@ export default function SeekerProfilePage() {
             <Label>Resume</Label>
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/50 w-full">
-                    <span className="text-sm text-muted-foreground truncate">my_awesome_resume_final.pdf</span>
+                    <span className="text-sm text-muted-foreground truncate">{resumeFile?.name || 'my_awesome_resume_final.pdf'}</span>
                 </div>
-                <Button variant="outline">
+                 <input 
+                    type="file" 
+                    ref={resumeInputRef} 
+                    onChange={handleResumeChange} 
+                    className="hidden" 
+                    accept=".pdf,.doc,.docx"
+                />
+                <Button variant="outline" onClick={() => resumeInputRef.current?.click()}>
                     <Upload className="mr-2 h-4 w-4" />
                     Upload
                 </Button>
