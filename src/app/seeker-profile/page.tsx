@@ -266,7 +266,7 @@ export default function SeekerProfilePage() {
                   </div>
                 </button>
               </DialogTrigger>
-              <DialogContent className="p-0 border-0 bg-transparent shadow-none max-w-4xl w-auto [&>[data-radix-dialog-close]]:text-white">
+              <DialogContent className="p-0 border-0 bg-transparent shadow-none w-auto [&>[data-radix-dialog-close]]:text-white">
                   <DialogHeader className="sr-only">
                     <DialogTitle>Profile Picture Preview</DialogTitle>
                     <DialogDescription>
@@ -278,7 +278,7 @@ export default function SeekerProfilePage() {
                       alt="Profile Picture"
                       width={1024}
                       height={1024}
-                      className="rounded-lg object-contain w-full h-auto max-h-[80vh]"
+                      className="rounded-lg object-contain h-auto max-h-[80vh] max-w-[80vw]"
                   />
               </DialogContent>
             </Dialog>
