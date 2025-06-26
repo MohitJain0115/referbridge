@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Loader2 } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Loader2, Eye } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch";
@@ -250,25 +250,44 @@ export default function SeekerProfilePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center gap-4 border-b pb-6">
-              <Image
-                  src={profilePic}
-                  alt="Profile Picture"
-                  width={128}
-                  height={128}
-                  className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
-                  data-ai-hint="person avatar"
-              />
-              <input 
-                  type="file" 
-                  ref={profilePicInputRef} 
-                  onChange={handleProfilePicChange}
-                  className="hidden" 
-                  accept="image/*"
-              />
-              <Button variant="outline" onClick={() => profilePicInputRef.current?.click()}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Photo
-              </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="relative group rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                  <Image
+                    src={profilePic}
+                    alt="Profile Picture"
+                    width={128}
+                    height={128}
+                    className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
+                    data-ai-hint="person avatar"
+                  />
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <Eye className="text-white h-8 w-8" />
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="p-0 border-0 bg-transparent shadow-none max-w-4xl">
+                  <Image
+                      src={profilePic}
+                      alt="Profile Picture"
+                      width={1024}
+                      height={1024}
+                      className="rounded-lg object-contain w-full h-auto max-h-[80vh]"
+                  />
+              </DialogContent>
+            </Dialog>
+
+            <input
+              type="file"
+              ref={profilePicInputRef}
+              onChange={handleProfilePicChange}
+              className="hidden"
+              accept="image/*"
+            />
+            <Button variant="outline" onClick={() => profilePicInputRef.current?.click()}>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Photo
+            </Button>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
