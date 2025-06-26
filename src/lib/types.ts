@@ -18,6 +18,6 @@ export type Referrer = {
   role: string;
   company: string;
   location: string;
-  referrals: number;
+  specialties: string[];
   connections: number;
 };

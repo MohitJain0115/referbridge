@@ -83,7 +83,7 @@ export const mockReferrers: Referrer[] = [
     role: 'Senior Software Engineer',
     company: 'TechCorp',
     location: 'San Francisco, CA',
-    referrals: 12,
+    specialties: ['Frontend', 'React', 'Cloud'],
     connections: 500,
   },
   {
@@ -93,7 +93,7 @@ export const mockReferrers: Referrer[] = [
     role: 'Engineering Manager',
     company: 'InnovateX',
     location: 'New York, NY',
-    referrals: 8,
+    specialties: ['Backend', 'Leadership', 'Scaling'],
     connections: 450,
   },
   {
@@ -103,7 +103,7 @@ export const mockReferrers: Referrer[] = [
     role: 'Recruiter',
     company: 'Creative Solutions',
     location: 'Austin, TX',
-    referrals: 25,
+    specialties: ['Tech Recruiting', 'Sourcing'],
     connections: 1200,
   },
   {
@@ -113,7 +113,7 @@ export const mockReferrers: Referrer[] = [
     role: 'Product Lead',
     company: 'DataDriven Inc.',
     location: 'Chicago, IL',
-    referrals: 5,
+    specialties: ['Product Strategy', 'UX', 'Mobile'],
     connections: 700,
   },
   {
@@ -123,7 +123,7 @@ export const mockReferrers: Referrer[] = [
     role: 'Senior DevOps Engineer',
     company: 'CloudWorks',
     location: 'Seattle, WA',
-    referrals: 9,
+    specialties: ['AWS', 'CI/CD', 'Infrastructure'],
     connections: 600,
   },
    {
@@ -133,7 +133,7 @@ export const mockReferrers: Referrer[] = [
     role: 'Data Scientist',
     company: 'TechCorp',
     location: 'San Francisco, CA',
-    referrals: 7,
+    specialties: ['Machine Learning', 'Python', 'Analytics'],
     connections: 300,
   },
 ];
