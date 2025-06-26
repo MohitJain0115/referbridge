@@ -1,17 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import type { Referrer } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Sparkles, Users } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Briefcase, Sparkles, Users, Send } from "lucide-react";
 
 type ReferrerCardProps = {
   referrer: Referrer;
 };
 
 export function ReferrerCard({ referrer }: ReferrerCardProps) {
+  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handleSendRequest = () => {
+    // In a real app, this would send the request to a backend.
+    console.log(`Sending request to ${referrer.name} with message: ${message}`);
+    
+    toast({
+      title: "Request Sent!",
+      description: `Your referral request has been sent to ${referrer.name}.`,
+    });
+
+    setIsDialogOpen(false);
+    setMessage("");
+  };
+
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center text-center">
@@ -50,9 +72,38 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full">
-            Request Referral
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-full">
+                Request Referral
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Request a Referral from {referrer.name}</DialogTitle>
+                  <DialogDescription>
+                      Write a brief, personalized message explaining why you're a great fit for a role at {referrer.company}.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="py-2">
+                  <Label htmlFor="message" className="sr-only">Your Message</Label>
+                  <Textarea
+                      id="message"
+                      placeholder="Hi, I saw you work at..."
+                      className="mt-2 min-h-[120px]"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                  />
+              </div>
+              <DialogFooter>
+                  <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleSendRequest} disabled={!message}>
+                      <Send className="mr-2 h-4 w-4" />
+                      Send Request
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardFooter>
     </Card>
   );
