@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -63,17 +64,17 @@ export default function SeekerProfilePage() {
     { id: 2, name: 'Stripe', jobs: [{ id: 1, url: '' }] },
   ]);
 
-  const [experiences, setExperiences] = useState<Omit<Experience, 'id'>[]>(
+  const [experiences, setExperiences] = useState<Experience[]>(
     [
       { role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
-    ]
-  ).map((e, i) => ({ ...e, id: i + 1 }));
+    ].map((e, i) => ({ ...e, id: i + 1 }))
+  );
 
-  const [educations, setEducations] = useState<Omit<Education, 'id'>[]>(
+  const [educations, setEducations] = useState<Education[]>(
     [
-      { id: 1, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
-    ]
-  ).map((e, i) => ({ ...e, id: i + 1 }));
+      { institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
+    ].map((e, i) => ({ ...e, id: i + 1 }))
+  );
 
   const addCompany = () => {
     setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
@@ -144,10 +145,14 @@ export default function SeekerProfilePage() {
     try {
         const result = await importFromLinkedIn({ url: linkedinUrl });
         if (result) {
-            setAbout(result.aboutMe);
-            // Add client-side unique IDs
-            setExperiences(result.experiences.map(e => ({...e, id: Date.now() + Math.random()})));
-            setEducations(result.educations.map(e => ({...e, id: Date.now() + Math.random()})));
+            setAbout(result.aboutMe || "");
+
+            const importedExperiences = Array.isArray(result.experiences) ? result.experiences : [];
+            setExperiences(importedExperiences.map(e => ({...e, id: Date.now() + Math.random()})));
+
+            const importedEducations = Array.isArray(result.educations) ? result.educations : [];
+            setEducations(importedEducations.map(e => ({...e, id: Date.now() + Math.random()})));
+            
             toast({ title: "Profile Imported!", description: "Please review the generated information."});
             setIsImporting(false);
             setLinkedinUrl('');
