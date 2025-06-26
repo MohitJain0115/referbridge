@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockCandidates } from "@/lib/data";
 
@@ -16,10 +16,12 @@ type CandidateFiltersProps = {
     role: string;
     setRole: (value: string) => void;
     onApplyFilters: () => void;
+    onClearFilters: () => void;
+    isFiltered: boolean;
 }
 
 export function CandidateFilters({
-    search, setSearch, company, setCompany, role, setRole, onApplyFilters
+    search, setSearch, company, setCompany, role, setRole, onApplyFilters, onClearFilters, isFiltered
 }: CandidateFiltersProps) {
     return (
         <div className="p-4 bg-card rounded-lg shadow-sm border">
@@ -65,10 +67,17 @@ export function CandidateFilters({
                         </SelectContent>
                     </Select>
                 </div>
-                <Button onClick={onApplyFilters}>
-                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                    Apply Filters
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button onClick={onApplyFilters} className="flex-1">
+                        <SlidersHorizontal className="mr-2 h-4 w-4" />
+                        Apply Filters
+                    </Button>
+                     {isFiltered && (
+                        <Button onClick={onClearFilters} variant="ghost" size="icon" aria-label="Clear filters">
+                            <X className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
             </div>
         </div>
     )

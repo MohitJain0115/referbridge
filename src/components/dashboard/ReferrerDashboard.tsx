@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CandidateCard } from "./CandidateCard";
 import { CandidateFilters } from "./CandidateFilters";
 import { mockCandidates } from "@/lib/data";
@@ -11,6 +11,10 @@ export function ReferrerDashboard() {
   const [search, setSearch] = useState("");
   const [company, setCompany] = useState("all");
   const [role, setRole] = useState("all");
+
+  const isFiltered = useMemo(() => {
+    return search !== "" || company !== "all" || role !== "all";
+  }, [search, company, role]);
 
   const handleApplyFilters = () => {
     let candidates = [...mockCandidates];
@@ -44,6 +48,13 @@ export function ReferrerDashboard() {
     setFilteredCandidates(candidates);
   };
 
+  const handleClearFilters = () => {
+    setSearch("");
+    setCompany("all");
+    setRole("all");
+    setFilteredCandidates(mockCandidates);
+  };
+
   return (
     <div className="space-y-6">
       <CandidateFilters 
@@ -54,6 +65,8 @@ export function ReferrerDashboard() {
         role={role}
         setRole={setRole}
         onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
+        isFiltered={isFiltered}
       />
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredCandidates.length > 0 ? (

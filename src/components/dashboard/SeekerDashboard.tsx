@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ReferrerCard } from "./ReferrerCard";
 import { ReferrerFilters } from "./ReferrerFilters";
 import { mockReferrers } from "@/lib/data";
@@ -11,6 +11,10 @@ export function SeekerDashboard() {
   const [search, setSearch] = useState("");
   const [company, setCompany] = useState("all");
   const [field, setField] = useState("all");
+
+  const isFiltered = useMemo(() => {
+    return search !== "" || company !== "all" || field !== "all";
+  }, [search, company, field]);
 
   const handleApplyFilters = () => {
     let referrers = [...mockReferrers];
@@ -45,6 +49,13 @@ export function SeekerDashboard() {
     setFilteredReferrers(referrers);
   };
 
+  const handleClearFilters = () => {
+    setSearch("");
+    setCompany("all");
+    setField("all");
+    setFilteredReferrers(mockReferrers);
+  };
+
   return (
     <div className="space-y-6">
       <ReferrerFilters 
@@ -55,6 +66,8 @@ export function SeekerDashboard() {
         field={field}
         setField={setField}
         onApplyFilters={handleApplyFilters}
+        onClearFilters={handleClearFilters}
+        isFiltered={isFiltered}
       />
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredReferrers.length > 0 ? (
