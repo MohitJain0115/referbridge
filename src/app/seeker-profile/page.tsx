@@ -6,10 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2 } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Loader2 } from "lucide-react";
 import Link from 'next/link';
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { importFromLinkedIn, LinkedInProfileOutput } from "@/ai/flows/linkedin-profile-flow";
 
 type Job = {
   id: number;
@@ -39,7 +42,16 @@ type Education = {
 };
 
 export default function SeekerProfilePage() {
+  const { toast } = useToast();
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+
+  const [about, setAbout] = useState(
+    "Passionate Product Manager with 3 years of experience in fast-paced tech environments. Skilled in user research, agile methodologies, and cross-functional team leadership. Eager to leverage my skills to build innovative products that users love."
+  );
+
   const [companies, setCompanies] = useState<Company[]>([
     { 
       id: 1, 
@@ -51,13 +63,17 @@ export default function SeekerProfilePage() {
     { id: 2, name: 'Stripe', jobs: [{ id: 1, url: '' }] },
   ]);
 
-  const [experiences, setExperiences] = useState<Experience[]>([
-    { id: 1, role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
-  ]);
-  
-  const [educations, setEducations] = useState<Education[]>([
-    { id: 1, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
-  ]);
+  const [experiences, setExperiences] = useState<Omit<Experience, 'id'>[]>(
+    [
+      { role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
+    ]
+  ).map((e, i) => ({ ...e, id: i + 1 }));
+
+  const [educations, setEducations] = useState<Omit<Education, 'id'>[]>(
+    [
+      { id: 1, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
+    ]
+  ).map((e, i) => ({ ...e, id: i + 1 }));
 
   const addCompany = () => {
     setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
@@ -103,7 +119,7 @@ export default function SeekerProfilePage() {
       setExperiences(experiences.filter(e => e.id !== id));
   };
 
-  const updateExperience = (id: number, field: keyof Experience, value: string) => {
+  const updateExperience = (id: number, field: keyof Omit<Experience, 'id'>, value: string) => {
       setExperiences(experiences.map(e => e.id === id ? {...e, [field]: value} : e));
   };
 
@@ -115,18 +131,80 @@ export default function SeekerProfilePage() {
       setEducations(educations.filter(e => e.id !== id));
   };
 
-  const updateEducation = (id: number, field: keyof Education, value: string) => {
+  const updateEducation = (id: number, field: keyof Omit<Education, 'id'>, value: string) => {
       setEducations(educations.map(e => e.id === id ? {...e, [field]: value} : e));
   };
+
+  const handleImport = async () => {
+    if (!linkedinUrl) {
+        toast({ title: "Please enter a URL", variant: "destructive" });
+        return;
+    }
+    setIsFetching(true);
+    try {
+        const result = await importFromLinkedIn({ url: linkedinUrl });
+        if (result) {
+            setAbout(result.aboutMe);
+            // Add client-side unique IDs
+            setExperiences(result.experiences.map(e => ({...e, id: Date.now() + Math.random()})));
+            setEducations(result.educations.map(e => ({...e, id: Date.now() + Math.random()})));
+            toast({ title: "Profile Imported!", description: "Please review the generated information."});
+            setIsImporting(false);
+            setLinkedinUrl('');
+        }
+    } catch (error) {
+        console.error("Failed to import LinkedIn profile:", error);
+        toast({ title: "Import Failed", description: "Could not generate profile data. Please try again.", variant: "destructive" });
+    } finally {
+        setIsFetching(false);
+    }
+};
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Your Profile</CardTitle>
-          <CardDescription>
-            This information will be visible to potential referrers. Make it count!
-          </CardDescription>
+            <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle className="font-headline text-2xl">Your Profile</CardTitle>
+                    <CardDescription>
+                        This information will be visible to potential referrers. Make it count!
+                    </CardDescription>
+                </div>
+                <Dialog open={isImporting} onOpenChange={setIsImporting}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline">
+                            <Linkedin className="mr-2 h-4 w-4" />
+                            Import from LinkedIn
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Import from LinkedIn</DialogTitle>
+                            <DialogDescription>
+                                Paste your LinkedIn profile URL below. We'll use AI to generate a draft of your profile.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-2">
+                           <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
+                           <Input 
+                             id="linkedin-url" 
+                             placeholder="https://www.linkedin.com/in/your-profile/" 
+                             value={linkedinUrl}
+                             onChange={(e) => setLinkedinUrl(e.target.value)}
+                             disabled={isFetching}
+                           />
+                        </div>
+                        <DialogFooter>
+                            <Button variant="ghost" onClick={() => setIsImporting(false)} disabled={isFetching}>Cancel</Button>
+                            <Button onClick={handleImport} disabled={isFetching}>
+                                {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Fetch Profile
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
@@ -183,6 +261,8 @@ export default function SeekerProfilePage() {
                 id="about" 
                 placeholder="A brief summary about your professional background, skills, and career aspirations." 
                 className="min-h-[100px]"
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
             />
           </div>
 
