@@ -266,7 +266,7 @@ export default function SeekerProfilePage() {
                   </div>
                 </button>
               </DialogTrigger>
-              <DialogContent className="p-0 border-0 bg-transparent shadow-none max-w-4xl">
+              <DialogContent className="p-0 border-0 bg-transparent shadow-none max-w-4xl w-auto [&>[data-radix-dialog-close]]:text-white">
                   <DialogHeader className="sr-only">
                     <DialogTitle>Profile Picture Preview</DialogTitle>
                     <DialogDescription>
