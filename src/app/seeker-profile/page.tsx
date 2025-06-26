@@ -267,6 +267,12 @@ export default function SeekerProfilePage() {
                 </button>
               </DialogTrigger>
               <DialogContent className="p-0 border-0 bg-transparent shadow-none max-w-4xl">
+                  <DialogHeader className="sr-only">
+                    <DialogTitle>Profile Picture Preview</DialogTitle>
+                    <DialogDescription>
+                      A larger, full-screen view of the profile picture.
+                    </DialogDescription>
+                  </DialogHeader>
                   <Image
                       src={profilePic}
                       alt="Profile Picture"
