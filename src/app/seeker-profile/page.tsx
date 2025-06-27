@@ -283,10 +283,6 @@ export default function SeekerProfilePage() {
                 <Label htmlFor="current-role">Current Role</Label>
                 <Input id="current-role" placeholder="e.g., Product Manager" defaultValue="Product Manager" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="current-experience">Experience in Current Role</Label>
-                <Input id="current-experience" placeholder="e.g., 3 years" defaultValue="3 years" />
-              </div>
             </div>
           </div>
           
@@ -294,6 +290,10 @@ export default function SeekerProfilePage() {
             <div className="space-y-6">
               <div className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-experience">Experience in Current Role</Label>
+                      <Input id="current-experience" placeholder="e.g., 3 years" defaultValue="3 years" />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="target-role">Target Role</Label>
                       <Input id="target-role" placeholder="e.g., Senior Product Manager" defaultValue="Senior Product Manager" />
