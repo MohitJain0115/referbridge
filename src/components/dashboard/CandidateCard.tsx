@@ -7,14 +7,40 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DollarSign, Download, Eye, CheckCircle, XCircle, MoreVertical, Briefcase } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 type CandidateCardProps = {
   candidate: Candidate;
+  isSelected: boolean;
+  onSelect: (candidateId: string) => void;
 };
 
-export function CandidateCard({ candidate }: CandidateCardProps) {
+export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCardProps) {
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Prevent click event from firing on interactive elements inside the card
+    if (e.target instanceof HTMLElement && e.target.closest('button, a, [role="menuitem"]')) {
+      return;
+    }
+    onSelect(candidate.id);
+  };
+
   return (
-    <Card className="flex flex-col">
+    <Card 
+      className={cn(
+        "flex flex-col transition-all relative cursor-pointer", 
+        isSelected && "border-primary ring-2 ring-primary"
+      )}
+      onClick={handleCardClick}
+    >
+      <div className="absolute top-4 left-4 z-10">
+        <Checkbox 
+            id={`select-${candidate.id}`}
+            aria-label={`Select ${candidate.name}`}
+            checked={isSelected}
+            onCheckedChange={() => onSelect(candidate.id)} 
+        />
+      </div>
       <CardHeader>
         <div className="flex items-center justify-between">
           <Image
@@ -27,7 +53,10 @@ export function CandidateCard({ candidate }: CandidateCardProps) {
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button 
+                variant="ghost" 
+                size="icon"
+              >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
