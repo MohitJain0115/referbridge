@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Loader2, Eye, Sparkles } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Loader2, Eye, Sparkles, Building2 } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch";
@@ -282,46 +282,45 @@ export default function SeekerProfilePage() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <Dialog open={isImporting} onOpenChange={setIsImporting}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline">
-                            <Linkedin className="mr-2 h-4 w-4" />
-                            Import from LinkedIn
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Import from LinkedIn</DialogTitle>
-                            <DialogDescription>
-                                Paste your LinkedIn profile URL below. We'll use AI to generate a draft of your profile.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-2">
-                           <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
-                           <Input 
-                             id="linkedin-url" 
-                             placeholder="https://www.linkedin.com/in/your-profile/"
-                             value={linkedinUrl}
-                             onChange={(e) => setLinkedinUrl(e.target.value)}
-                             disabled={isFetching}
-                           />
-                        </div>
-                        <DialogFooter>
-                            <Button variant="ghost" onClick={() => setIsImporting(false)} disabled={isFetching}>Cancel</Button>
-                            <Button onClick={handleImport} disabled={isFetching}>
-                                {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Fetch Profile
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-              </div>
-          
               <div className="space-y-2">
-                <Label htmlFor="about" className="flex items-center gap-2 font-medium">
-                    <User className="h-4 w-4 text-primary" /> About Me
-                </Label>
+                <div className="flex justify-between items-center">
+                    <Label htmlFor="about" className="flex items-center gap-2 font-medium">
+                        <User className="h-4 w-4 text-primary" /> About Me
+                    </Label>
+                    <Dialog open={isImporting} onOpenChange={setIsImporting}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <Linkedin className="mr-2 h-4 w-4" />
+                                Import from LinkedIn
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Import from LinkedIn</DialogTitle>
+                                <DialogDescription>
+                                    Paste your LinkedIn profile URL below. We'll use AI to generate a draft of your profile.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-2">
+                               <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
+                               <Input 
+                                 id="linkedin-url" 
+                                 placeholder="https://www.linkedin.com/in/your-profile/"
+                                 value={linkedinUrl}
+                                 onChange={(e) => setLinkedinUrl(e.target.value)}
+                                 disabled={isFetching}
+                               />
+                            </div>
+                            <DialogFooter>
+                                <Button variant="ghost" onClick={() => setIsImporting(false)} disabled={isFetching}>Cancel</Button>
+                                <Button onClick={handleImport} disabled={isFetching}>
+                                    {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Fetch Profile
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
                 <Textarea 
                     id="about" 
                     placeholder="A brief summary about your professional background, skills, and career aspirations." 
@@ -332,9 +331,9 @@ export default function SeekerProfilePage() {
               </div>
 
               <div className="space-y-4">
-                <Label className="flex items-center gap-2 font-medium text-base">
+                <h3 className="flex items-center gap-2 font-medium text-base">
                     <Briefcase className="h-5 w-5 text-primary" /> Work Experience
-                </Label>
+                </h3>
                 <div className="space-y-4">
                     {experiences.map((exp) => (
                         <Card key={exp.id} className="p-4 bg-muted/20 border-dashed">
@@ -371,9 +370,9 @@ export default function SeekerProfilePage() {
               </div>
 
               <div className="space-y-4">
-                <Label className="flex items-center gap-2 font-medium text-base">
+                <h3 className="flex items-center gap-2 font-medium text-base">
                     <GraduationCap className="h-5 w-5 text-primary" /> Education
-                </Label>
+                </h3>
                 <div className="space-y-4">
                     {educations.map((edu) => (
                         <Card key={edu.id} className="p-4 bg-muted/20 border-dashed">
@@ -410,8 +409,12 @@ export default function SeekerProfilePage() {
               </div>
 
               <div className="space-y-4">
-                <Label className="text-base font-medium">Preferred Companies & Job Links</Label>
-                <p className="text-sm text-muted-foreground">Add companies you're interested in and links to specific job postings.</p>
+                 <div className="space-y-1">
+                    <h3 className="flex items-center gap-2 font-medium text-base">
+                        <Building2 className="h-5 w-5 text-primary" /> Target Companies & Job Links
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Add companies you're interested in and links to specific job postings.</p>
+                </div>
                 <div className="space-y-4">
                   {companies.map((company) => (
                     <Card key={company.id} className="p-4 bg-muted/20 border-dashed">
