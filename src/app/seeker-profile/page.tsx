@@ -182,14 +182,14 @@ export default function SeekerProfilePage() {
     <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <div className="flex items-start gap-4">
-            <div className="flex-grow">
+          <div className="flex items-start justify-between gap-4">
+            <div>
               <CardTitle className="font-headline text-2xl">Your {profileView === 'seeker' ? 'Job Seeker' : 'Referrer'} Profile</CardTitle>
               <CardDescription>
                 This information will be visible to potential {profileView === 'seeker' ? 'referrers' : 'job seekers'}. Make it count!
               </CardDescription>
             </div>
-            <div className="flex flex-shrink-0 items-center gap-2">
+            <div className="flex items-center gap-2">
               <ProfileViewToggle currentView={profileView} setView={setProfileView} />
               <Dialog open={isImporting} onOpenChange={setIsImporting}>
                   <DialogTrigger asChild>
