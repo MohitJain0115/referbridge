@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { mockCandidates } from "@/lib/data";
+import { ReferralRequestsPage } from '@/components/dashboard/ReferralRequestsPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,6 +90,8 @@ export default function DashboardPage({
     content = <SettingsPage />;
   } else if (page === 'referred') {
     content = <ReferralHistoryPage userType={view as 'seeker' | 'referrer'} />;
+  } else if (page === 'requests' && view === 'referrer') {
+    content = <ReferralRequestsPage />;
   } else {
     content = <MainDashboard view={view} />;
   }
