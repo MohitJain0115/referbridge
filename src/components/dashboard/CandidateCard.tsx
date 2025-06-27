@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DollarSign, Download, Eye, CheckCircle, XCircle, MoreVertical } from "lucide-react";
+import { DollarSign, Download, Eye, CheckCircle, XCircle, MoreVertical, Briefcase } from "lucide-react";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -61,6 +61,10 @@ export function CandidateCard({ candidate }: CandidateCardProps) {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <DollarSign className="h-4 w-4" />
           <span>{candidate.salary.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })} expected salary</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Briefcase className="h-4 w-4" />
+            <span>{candidate.experience} {candidate.experience === 1 ? 'year' : 'years'} of experience</span>
         </div>
          <div className="space-y-2">
             <h4 className="text-sm font-medium">Top Skills</h4>
