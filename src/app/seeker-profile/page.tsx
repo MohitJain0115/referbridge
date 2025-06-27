@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Loader2, Eye, Sparkles, Building2 } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Loader2, Eye, Sparkles, Building2, Calendar as CalendarIcon } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch";
@@ -15,6 +15,10 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { importFromLinkedIn, LinkedInProfileOutput } from "@/ai/flows/linkedin-profile-flow";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Job = {
   id: number;
@@ -31,7 +35,9 @@ type Experience = {
     id: number;
     role: string;
     company: string;
-    dates: string;
+    from: Date | undefined;
+    to: Date | undefined;
+    currentlyWorking: boolean;
     description: string;
 };
 
@@ -39,13 +45,13 @@ type Education = {
     id: number;
     institution: string;
     degree: string;
-    dates: string;
+    from: Date | undefined;
+    to: Date | undefined;
     description: string;
 };
 
 function ProfileViewToggle({ currentView, setView }: { currentView: 'seeker' | 'referrer', setView: (view: 'seeker' | 'referrer') => void }) {
   const baseClasses = "transition-all";
-  const activeClasses = "shadow-md";
 
   return (
     <div className="flex items-center gap-2 p-1 rounded-lg bg-muted">
@@ -92,10 +98,10 @@ export default function SeekerProfilePage() {
     { id: 2, name: 'Stripe', jobs: [{ id: 1, url: '' }] },
   ]);
   const [experiences, setExperiences] = useState<Experience[]>([
-      { id: 101, role: 'Product Manager', company: 'TechCorp', dates: 'Jan 2020 - Present', description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
+      { id: 101, role: 'Product Manager', company: 'TechCorp', from: new Date(2021, 0, 1), to: undefined, currentlyWorking: true, description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
   ]);
   const [educations, setEducations] = useState<Education[]>([
-      { id: 201, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', dates: '2018 - 2020', description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
+      { id: 201, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', from: new Date(2018, 7), to: new Date(2020, 4), description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
   ]);
 
   // Referrer states
@@ -109,12 +115,28 @@ export default function SeekerProfilePage() {
   const addJobLink = (companyId: number) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: [...c.jobs, { id: Date.now(), url: '' }] } : c));
   const removeJobLink = (companyId: number, jobId: number) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: c.jobs.filter(j => j.id !== jobId) } : c));
   const updateJobLink = (companyId: number, jobId: number, url: string) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: c.jobs.map(j => j.id === jobId ? { ...j, url } : j) } : c));
-  const addExperience = () => setExperiences([...experiences, {id: Date.now(), role: '', company: '', dates: '', description: ''}]);
+  
+  const addExperience = () => setExperiences([...experiences, {id: Date.now(), role: '', company: '', from: undefined, to: undefined, currentlyWorking: false, description: ''}]);
   const removeExperience = (id: number) => setExperiences(experiences.filter(e => e.id !== id));
-  const updateExperience = (id: number, field: keyof Omit<Experience, 'id'>, value: string) => setExperiences(experiences.map(e => e.id === id ? {...e, [field]: value} : e));
-  const addEducation = () => setEducations([...educations, {id: Date.now(), institution: '', degree: '', dates: '', description: ''}]);
+  const handleExperienceChange = (id: number, field: keyof Omit<Experience, 'id'>, value: string | boolean | Date | undefined) => {
+    setExperiences(experiences.map(exp => {
+        if (exp.id === id) {
+            const updatedExp = { ...exp, [field]: value };
+            if (field === 'currentlyWorking' && value === true) {
+                updatedExp.to = undefined;
+            }
+            return updatedExp;
+        }
+        return exp;
+    }));
+  };
+
+  const addEducation = () => setEducations([...educations, {id: Date.now(), institution: '', degree: '', from: undefined, to: undefined, description: ''}]);
   const removeEducation = (id: number) => setEducations(educations.filter(e => e.id !== id));
-  const updateEducation = (id: number, field: keyof Omit<Education, 'id'>, value: string) => setEducations(educations.map(e => e.id === id ? {...e, [field]: value} : e));
+  const handleEducationChange = (id: number, field: keyof Omit<Education, 'id'>, value: string | Date | undefined) => {
+    setEducations(educations.map(edu => edu.id === id ? { ...edu, [field]: value } : edu));
+  };
+
 
   const handleProfilePicChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -149,10 +171,36 @@ export default function SeekerProfilePage() {
       if (result) {
         // Seeker profile
         setAbout(result.aboutMe || "");
+        
         const importedExperiences = Array.isArray(result.experiences) ? result.experiences : [];
-        setExperiences(importedExperiences.map(e => ({...e, id: Date.now() + Math.random()})));
+        setExperiences(importedExperiences.map(e => {
+            const fromDate = e.startDate ? new Date(e.startDate) : undefined;
+            const currentlyWorking = e.endDate === 'Present';
+            const toDate = !currentlyWorking && e.endDate ? new Date(e.endDate) : undefined;
+            return {
+                id: Date.now() + Math.random(),
+                role: e.role || '',
+                company: e.company || '',
+                from: fromDate,
+                to: toDate,
+                currentlyWorking: currentlyWorking,
+                description: e.description || '',
+            };
+        }));
+        
         const importedEducations = Array.isArray(result.educations) ? result.educations : [];
-        setEducations(importedEducations.map(e => ({...e, id: Date.now() + Math.random()})));
+        setEducations(importedEducations.map(e => {
+            const fromDate = e.startDate ? new Date(e.startDate) : undefined;
+            const toDate = e.endDate ? new Date(e.endDate) : undefined;
+            return {
+              id: Date.now() + Math.random(),
+              institution: e.institution || '',
+              degree: e.degree || '',
+              from: fromDate,
+              to: toDate,
+              description: e.description || '',
+            }
+        }));
         
         // Referrer profile
         setReferrerCompany(result.referrerCompany || "");
@@ -354,20 +402,52 @@ export default function SeekerProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div className="space-y-2">
                                     <Label htmlFor={`exp-role-${exp.id}`}>Role</Label>
-                                    <Input id={`exp-role-${exp.id}`} placeholder="e.g., Product Manager" value={exp.role} onChange={(e) => updateExperience(exp.id, 'role', e.target.value)} />
+                                    <Input id={`exp-role-${exp.id}`} placeholder="e.g., Product Manager" value={exp.role} onChange={(e) => handleExperienceChange(exp.id, 'role', e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor={`exp-company-${exp.id}`}>Company</Label>
-                                    <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)} />
+                                    <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)} />
                                 </div>
                             </div>
-                            <div className="space-y-2 mb-4">
-                                <Label htmlFor={`exp-dates-${exp.id}`}>Dates</Label>
-                                <Input id={`exp-dates-${exp.id}`} placeholder="e.g., Jan 2020 - Present" value={exp.dates} onChange={(e) => updateExperience(exp.id, 'dates', e.target.value)} />
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor={`exp-from-${exp.id}`}>From</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button id={`exp-from-${exp.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !exp.from && "text-muted-foreground")}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {exp.from ? format(exp.from, "MMM yyyy") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={exp.from} onSelect={(date) => handleExperienceChange(exp.id, 'from', date)} captionLayout="dropdown-buttons" fromYear={1980} toYear={new Date().getFullYear()} />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`exp-to-${exp.id}`}>To</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button id={`exp-to-${exp.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !exp.to && "text-muted-foreground")} disabled={exp.currentlyWorking}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {exp.currentlyWorking ? 'Present' : exp.to ? format(exp.to, "MMM yyyy") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={exp.to} onSelect={(date) => handleExperienceChange(exp.id, 'to', date)} disabled={exp.currentlyWorking} captionLayout="dropdown-buttons" fromYear={1980} toYear={new Date().getFullYear()}/>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                             </div>
+                            <div className="flex items-center space-x-2 mb-4">
+                                <Checkbox id={`exp-current-${exp.id}`} checked={exp.currentlyWorking} onCheckedChange={(checked) => handleExperienceChange(exp.id, 'currentlyWorking', !!checked)} />
+                                <Label htmlFor={`exp-current-${exp.id}`} className="font-normal cursor-pointer">I currently work here</Label>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor={`exp-desc-${exp.id}`}>Description</Label>
-                                <Textarea id={`exp-desc-${exp.id}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => updateExperience(exp.id, 'description', e.target.value)} className="min-h-[100px]" />
+                                <Textarea id={`exp-desc-${exp.id}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)} className="min-h-[100px]" />
                             </div>
                         </Card>
                     ))}
@@ -393,20 +473,48 @@ export default function SeekerProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div className="space-y-2">
                                     <Label htmlFor={`edu-institution-${edu.id}`}>Institution</Label>
-                                    <Input id={`edu-institution-${edu.id}`} placeholder="e.g., Carnegie Mellon University" value={edu.institution} onChange={(e) => updateEducation(edu.id, 'institution', e.target.value)} />
+                                    <Input id={`edu-institution-${edu.id}`} placeholder="e.g., Carnegie Mellon University" value={edu.institution} onChange={(e) => handleEducationChange(edu.id, 'institution', e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor={`edu-degree-${edu.id}`}>Degree</Label>
-                                    <Input id={`edu-degree-${edu.id}`} placeholder="e.g., M.S. in HCI" value={edu.degree} onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)} />
+                                    <Input id={`edu-degree-${edu.id}`} placeholder="e.g., M.S. in HCI" value={edu.degree} onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)} />
                                 </div>
                             </div>
-                            <div className="space-y-2 mb-4">
-                                <Label htmlFor={`edu-dates-${edu.id}`}>Dates</Label>
-                                <Input id={`edu-dates-${edu.id}`} placeholder="e.g., 2018 - 2020" value={edu.dates} onChange={(e) => updateEducation(edu.id, 'dates', e.target.value)} />
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor={`edu-from-${edu.id}`}>From</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button id={`edu-from-${edu.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !edu.from && "text-muted-foreground")}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {edu.from ? format(edu.from, "MMM yyyy") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={edu.from} onSelect={(date) => handleEducationChange(edu.id, 'from', date)} captionLayout="dropdown-buttons" fromYear={1980} toYear={new Date().getFullYear()} />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`edu-to-${edu.id}`}>To</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button id={`edu-to-${edu.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !edu.to && "text-muted-foreground")}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {edu.to ? format(edu.to, "MMM yyyy") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={edu.to} onSelect={(date) => handleEducationChange(edu.id, 'to', date)} captionLayout="dropdown-buttons" fromYear={1980} toYear={new Date().getFullYear()} />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                             </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor={`edu-desc-${edu.id}`}>Description / Notes</Label>
-                                <Textarea id={`edu-desc-${edu.id}`} placeholder="Describe any relevant coursework, activities, or honors..." value={edu.description} onChange={(e) => updateEducation(edu.id, 'description', e.target.value)} className="min-h-[80px]" />
+                                <Textarea id={`edu-desc-${edu.id}`} placeholder="Describe any relevant coursework, activities, or honors..." value={edu.description} onChange={(e) => handleEducationChange(edu.id, 'description', e.target.value)} className="min-h-[80px]" />
                             </div>
                         </Card>
                     ))}

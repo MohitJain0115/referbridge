@@ -18,14 +18,16 @@ export type LinkedInProfileInput = z.infer<typeof LinkedInProfileInputSchema>;
 const ExperienceSchema = z.object({
     role: z.string().describe("The user's job title or role."),
     company: z.string().describe("The name of the company."),
-    dates: z.string().describe("The start and end dates of the employment."),
+    startDate: z.string().describe("The start date of the employment, in 'Month YYYY' format (e.g., 'Jan 2020')."),
+    endDate: z.string().describe("The end date of the employment, in 'Month YYYY' format (e.g., 'Dec 2022'). If the user is currently working here, return 'Present'."),
     description: z.string().describe("A brief description of responsibilities and achievements in the role."),
 });
 
 const EducationSchema = z.object({
     institution: z.string().describe("The name of the educational institution."),
     degree: z.string().describe("The degree or field of study."),
-    dates: z.string().describe("The start and end dates of the education."),
+    startDate: z.string().describe("The start date of the education, in 'Month YYYY' format (e.g., 'Aug 2018')."),
+    endDate: z.string().describe("The end date of the education, in 'Month YYYY' format (e.g., 'May 2020')."),
     description: z.string().describe("Any notes about the education, like relevant coursework or honors."),
 });
 
@@ -61,8 +63,8 @@ Based on the provided URL: {{{url}}}, generate the following:
 
 **For the Job Seeker Profile:**
 1.  A brief "About Me" summary (3-4 sentences).
-2.  A list of 2-3 realistic work experiences, including role, company, dates, and a description of achievements.
-3.  A list of 1-2 realistic education entries, including institution, degree, dates, and a brief description.
+2.  A list of 2-3 realistic work experiences, including role, company, description, and dates. For dates, provide a separate 'startDate' and 'endDate' in "Month YYYY" format (e.g., startDate: "Jan 2020", endDate: "Dec 2022"). If it's the current role, the 'endDate' should be "Present".
+3.  A list of 1-2 realistic education entries, including institution, degree, description, and dates in the same "Month YYYY" format.
 
 **For the Referrer Profile:**
 1.  The user's most recent company for the \`referrerCompany\` field. This should match the company of their most recent work experience.
