@@ -147,12 +147,19 @@ export default function SeekerProfilePage() {
     try {
       const result: LinkedInProfileOutput = await importFromLinkedIn({ url: linkedinUrl });
       if (result) {
+        // Seeker profile
         setAbout(result.aboutMe || "");
         const importedExperiences = Array.isArray(result.experiences) ? result.experiences : [];
         setExperiences(importedExperiences.map(e => ({...e, id: Date.now() + Math.random()})));
         const importedEducations = Array.isArray(result.educations) ? result.educations : [];
         setEducations(importedEducations.map(e => ({...e, id: Date.now() + Math.random()})));
-        toast({ title: "Profile Imported!", description: "Please review the generated information."});
+        
+        // Referrer profile
+        setReferrerCompany(result.referrerCompany || "");
+        setReferrerAbout(result.referrerBio || "");
+        setReferrerSpecialties(result.referrerSpecialties || "");
+
+        toast({ title: "Profile Data Imported!", description: "Please review the generated information."});
         setIsImporting(false);
         setLinkedinUrl('');
       }
@@ -182,7 +189,42 @@ export default function SeekerProfilePage() {
                 This information will be visible to potential {profileView === 'seeker' ? 'referrers' : 'job seekers'}. Make it count!
               </CardDescription>
             </div>
-            <ProfileViewToggle currentView={profileView} setView={setProfileView} />
+            <div className="flex items-center gap-2">
+              <Dialog open={isImporting} onOpenChange={setIsImporting}>
+                  <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                          <Linkedin className="mr-2 h-4 w-4" />
+                          Import from LinkedIn
+                      </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                      <DialogHeader>
+                          <DialogTitle>Import from LinkedIn</DialogTitle>
+                          <DialogDescription>
+                              Paste your LinkedIn profile URL below. We'll use AI to generate a draft of your profile.
+                          </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-2">
+                          <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
+                          <Input 
+                            id="linkedin-url" 
+                            placeholder="https://www.linkedin.com/in/your-profile/"
+                            value={linkedinUrl}
+                            onChange={(e) => setLinkedinUrl(e.target.value)}
+                            disabled={isFetching}
+                          />
+                      </div>
+                      <DialogFooter>
+                          <Button variant="ghost" onClick={() => setIsImporting(false)} disabled={isFetching}>Cancel</Button>
+                          <Button onClick={handleImport} disabled={isFetching}>
+                              {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              Fetch Profile
+                          </Button>
+                      </DialogFooter>
+                  </DialogContent>
+              </Dialog>
+              <ProfileViewToggle currentView={profileView} setView={setProfileView} />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -283,44 +325,9 @@ export default function SeekerProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <Label htmlFor="about" className="flex items-center gap-2 font-medium">
-                        <User className="h-4 w-4 text-primary" /> About Me
-                    </Label>
-                    <Dialog open={isImporting} onOpenChange={setIsImporting}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                                <Linkedin className="mr-2 h-4 w-4" />
-                                Import from LinkedIn
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Import from LinkedIn</DialogTitle>
-                                <DialogDescription>
-                                    Paste your LinkedIn profile URL below. We'll use AI to generate a draft of your profile.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-2">
-                               <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
-                               <Input 
-                                 id="linkedin-url" 
-                                 placeholder="https://www.linkedin.com/in/your-profile/"
-                                 value={linkedinUrl}
-                                 onChange={(e) => setLinkedinUrl(e.target.value)}
-                                 disabled={isFetching}
-                               />
-                            </div>
-                            <DialogFooter>
-                                <Button variant="ghost" onClick={() => setIsImporting(false)} disabled={isFetching}>Cancel</Button>
-                                <Button onClick={handleImport} disabled={isFetching}>
-                                    {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Fetch Profile
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </div>
+                <Label htmlFor="about" className="flex items-center gap-2 font-medium">
+                    <User className="h-4 w-4 text-primary" /> About Me
+                </Label>
                 <Textarea 
                     id="about" 
                     placeholder="A brief summary about your professional background, skills, and career aspirations." 
