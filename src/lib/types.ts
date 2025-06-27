@@ -7,6 +7,7 @@ export type Candidate = {
   salary: number;
   skills: string[];
   location: string;
+  experience: number;
   status: 'Pending' | 'Viewed' | 'Referred' | 'Not a Fit';
   jobPostUrl: string;
 };

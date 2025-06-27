@@ -4,15 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockCandidates } from "@/lib/data";
-
-const uniqueCompanies = [...new Set(mockCandidates.map(c => c.company))];
 
 type CandidateFiltersProps = {
     search: string;
     setSearch: (value: string) => void;
-    company: string;
-    setCompany: (value: string) => void;
+    experience: string;
+    setExperience: (value: string) => void;
     role: string;
     setRole: (value: string) => void;
     onApplyFilters: () => void;
@@ -21,7 +18,7 @@ type CandidateFiltersProps = {
 }
 
 export function CandidateFilters({
-    search, setSearch, company, setCompany, role, setRole, onApplyFilters, onClearFilters, isFiltered
+    search, setSearch, experience, setExperience, role, setRole, onApplyFilters, onClearFilters, isFiltered
 }: CandidateFiltersProps) {
     return (
         <div className="p-4 bg-card rounded-lg shadow-sm border">
@@ -40,16 +37,16 @@ export function CandidateFilters({
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <label htmlFor="company" className="text-sm font-medium">Company</label>
-                     <Select value={company} onValueChange={setCompany}>
-                        <SelectTrigger id="company">
-                            <SelectValue placeholder="All Companies" />
+                    <label htmlFor="experience" className="text-sm font-medium">Experience Level</label>
+                     <Select value={experience} onValueChange={setExperience}>
+                        <SelectTrigger id="experience">
+                            <SelectValue placeholder="All Levels" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Companies</SelectItem>
-                            {uniqueCompanies.map(c => (
-                                <SelectItem key={c} value={c}>{c}</SelectItem>
-                            ))}
+                            <SelectItem value="all">All Levels</SelectItem>
+                            <SelectItem value="0-2">0-2 Years</SelectItem>
+                            <SelectItem value="3-5">3-5 Years</SelectItem>
+                            <SelectItem value="5+">5+ Years</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

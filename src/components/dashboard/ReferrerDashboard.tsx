@@ -9,12 +9,12 @@ import type { Candidate } from "@/lib/types";
 export function ReferrerDashboard() {
   const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>(mockCandidates);
   const [search, setSearch] = useState("");
-  const [company, setCompany] = useState("all");
+  const [experience, setExperience] = useState("all");
   const [role, setRole] = useState("all");
 
   const isFiltered = useMemo(() => {
-    return search !== "" || company !== "all" || role !== "all";
-  }, [search, company, role]);
+    return search !== "" || experience !== "all" || role !== "all";
+  }, [search, experience, role]);
 
   const handleApplyFilters = () => {
     let candidates = [...mockCandidates];
@@ -28,8 +28,18 @@ export function ReferrerDashboard() {
       );
     }
 
-    if (company !== "all") {
-      candidates = candidates.filter(c => c.company === company);
+    if (experience !== "all") {
+      switch (experience) {
+        case '0-2':
+          candidates = candidates.filter(c => c.experience >= 0 && c.experience <= 2);
+          break;
+        case '3-5':
+          candidates = candidates.filter(c => c.experience >= 3 && c.experience <= 5);
+          break;
+        case '5+':
+          candidates = candidates.filter(c => c.experience > 5);
+          break;
+      }
     }
 
     if (role !== "all") {
@@ -50,7 +60,7 @@ export function ReferrerDashboard() {
 
   const handleClearFilters = () => {
     setSearch("");
-    setCompany("all");
+    setExperience("all");
     setRole("all");
     setFilteredCandidates(mockCandidates);
   };
@@ -60,8 +70,8 @@ export function ReferrerDashboard() {
       <CandidateFilters 
         search={search}
         setSearch={setSearch}
-        company={company}
-        setCompany={setCompany}
+        experience={experience}
+        setExperience={setExperience}
         role={role}
         setRole={setRole}
         onApplyFilters={handleApplyFilters}
