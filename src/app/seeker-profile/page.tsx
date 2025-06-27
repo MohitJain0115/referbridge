@@ -182,49 +182,47 @@ export default function SeekerProfilePage() {
     <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <CardTitle className="font-headline text-2xl">Your {profileView === 'seeker' ? 'Job Seeker' : 'Referrer'} Profile</CardTitle>
-              <CardDescription>
-                This information will be visible to potential {profileView === 'seeker' ? 'referrers' : 'job seekers'}. Make it count!
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <ProfileViewToggle currentView={profileView} setView={setProfileView} />
-              <Dialog open={isImporting} onOpenChange={setIsImporting}>
-                  <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                          <Linkedin className="mr-2 h-4 w-4" />
-                          Import from LinkedIn
-                      </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                      <DialogHeader>
-                          <DialogTitle>Import from LinkedIn</DialogTitle>
-                          <DialogDescription>
-                              Paste your LinkedIn profile URL below. We'll use AI to generate a draft of your profile.
-                          </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-2">
-                          <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
-                          <Input 
-                            id="linkedin-url" 
-                            placeholder="https://www.linkedin.com/in/your-profile/"
-                            value={linkedinUrl}
-                            onChange={(e) => setLinkedinUrl(e.target.value)}
-                            disabled={isFetching}
-                          />
-                      </div>
-                      <DialogFooter>
-                          <Button variant="ghost" onClick={() => setIsImporting(false)} disabled={isFetching}>Cancel</Button>
-                          <Button onClick={handleImport} disabled={isFetching}>
-                              {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                              Fetch Profile
-                          </Button>
-                      </DialogFooter>
-                  </DialogContent>
-              </Dialog>
-            </div>
+          <div>
+            <CardTitle className="font-headline text-2xl">Your {profileView === 'seeker' ? 'Job Seeker' : 'Referrer'} Profile</CardTitle>
+            <CardDescription>
+              This information will be visible to potential {profileView === 'seeker' ? 'referrers' : 'job seekers'}. Make it count!
+            </CardDescription>
+          </div>
+          <div className="flex items-center justify-between pt-4">
+            <ProfileViewToggle currentView={profileView} setView={setProfileView} />
+            <Dialog open={isImporting} onOpenChange={setIsImporting}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Linkedin className="mr-2 h-4 w-4" />
+                  Import from LinkedIn
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Import from LinkedIn</DialogTitle>
+                  <DialogDescription>
+                    Paste your LinkedIn profile URL below. We'll use AI to generate a draft of your profile.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
+                  <Input 
+                    id="linkedin-url" 
+                    placeholder="https://www.linkedin.com/in/your-profile/"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    disabled={isFetching}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setIsImporting(false)} disabled={isFetching}>Cancel</Button>
+                  <Button onClick={handleImport} disabled={isFetching}>
+                    {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Fetch Profile
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
