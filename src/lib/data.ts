@@ -13,6 +13,7 @@ export const mockCandidates: Candidate[] = [
     experience: 5,
     status: 'Pending',
     jobPostUrl: 'https://example.com/job/1',
+    targetCompanies: ['TechCorp', 'CloudWorks'],
   },
   {
     id: '2',
@@ -26,6 +27,7 @@ export const mockCandidates: Candidate[] = [
     experience: 6,
     status: 'Viewed',
     jobPostUrl: 'https://example.com/job/2',
+    targetCompanies: ['InnovateX', 'DataDriven Inc.'],
   },
   {
     id: '3',
@@ -39,6 +41,7 @@ export const mockCandidates: Candidate[] = [
     experience: 3,
     status: 'Referred',
     jobPostUrl: 'https://example.com/job/3',
+    targetCompanies: ['Creative Solutions', 'TechCorp'],
   },
   {
     id: '4',
@@ -52,6 +55,7 @@ export const mockCandidates: Candidate[] = [
     experience: 4,
     status: 'Not a Fit',
     jobPostUrl: 'https://example.com/job/4',
+    targetCompanies: ['DataDriven Inc.', 'CloudWorks'],
   },
   {
     id: '5',
@@ -65,6 +69,7 @@ export const mockCandidates: Candidate[] = [
     experience: 7,
     status: 'Pending',
     jobPostUrl: 'https://example.com/job/5',
+    targetCompanies: ['CloudWorks', 'InnovateX'],
   },
    {
     id: '6',
@@ -78,6 +83,7 @@ export const mockCandidates: Candidate[] = [
     experience: 4,
     status: 'Viewed',
     jobPostUrl: 'https://example.com/job/6',
+    targetCompanies: ['InnovateX', 'Creative Solutions'],
   },
 ];
 

@@ -11,26 +11,26 @@ import { Download } from "lucide-react";
 
 export function ReferrerDashboard() {
   const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>(mockCandidates);
-  const [search, setSearch] = useState("");
+  const [company, setCompany] = useState("all");
   const [experience, setExperience] = useState("all");
   const [role, setRole] = useState("all");
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const { toast } = useToast();
 
+  const availableCompanies = useMemo(() => {
+    const companies = new Set(mockCandidates.flatMap(c => c.targetCompanies));
+    return Array.from(companies).sort();
+  }, []);
+
   const isFiltered = useMemo(() => {
-    return search !== "" || experience !== "all" || role !== "all";
-  }, [search, experience, role]);
+    return company !== "all" || experience !== "all" || role !== "all";
+  }, [company, experience, role]);
 
   const handleApplyFilters = () => {
     let candidates = [...mockCandidates];
 
-    if (search) {
-      const lowercasedSearch = search.toLowerCase();
-      candidates = candidates.filter(c => 
-        c.name.toLowerCase().includes(lowercasedSearch) ||
-        c.role.toLowerCase().includes(lowercasedSearch) ||
-        c.skills.some(skill => skill.toLowerCase().includes(lowercasedSearch))
-      );
+    if (company !== "all") {
+      candidates = candidates.filter(c => c.targetCompanies.includes(company));
     }
 
     if (experience !== "all") {
@@ -65,7 +65,7 @@ export function ReferrerDashboard() {
   };
 
   const handleClearFilters = () => {
-    setSearch("");
+    setCompany("all");
     setExperience("all");
     setRole("all");
     setFilteredCandidates(mockCandidates);
@@ -96,8 +96,9 @@ export function ReferrerDashboard() {
   return (
     <div className="space-y-6">
       <CandidateFilters 
-        search={search}
-        setSearch={setSearch}
+        company={company}
+        setCompany={setCompany}
+        availableCompanies={availableCompanies}
         experience={experience}
         setExperience={setExperience}
         role={role}

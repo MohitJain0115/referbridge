@@ -10,6 +10,7 @@ export type Candidate = {
   experience: number;
   status: 'Pending' | 'Viewed' | 'Referred' | 'Not a Fit';
   jobPostUrl: string;
+  targetCompanies: string[];
 };
 
 export type Referrer = {

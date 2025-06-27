@@ -1,13 +1,13 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type CandidateFiltersProps = {
-    search: string;
-    setSearch: (value: string) => void;
+    company: string;
+    setCompany: (value: string) => void;
+    availableCompanies: string[];
     experience: string;
     setExperience: (value: string) => void;
     role: string;
@@ -18,23 +18,24 @@ type CandidateFiltersProps = {
 }
 
 export function CandidateFilters({
-    search, setSearch, experience, setExperience, role, setRole, onApplyFilters, onClearFilters, isFiltered
+    company, setCompany, availableCompanies, experience, setExperience, role, setRole, onApplyFilters, onClearFilters, isFiltered
 }: CandidateFiltersProps) {
     return (
         <div className="p-4 bg-card rounded-lg shadow-sm border">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <div className="space-y-2">
-                    <label htmlFor="search" className="text-sm font-medium">Search by keyword</label>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            id="search" 
-                            placeholder="React, Python, Figma..." 
-                            className="pl-10" 
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
+                    <label htmlFor="company" className="text-sm font-medium">Target Company</label>
+                    <Select value={company} onValueChange={setCompany}>
+                        <SelectTrigger id="company">
+                            <SelectValue placeholder="All Companies" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Companies</SelectItem>
+                            {availableCompanies.map(c => (
+                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="space-y-2">
                     <label htmlFor="experience" className="text-sm font-medium">Experience Level</label>
