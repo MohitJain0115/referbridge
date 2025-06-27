@@ -190,6 +190,7 @@ export default function SeekerProfilePage() {
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              <ProfileViewToggle currentView={profileView} setView={setProfileView} />
               <Dialog open={isImporting} onOpenChange={setIsImporting}>
                   <DialogTrigger asChild>
                       <Button variant="outline" size="sm">
@@ -223,7 +224,6 @@ export default function SeekerProfilePage() {
                       </DialogFooter>
                   </DialogContent>
               </Dialog>
-              <ProfileViewToggle currentView={profileView} setView={setProfileView} />
             </div>
           </div>
         </CardHeader>
