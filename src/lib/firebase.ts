@@ -15,7 +15,7 @@ let auth: Auth | null = null;
 
 // This check ensures that Firebase is only initialized if the environment variables are set.
 // This is crucial to prevent the app from crashing if the .env file is not configured.
-if (firebaseConfig.apiKey) {
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "undefined") {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
 } else {
