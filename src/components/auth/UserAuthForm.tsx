@@ -14,13 +14,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signOut,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 
 const signupSchema = z.object({
@@ -47,8 +46,6 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [isSignupSuccessDialogOpen, setIsSignupSuccessDialogOpen] = React.useState(false);
-  const [signupUserType, setSignupUserType] = React.useState<'seeker' | 'referrer'>('seeker');
   
   const schema = mode === "signup" ? signupSchema : loginSchema;
 
@@ -59,31 +56,68 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
 
   async function onSubmit(data: FormData) {
     setIsLoading(true);
+    const { email, password } = data as z.infer<typeof loginSchema>;
 
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-
-    toast({
-      title: mode === "login" ? "Login Successful" : "Account Created",
-      description: mode === "login" ? "Redirecting to your dashboard..." : "Welcome to ReferBridge!",
-    });
-    
     if (mode === 'login') {
-      const userType = 'seeker'; // Default to seeker on login for demo
-      router.push(`/dashboard?view=${userType}`);
-    } else {
-      const userType = (data as z.infer<typeof signupSchema>).userType;
-      setSignupUserType(userType);
-      setIsSignupSuccessDialogOpen(true);
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            if (user.emailVerified) {
+                toast({
+                    title: "Login Successful",
+                    description: "Redirecting to your dashboard...",
+                });
+                router.push('/dashboard');
+            } else {
+                await signOut(auth);
+                toast({
+                    title: "Email Not Verified",
+                    description: "Please verify your email before logging in. Check your inbox.",
+                    variant: "destructive",
+                });
+            }
+        } catch (error: any) {
+            const errorCode = error.code;
+            let errorMessage = "An unknown error occurred.";
+            if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
+                errorMessage = "Invalid email or password.";
+            } else {
+                errorMessage = error.message;
+            }
+            toast({
+                title: "Login Failed",
+                description: errorMessage,
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    } else { // signup mode
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, (data as z.infer<typeof signupSchema>).password);
+            const user = userCredential.user;
+            await sendEmailVerification(user);
+            await signOut(auth);
+
+            toast({
+              title: "Account Created!",
+              description: "A verification email has been sent. Please check your inbox and verify your email before logging in.",
+            });
+
+            router.push('/login');
+            
+        } catch (error: any) {
+             toast({
+                title: "Signup Failed",
+                description: error.message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     }
   }
-  
-  const handleDialogClose = () => {
-    router.push(`/dashboard?view=${signupUserType}`);
-    setIsSignupSuccessDialogOpen(false);
-  };
 
   return (
     <div className={cn("grid gap-6", className)}>
@@ -154,31 +188,6 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
           </Button>
         </form>
       </Form>
-
-       <Dialog open={isSignupSuccessDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          handleDialogClose();
-        } else {
-          setIsSignupSuccessDialogOpen(open);
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Let's complete your profile</DialogTitle>
-            <DialogDescription>
-              A complete profile helps you get noticed. You can always come back and edit it later.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={handleDialogClose}>
-              Skip for Now
-            </Button>
-            <Button onClick={() => router.push('/seeker-profile')}>
-              Complete Profile
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
