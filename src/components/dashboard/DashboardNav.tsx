@@ -13,6 +13,7 @@ export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
 
   const seekerNav = [
     { name: "Find Referrers", href: "/dashboard?view=seeker", icon: Users, page: null },
+    { name: "My Requests", href: "/dashboard?view=seeker&page=requests", icon: Inbox, page: "requests" },
     { name: "Settings", href: "/dashboard?view=seeker&page=settings", icon: Settings, page: "settings" },
   ];
 

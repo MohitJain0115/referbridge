@@ -23,3 +23,13 @@ export type Referrer = {
   specialties: string[];
   connections: number;
 };
+
+export type ReferralRequestStatus = 'Pending' | 'Resume Downloaded' | 'Cancelled';
+
+export type TrackedRequest = {
+  id: string;
+  referrer: Referrer;
+  status: ReferralRequestStatus;
+  cancellationReason?: string;
+  requestedAt: string;
+};

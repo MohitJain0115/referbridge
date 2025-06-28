@@ -1,4 +1,4 @@
-import type { Candidate, Referrer } from './types';
+import type { Candidate, Referrer, TrackedRequest } from './types';
 
 export const mockCandidates: Candidate[] = [
   {
@@ -147,5 +147,34 @@ export const mockReferrers: Referrer[] = [
     location: 'San Francisco, CA',
     specialties: ['Machine Learning', 'Python', 'Analytics'],
     connections: 300,
+  },
+];
+
+export const mockTrackedRequests: TrackedRequest[] = [
+  {
+    id: 'tr1',
+    referrer: mockReferrers[0], // John Smith
+    status: 'Resume Downloaded',
+    requestedAt: '2024-07-26',
+  },
+  {
+    id: 'tr2',
+    referrer: mockReferrers[1], // Emily Jones
+    status: 'Pending',
+    requestedAt: '2024-07-25',
+  },
+  {
+    id: 'tr3',
+    referrer: mockReferrers[4], // David Wilson
+    status: 'Cancelled',
+    cancellationReason: 'Not a good fit for current openings',
+    requestedAt: '2024-07-24',
+  },
+    {
+    id: 'tr4',
+    referrer: mockReferrers[5], // Sarah Miller
+    status: 'Cancelled',
+    cancellationReason: 'Experience level does not match',
+    requestedAt: '2024-07-22',
   },
 ];

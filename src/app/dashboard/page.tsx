@@ -5,6 +5,7 @@ import { DashboardToggle } from '@/components/dashboard/DashboardToggle';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SettingsPage } from '@/components/dashboard/SettingsPage';
 import { ReferralRequestsPage } from '@/components/dashboard/ReferralRequestsPage';
+import { ReferralStatusPage } from '@/components/dashboard/ReferralStatusPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,8 +37,12 @@ export default function DashboardPage({
 
   if (page === 'settings') {
     content = <SettingsPage />;
-  } else if (page === 'requests' && view === 'referrer') {
-    content = <ReferralRequestsPage />;
+  } else if (page === 'requests') {
+    if (view === 'referrer') {
+      content = <ReferralRequestsPage />;
+    } else {
+      content = <ReferralStatusPage />;
+    }
   } else {
     content = <MainDashboard view={view} />;
   }
