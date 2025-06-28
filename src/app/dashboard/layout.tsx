@@ -24,9 +24,9 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     if (!auth) {
-      toast({
-        title: "Firebase Not Configured",
-        description: "Could not log out. Please check your Firebase setup.",
+       toast({
+        title: "Logout Failed",
+        description: "Authentication service not available.",
         variant: "destructive"
       });
       return;

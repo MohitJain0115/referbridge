@@ -59,8 +59,8 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
 
     if (!auth) {
       toast({
-        title: "Firebase Not Configured",
-        description: "Authentication is disabled. Please provide your Firebase credentials in the .env file.",
+        title: "Firebase Error",
+        description: "Authentication service is not available. Please try again later.",
         variant: "destructive",
       });
       setIsLoading(false);
