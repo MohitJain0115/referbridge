@@ -3,6 +3,8 @@ import { UserAuthForm } from "@/components/auth/UserAuthForm";
 import { Logo } from "@/components/shared/Logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+export const dynamic = 'force-dynamic';
+
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4">
