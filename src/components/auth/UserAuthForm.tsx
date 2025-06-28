@@ -13,6 +13,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 
 const signupSchema = z.object({
@@ -39,6 +47,8 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isSignupSuccessDialogOpen, setIsSignupSuccessDialogOpen] = React.useState(false);
+  const [signupUserType, setSignupUserType] = React.useState<'seeker' | 'referrer'>('seeker');
   
   const schema = mode === "signup" ? signupSchema : loginSchema;
 
@@ -57,14 +67,23 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
 
     toast({
       title: mode === "login" ? "Login Successful" : "Account Created",
-      description: mode === "login" ? "Redirecting to your dashboard..." : "Welcome to ReferBridge! Redirecting...",
+      description: mode === "login" ? "Redirecting to your dashboard..." : "Welcome to ReferBridge!",
     });
-
-    const userType = mode === 'signup' ? (data as z.infer<typeof signupSchema>).userType : 'seeker'; // Default to seeker on login for demo
     
-    // Redirect to dashboard with user type for demo purposes
-    router.push(`/dashboard?view=${userType}`);
+    if (mode === 'login') {
+      const userType = 'seeker'; // Default to seeker on login for demo
+      router.push(`/dashboard?view=${userType}`);
+    } else {
+      const userType = (data as z.infer<typeof signupSchema>).userType;
+      setSignupUserType(userType);
+      setIsSignupSuccessDialogOpen(true);
+    }
   }
+  
+  const handleDialogClose = () => {
+    router.push(`/dashboard?view=${signupUserType}`);
+    setIsSignupSuccessDialogOpen(false);
+  };
 
   return (
     <div className={cn("grid gap-6", className)}>
@@ -135,6 +154,31 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
           </Button>
         </form>
       </Form>
+
+       <Dialog open={isSignupSuccessDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          handleDialogClose();
+        } else {
+          setIsSignupSuccessDialogOpen(open);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Let's complete your profile</DialogTitle>
+            <DialogDescription>
+              A complete profile helps you get noticed. You can always come back and edit it later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={handleDialogClose}>
+              Skip for Now
+            </Button>
+            <Button onClick={() => router.push('/seeker-profile')}>
+              Complete Profile
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
