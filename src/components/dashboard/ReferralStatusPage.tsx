@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { mockTrackedRequests } from "@/lib/data";
 import {
@@ -20,8 +21,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Inbox, Download, Clock, XCircle } from "lucide-react";
 import type { ReferralRequestStatus } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function ReferralStatusPage() {
+  const [filterStatus, setFilterStatus] = useState<ReferralRequestStatus | 'all'>('all');
+  
   const getStatusBadgeVariant = (status: ReferralRequestStatus) => {
     switch (status) {
       case "Resume Downloaded":
@@ -46,6 +50,13 @@ export function ReferralStatusPage() {
     (r) => r.status === "Cancelled"
   ).length;
 
+  const filteredRequests = useMemo(() => {
+    if (filterStatus === 'all') {
+        return mockTrackedRequests;
+    }
+    return mockTrackedRequests.filter((r) => r.status === filterStatus);
+  }, [filterStatus]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -53,12 +64,18 @@ export function ReferralStatusPage() {
           My Referral Requests
         </h1>
         <p className="text-muted-foreground">
-          Track the status of the referrals you've requested.
+          Track the status of the referrals you've requested. Click a card to filter.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card
+            onClick={() => setFilterStatus('all')}
+            className={cn(
+              "cursor-pointer transition-all hover:border-primary",
+              filterStatus === 'all' && "border-primary ring-2 ring-primary"
+            )}
+          >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
                   <Inbox className="h-4 w-4 text-muted-foreground" />
@@ -67,7 +84,13 @@ export function ReferralStatusPage() {
                   <div className="text-2xl font-bold">{totalRequests}</div>
               </CardContent>
           </Card>
-          <Card>
+          <Card
+            onClick={() => setFilterStatus('Resume Downloaded')}
+            className={cn(
+              "cursor-pointer transition-all hover:border-primary",
+              filterStatus === 'Resume Downloaded' && "border-primary ring-2 ring-primary"
+            )}
+          >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Downloaded</CardTitle>
                   <Download className="h-4 w-4 text-muted-foreground" />
@@ -76,7 +99,13 @@ export function ReferralStatusPage() {
                   <div className="text-2xl font-bold">{downloadedRequests}</div>
               </CardContent>
           </Card>
-          <Card>
+          <Card
+             onClick={() => setFilterStatus('Pending')}
+             className={cn(
+               "cursor-pointer transition-all hover:border-primary",
+               filterStatus === 'Pending' && "border-primary ring-2 ring-primary"
+             )}
+          >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Pending</CardTitle>
                   <Clock className="h-4 w-4 text-muted-foreground" />
@@ -85,7 +114,13 @@ export function ReferralStatusPage() {
                   <div className="text-2xl font-bold">{pendingRequests}</div>
               </CardContent>
           </Card>
-          <Card>
+          <Card
+             onClick={() => setFilterStatus('Cancelled')}
+             className={cn(
+               "cursor-pointer transition-all hover:border-destructive",
+               filterStatus === 'Cancelled' && "border-destructive ring-2 ring-destructive"
+             )}
+          >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Cancelled</CardTitle>
                   <XCircle className="h-4 w-4 text-muted-foreground" />
@@ -107,7 +142,8 @@ export function ReferralStatusPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockTrackedRequests.map((request) => (
+            {filteredRequests.length > 0 ? (
+                filteredRequests.map((request) => (
               <TableRow key={request.id}>
                 <TableCell>
                   <div className="flex items-center gap-4">
@@ -146,7 +182,14 @@ export function ReferralStatusPage() {
                    </div>
                 </TableCell>
               </TableRow>
-            ))}
+            ))
+            ) : (
+                <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                        No requests found with the selected status.
+                    </TableCell>
+                </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
