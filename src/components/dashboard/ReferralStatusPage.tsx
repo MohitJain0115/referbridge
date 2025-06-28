@@ -10,9 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Info, Inbox, Download, Clock, XCircle } from "lucide-react";
 import type { ReferralRequestStatus } from "@/lib/types";
 
 export function ReferralStatusPage() {
@@ -29,6 +35,17 @@ export function ReferralStatusPage() {
     }
   };
 
+  const totalRequests = mockTrackedRequests.length;
+  const downloadedRequests = mockTrackedRequests.filter(
+    (r) => r.status === "Resume Downloaded"
+  ).length;
+  const pendingRequests = mockTrackedRequests.filter(
+    (r) => r.status === "Pending"
+  ).length;
+  const cancelledRequests = mockTrackedRequests.filter(
+    (r) => r.status === "Cancelled"
+  ).length;
+
   return (
     <div className="space-y-6">
       <div>
@@ -39,6 +56,46 @@ export function ReferralStatusPage() {
           Track the status of the referrals you've requested.
         </p>
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+                  <Inbox className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                  <div className="text-2xl font-bold">{totalRequests}</div>
+              </CardContent>
+          </Card>
+          <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Downloaded</CardTitle>
+                  <Download className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                  <div className="text-2xl font-bold">{downloadedRequests}</div>
+              </CardContent>
+          </Card>
+          <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                  <div className="text-2xl font-bold">{pendingRequests}</div>
+              </CardContent>
+          </Card>
+          <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Cancelled</CardTitle>
+                  <XCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                  <div className="text-2xl font-bold">{cancelledRequests}</div>
+              </CardContent>
+          </Card>
+      </div>
+
       <div className="border rounded-lg bg-card">
         <Table>
           <TableHeader>
