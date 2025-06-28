@@ -56,6 +56,17 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
 
   async function onSubmit(data: FormData) {
     setIsLoading(true);
+
+    if (!auth) {
+      toast({
+        title: "Firebase Not Configured",
+        description: "Authentication is disabled. Please provide your Firebase credentials in the .env file.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     const { email, password } = data as z.infer<typeof loginSchema>;
 
     if (mode === 'login') {
