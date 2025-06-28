@@ -165,9 +165,15 @@ export default function SeekerProfilePage() {
       toast({ title: "Please enter a URL", variant: "destructive" });
       return;
     }
+    
+    let formattedUrl = linkedinUrl.trim();
+    if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = `https://${formattedUrl}`;
+    }
+
     setIsFetching(true);
     try {
-      const result: LinkedInProfileOutput = await importFromLinkedIn({ url: linkedinUrl });
+      const result: LinkedInProfileOutput = await importFromLinkedIn({ url: formattedUrl });
       if (result) {
         // Seeker profile
         setAbout(result.aboutMe || "");
