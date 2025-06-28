@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -11,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 type CandidateGridProps = {
@@ -25,7 +27,8 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
+  const [selectedReason, setSelectedReason] = useState("");
+  const [otherReasonText, setOtherReasonText] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -122,22 +125,34 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
 
   const handleCancelRequest = () => {
     if (selectedCandidates.length === 0) return;
-    if (!cancelReason.trim()) {
+
+    const finalReason = selectedReason === 'other' ? otherReasonText.trim() : selectedReason;
+    
+    if (!finalReason) {
         toast({
             title: "Reason Required",
-            description: "Please provide a reason for cancelling the request(s).",
+            description: "Please select or provide a reason for cancelling the request(s).",
             variant: "destructive",
         });
         return;
     }
+
     toast({
         title: "Request(s) Cancelled",
         description: `${selectedCandidates.length} candidate request(s) have been cancelled.`
     });
     setIsCancelDialogOpen(false);
     setSelectedCandidates([]);
-    setCancelReason("");
+    setSelectedReason("");
+    setOtherReasonText("");
   };
+  
+  const resetCancelDialog = () => {
+    setIsCancelDialogOpen(false);
+    setSelectedReason("");
+    setOtherReasonText("");
+  }
+
 
   return (
     <>
@@ -212,7 +227,7 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
         </DialogContent>
       </Dialog>
       
-      <Dialog open={isCancelDialogOpen} onOpenChange={(open) => { if (!open) setCancelReason(''); setIsCancelDialogOpen(open);}}>
+      <Dialog open={isCancelDialogOpen} onOpenChange={(open) => { if (!open) resetCancelDialog(); else setIsCancelDialogOpen(open);}}>
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Cancel Referral Request</DialogTitle>
@@ -220,19 +235,43 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
                     You are about to cancel the request for {selectedCandidates.length} candidate(s). Please provide a reason below. This will be shared with the candidate.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-2">
-                <Label htmlFor="cancel-reason" className="sr-only">Reason for Cancellation</Label>
-                <Textarea
-                    id="cancel-reason"
-                    placeholder="e.g., Position has been filled, not a good fit for the current openings..."
-                    className="mt-2 min-h-[100px]"
-                    value={cancelReason}
-                    onChange={(e) => setCancelReason(e.target.value)}
-                />
+            <div className="py-2 space-y-4">
+                <Label>Reason for Cancellation</Label>
+                <RadioGroup value={selectedReason} onValueChange={setSelectedReason} className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Not a good fit for current openings" id="r1" />
+                      <Label htmlFor="r1" className="font-normal cursor-pointer">Not a good fit for current openings</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Experience level does not match" id="r2" />
+                      <Label htmlFor="r2" className="font-normal cursor-pointer">Experience level does not match</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Position has been filled" id="r3" />
+                      <Label htmlFor="r3" className="font-normal cursor-pointer">Position has been filled</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="other" id="r4" />
+                      <Label htmlFor="r4" className="font-normal cursor-pointer">Other</Label>
+                  </div>
+                </RadioGroup>
+                {selectedReason === 'other' && (
+                  <Textarea
+                      id="cancel-reason-other"
+                      placeholder="Please specify the reason..."
+                      className="mt-2 min-h-[100px]"
+                      value={otherReasonText}
+                      onChange={(e) => setOtherReasonText(e.target.value)}
+                  />
+                )}
             </div>
             <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsCancelDialogOpen(false)}>Cancel</Button>
-                <Button variant="destructive" onClick={handleCancelRequest}>
+                <Button variant="ghost" onClick={resetCancelDialog}>Cancel</Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleCancelRequest}
+                  disabled={!selectedReason || (selectedReason === 'other' && !otherReasonText.trim())}
+                >
                     <Send className="mr-2 h-4 w-4" />
                     Confirm Cancellation
                 </Button>
