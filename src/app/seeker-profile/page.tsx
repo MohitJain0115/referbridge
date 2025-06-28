@@ -7,14 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Loader2, Eye, Sparkles, Building2, Calendar as CalendarIcon } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Eye, Sparkles, Building2, Calendar as CalendarIcon } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { importFromLinkedIn, LinkedInProfileOutput } from "@/ai/flows/linkedin-profile-flow";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -80,9 +79,6 @@ export default function SeekerProfilePage() {
   const [profileView, setProfileView] = useState<'seeker' | 'referrer'>('seeker');
   
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
-  const [isImporting, setIsImporting] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [linkedinUrl, setLinkedinUrl] = useState("");
   
   const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -160,74 +156,6 @@ export default function SeekerProfilePage() {
     }
   };
 
-  const handleImport = async () => {
-    if (!linkedinUrl) {
-      toast({ title: "Please enter a URL", variant: "destructive" });
-      return;
-    }
-    
-    let formattedUrl = linkedinUrl.trim();
-    if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
-        formattedUrl = `https://${formattedUrl}`;
-    }
-
-    setIsFetching(true);
-    try {
-      const result: LinkedInProfileOutput = await importFromLinkedIn({ url: formattedUrl });
-      if (result) {
-        // General
-        setProfilePic(result.profilePicUrl || "https://placehold.co/128x128.png");
-
-        // Seeker profile
-        setAbout(result.aboutMe || "");
-        
-        const importedExperiences = Array.isArray(result.experiences) ? result.experiences : [];
-        setExperiences(importedExperiences.map(e => {
-            const fromDate = e.startDate ? new Date(e.startDate) : undefined;
-            const currentlyWorking = e.endDate === 'Present';
-            const toDate = !currentlyWorking && e.endDate ? new Date(e.endDate) : undefined;
-            return {
-                id: Date.now() + Math.random(),
-                role: e.role || '',
-                company: e.company || '',
-                from: fromDate,
-                to: toDate,
-                currentlyWorking: currentlyWorking,
-                description: e.description || '',
-            };
-        }));
-        
-        const importedEducations = Array.isArray(result.educations) ? result.educations : [];
-        setEducations(importedEducations.map(e => {
-            const fromDate = e.startDate ? new Date(e.startDate) : undefined;
-            const toDate = e.endDate ? new Date(e.endDate) : undefined;
-            return {
-              id: Date.now() + Math.random(),
-              institution: e.institution || '',
-              degree: e.degree || '',
-              from: fromDate,
-              to: toDate,
-              description: e.description || '',
-            }
-        }));
-        
-        // Referrer profile
-        setReferrerCompany(result.referrerCompany || "");
-        setReferrerAbout(result.referrerBio || "");
-        setReferrerSpecialties(result.referrerSpecialties || "");
-
-        toast({ title: "Profile Data Imported!", description: "Please review the generated information."});
-        setIsImporting(false);
-        setLinkedinUrl('');
-      }
-    } catch (error) {
-      console.error("Failed to import LinkedIn profile:", error);
-      toast({ title: "Import Failed", description: "Could not generate profile data. Please try again.", variant: "destructive" });
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
   const handleSave = () => {
     toast({
       title: "Profile Saved!",
@@ -247,39 +175,20 @@ export default function SeekerProfilePage() {
           </div>
           <div className="flex items-center justify-between pt-4">
             <ProfileViewToggle currentView={profileView} setView={setProfileView} />
-            <Dialog open={isImporting} onOpenChange={setIsImporting}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Linkedin className="mr-2 h-4 w-4" />
-                  Import from LinkedIn
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Import from LinkedIn</DialogTitle>
-                  <DialogDescription>
-                    Paste your LinkedIn profile URL below. We'll use AI to generate a draft of your profile.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-2">
-                  <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
-                  <Input 
-                    id="linkedin-url" 
-                    placeholder="https://www.linkedin.com/in/your-profile/"
-                    value={linkedinUrl}
-                    onChange={(e) => setLinkedinUrl(e.target.value)}
-                    disabled={isFetching}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsImporting(false)} disabled={isFetching}>Cancel</Button>
-                  <Button onClick={handleImport} disabled={isFetching}>
-                    {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Fetch Profile
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                toast({
+                  title: "Coming Soon!",
+                  description: "This feature is under development. For now, please fill in your details manually.",
+                });
+              }}
+              className="opacity-60"
+            >
+              <Linkedin className="mr-2 h-4 w-4" />
+              Import from LinkedIn
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
