@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { generateTrackedRequests } from "@/ai/flows/tracked-requests-flow";
-import type { TrackedRequest, ReferralRequestStatus } from "@/ai/flows/tracked-requests-flow";
+import type { TrackedRequest, ReferralRequestStatus } from "@/lib/types";
 import {
   Table,
   TableBody,

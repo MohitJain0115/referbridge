@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { CandidateGrid } from "./CandidateGrid";
 import { generateCandidates } from "@/ai/flows/candidates-flow";
-import type { Candidate } from "@/ai/flows/candidates-flow";
+import type { Candidate } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function CandidateGridSkeleton() {

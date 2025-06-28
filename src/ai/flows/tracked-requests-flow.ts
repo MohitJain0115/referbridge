@@ -3,25 +3,12 @@
  * @fileOverview An AI flow to generate mock tracked referral request data.
  *
  * - generateTrackedRequests - Generates a list of tracked requests.
- * - TrackedRequest - The Zod schema and type for a single tracked request.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { ReferrerSchema } from './referrers-flow';
+import { TrackedRequestSchema, type TrackedRequest } from '@/lib/types';
 
-const RequestStatusSchema = z.enum(['Pending', 'Resume Downloaded', 'Cancelled']);
-export type ReferralRequestStatus = z.infer<typeof RequestStatusSchema>;
-
-
-export const TrackedRequestSchema = z.object({
-  id: z.string().uuid().describe("A unique UUID for the tracked request."),
-  referrer: ReferrerSchema,
-  status: RequestStatusSchema.describe("The current status of the referral request."),
-  cancellationReason: z.string().optional().describe("The reason for cancellation, if applicable. Provide a reason only if the status is 'Cancelled'."),
-  requestedAt: z.string().datetime().describe("The ISO 8601 timestamp when the request was made."),
-});
-export type TrackedRequest = z.infer<typeof TrackedRequestSchema>;
 
 const GenerateTrackedRequestsInputSchema = z.object({
   count: z.number().int().positive().describe('The number of tracked requests to generate.'),

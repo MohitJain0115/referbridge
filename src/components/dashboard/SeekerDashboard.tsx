@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { ReferrerCard } from "./ReferrerCard";
 import { ReferrerFilters } from "./ReferrerFilters";
 import { generateReferrers } from "@/ai/flows/referrers-flow";
-import type { Referrer } from "@/ai/flows/referrers-flow";
+import type { Referrer } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function ReferrerGridSkeleton() {

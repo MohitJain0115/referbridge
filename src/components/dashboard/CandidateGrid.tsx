@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { CandidateCard } from "./CandidateCard";
 import { CandidateFilters } from "./CandidateFilters";
-import type { Candidate } from "@/ai/flows/candidates-flow";
+import type { Candidate } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Mail, ChevronDown, XCircle, Send } from "lucide-react";
