@@ -1,9 +1,10 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { mockTrackedRequests } from "@/lib/data";
+import { generateTrackedRequests } from "@/ai/flows/tracked-requests-flow";
+import type { TrackedRequest, ReferralRequestStatus } from "@/ai/flows/tracked-requests-flow";
 import {
   Table,
   TableBody,
@@ -39,17 +40,33 @@ import {
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog";
 import { Info, Inbox, Download, Clock, XCircle, Trash2 } from "lucide-react";
-import type { ReferralRequestStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ReferralStatusPage() {
-  const [requests, setRequests] = useState(mockTrackedRequests);
+  const [requests, setRequests] = useState<TrackedRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<ReferralRequestStatus | 'all'>('all');
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        const generatedRequests = await generateTrackedRequests(4);
+        setRequests(generatedRequests);
+      } catch (error) {
+        console.error("Failed to generate tracked requests:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
   
   const getStatusBadgeVariant = (status: ReferralRequestStatus) => {
     switch (status) {
@@ -105,6 +122,20 @@ export function ReferralStatusPage() {
     });
   };
 
+  if (isLoading) {
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-lg font-semibold md:text-2xl font-headline">My Referral Requests</h1>
+                <p className="text-muted-foreground">Track the status of the referrals you've requested. Click a card to filter.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-[108px]" />)}
+            </div>
+            <Skeleton className="h-[300px] w-full" />
+        </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

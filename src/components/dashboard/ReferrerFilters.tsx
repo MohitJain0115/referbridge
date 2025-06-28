@@ -4,15 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockReferrers } from "@/lib/data";
-
-const uniqueCompanies = [...new Set(mockReferrers.map(r => r.company))];
 
 type ReferrerFiltersProps = {
     search: string;
     setSearch: (value: string) => void;
     company: string;
     setCompany: (value: string) => void;
+    availableCompanies: string[];
     field: string;
     setField: (value: string) => void;
     onApplyFilters: () => void;
@@ -21,7 +19,7 @@ type ReferrerFiltersProps = {
 }
 
 export function ReferrerFilters({
-    search, setSearch, company, setCompany, field, setField, onApplyFilters, onClearFilters, isFiltered
+    search, setSearch, company, setCompany, availableCompanies, field, setField, onApplyFilters, onClearFilters, isFiltered
 }: ReferrerFiltersProps) {
     return (
         <div className="p-4 bg-card rounded-lg shadow-sm border">
@@ -47,7 +45,7 @@ export function ReferrerFilters({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Companies</SelectItem>
-                            {uniqueCompanies.map(c => (
+                            {availableCompanies.map(c => (
                                 <SelectItem key={c} value={c}>{c}</SelectItem>
                             ))}
                         </SelectContent>

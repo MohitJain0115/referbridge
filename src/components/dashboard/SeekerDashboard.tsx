@@ -1,23 +1,58 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ReferrerCard } from "./ReferrerCard";
 import { ReferrerFilters } from "./ReferrerFilters";
-import { mockReferrers } from "@/lib/data";
-import type { Referrer } from "@/lib/types";
+import { generateReferrers } from "@/ai/flows/referrers-flow";
+import type { Referrer } from "@/ai/flows/referrers-flow";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function ReferrerGridSkeleton() {
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {[...Array(8)].map((_, i) => (
+        <Skeleton key={i} className="h-[350px] w-full" />
+      ))}
+    </div>
+  );
+}
 
 export function SeekerDashboard() {
-  const [filteredReferrers, setFilteredReferrers] = useState<Referrer[]>(mockReferrers);
+  const [allReferrers, setAllReferrers] = useState<Referrer[]>([]);
+  const [filteredReferrers, setFilteredReferrers] = useState<Referrer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const [search, setSearch] = useState("");
   const [company, setCompany] = useState("all");
   const [field, setField] = useState("all");
+
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        const generatedReferrers = await generateReferrers({ count: 12 });
+        setAllReferrers(generatedReferrers);
+        setFilteredReferrers(generatedReferrers);
+      } catch (error) {
+        console.error("Failed to generate referrers:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const availableCompanies = useMemo(() => {
+    const companies = new Set(allReferrers.map(r => r.company));
+    return Array.from(companies).sort();
+  }, [allReferrers]);
 
   const isFiltered = useMemo(() => {
     return search !== "" || company !== "all" || field !== "all";
   }, [search, company, field]);
 
   const handleApplyFilters = () => {
-    let referrers = [...mockReferrers];
+    let referrers = [...allReferrers];
 
     if (search) {
       const lowercasedSearch = search.toLowerCase();
@@ -53,7 +88,7 @@ export function SeekerDashboard() {
     setSearch("");
     setCompany("all");
     setField("all");
-    setFilteredReferrers(mockReferrers);
+    setFilteredReferrers(allReferrers);
   };
 
   return (
@@ -63,23 +98,28 @@ export function SeekerDashboard() {
         setSearch={setSearch}
         company={company}
         setCompany={setCompany}
+        availableCompanies={availableCompanies}
         field={field}
         setField={setField}
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isFiltered={isFiltered}
       />
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredReferrers.length > 0 ? (
-            filteredReferrers.map(referrer => (
-              <ReferrerCard key={referrer.id} referrer={referrer} />
-            ))
-        ) : (
-            <div className="col-span-full text-center text-muted-foreground py-10">
-                No referrers match your criteria.
-            </div>
-        )}
-      </div>
+      {isLoading ? (
+        <ReferrerGridSkeleton />
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredReferrers.length > 0 ? (
+              filteredReferrers.map(referrer => (
+                <ReferrerCard key={referrer.id} referrer={referrer} />
+              ))
+          ) : (
+              <div className="col-span-full text-center text-muted-foreground py-10">
+                  No referrers match your criteria.
+              </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
