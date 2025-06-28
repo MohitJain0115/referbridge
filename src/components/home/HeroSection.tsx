@@ -24,11 +24,11 @@ export function HeroSection() {
       <div className="hidden lg:block">
          <Image 
           src="https://placehold.co/600x400.png"
-          alt="Illustration of people connecting for referrals"
+          alt="A person handing a resume to another person in a professional setting"
           width={600}
           height={400}
           className="rounded-lg shadow-2xl"
-          data-ai-hint="professional connection"
+          data-ai-hint="resume handover"
         />
       </div>
     </section>
