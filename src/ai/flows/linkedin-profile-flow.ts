@@ -32,6 +32,7 @@ const EducationSchema = z.object({
 });
 
 const LinkedInProfileOutputSchema = z.object({
+  profilePicUrl: z.string().describe("A placeholder avatar URL from placehold.co (e.g., https://placehold.co/128x128.png)."),
   aboutMe: z.string().describe("A brief professional summary about the user."),
   experiences: z
     .array(ExperienceSchema)
@@ -60,6 +61,9 @@ IMPORTANT: You cannot access the live internet or the content of the provided UR
 The user is filling out their profile, which has two views: a Job Seeker profile and a Referrer profile.
 
 Based on the provided URL: {{{url}}}, generate the following:
+
+**General:**
+1. A placeholder profile picture URL (\`profilePicUrl\`) from placehold.co (e.g., 'https://placehold.co/128x128.png').
 
 **For the Job Seeker Profile:**
 1.  A brief "About Me" summary (3-4 sentences).

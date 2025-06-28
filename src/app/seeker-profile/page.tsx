@@ -175,6 +175,9 @@ export default function SeekerProfilePage() {
     try {
       const result: LinkedInProfileOutput = await importFromLinkedIn({ url: formattedUrl });
       if (result) {
+        // General
+        setProfilePic(result.profilePicUrl || "https://placehold.co/128x128.png");
+
         // Seeker profile
         setAbout(result.aboutMe || "");
         
