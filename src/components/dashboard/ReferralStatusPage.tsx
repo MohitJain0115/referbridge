@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -26,12 +27,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Info, Inbox, Download, Clock, XCircle } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+  } from "@/components/ui/alert-dialog";
+import { Info, Inbox, Download, Clock, XCircle, Trash2 } from "lucide-react";
 import type { ReferralRequestStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export function ReferralStatusPage() {
+  const [requests, setRequests] = useState(mockTrackedRequests);
   const [filterStatus, setFilterStatus] = useState<ReferralRequestStatus | 'all'>('all');
+  const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
+  const { toast } = useToast();
   
   const getStatusBadgeVariant = (status: ReferralRequestStatus) => {
     switch (status) {
@@ -46,23 +64,47 @@ export function ReferralStatusPage() {
     }
   };
 
-  const totalRequests = mockTrackedRequests.length;
-  const downloadedRequests = mockTrackedRequests.filter(
+  const filteredRequests = useMemo(() => {
+    if (filterStatus === 'all') {
+        return requests;
+    }
+    return requests.filter((r) => r.status === filterStatus);
+  }, [filterStatus, requests]);
+
+  const totalRequests = requests.length;
+  const downloadedRequests = requests.filter(
     (r) => r.status === "Resume Downloaded"
   ).length;
-  const pendingRequests = mockTrackedRequests.filter(
+  const pendingRequests = requests.filter(
     (r) => r.status === "Pending"
   ).length;
-  const cancelledRequests = mockTrackedRequests.filter(
+  const cancelledRequests = requests.filter(
     (r) => r.status === "Cancelled"
   ).length;
 
-  const filteredRequests = useMemo(() => {
-    if (filterStatus === 'all') {
-        return mockTrackedRequests;
+  const toggleSelection = (id: string) => {
+    setSelectedRequests((prev) =>
+      prev.includes(id) ? prev.filter((reqId) => reqId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedRequests.length === filteredRequests.length) {
+      setSelectedRequests([]);
+    } else {
+      setSelectedRequests(filteredRequests.map((r) => r.id));
     }
-    return mockTrackedRequests.filter((r) => r.status === filterStatus);
-  }, [filterStatus]);
+  };
+
+  const handleDelete = () => {
+    setRequests(requests.filter((r) => !selectedRequests.includes(r.id)));
+    setSelectedRequests([]);
+    toast({
+      title: "Requests Deleted",
+      description: "The selected referral requests have been removed.",
+    });
+  };
+
 
   return (
     <div className="space-y-6">
@@ -77,7 +119,7 @@ export function ReferralStatusPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card
-            onClick={() => setFilterStatus('all')}
+            onClick={() => { setFilterStatus('all'); setSelectedRequests([]); }}
             className={cn(
               "cursor-pointer transition-all hover:border-primary",
               filterStatus === 'all' && "border-primary ring-2 ring-primary"
@@ -92,7 +134,7 @@ export function ReferralStatusPage() {
               </CardContent>
           </Card>
           <Card
-            onClick={() => setFilterStatus('Resume Downloaded')}
+            onClick={() => { setFilterStatus('Resume Downloaded'); setSelectedRequests([]); }}
             className={cn(
               "cursor-pointer transition-all hover:border-primary",
               filterStatus === 'Resume Downloaded' && "border-primary ring-2 ring-primary"
@@ -107,7 +149,7 @@ export function ReferralStatusPage() {
               </CardContent>
           </Card>
           <Card
-             onClick={() => setFilterStatus('Pending')}
+             onClick={() => { setFilterStatus('Pending'); setSelectedRequests([]); }}
              className={cn(
                "cursor-pointer transition-all hover:border-primary",
                filterStatus === 'Pending' && "border-primary ring-2 ring-primary"
@@ -122,7 +164,7 @@ export function ReferralStatusPage() {
               </CardContent>
           </Card>
           <Card
-             onClick={() => setFilterStatus('Cancelled')}
+             onClick={() => { setFilterStatus('Cancelled'); setSelectedRequests([]); }}
              className={cn(
                "cursor-pointer transition-all hover:border-destructive",
                filterStatus === 'Cancelled' && "border-destructive ring-2 ring-destructive"
@@ -137,11 +179,55 @@ export function ReferralStatusPage() {
               </CardContent>
           </Card>
       </div>
+      
+      {selectedRequests.length > 0 && (
+        <div className="flex items-center gap-4 p-2 rounded-lg bg-muted border">
+            <span className="text-sm text-muted-foreground font-medium pl-2">
+                {selectedRequests.length} request(s) selected
+            </span>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Selected
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the selected referral requests.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSelectedRequests([])}
+            >
+                Clear selection
+            </Button>
+        </div>
+      )}
+
 
       <div className="border rounded-lg bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={filteredRequests.length > 0 && selectedRequests.length === filteredRequests.length}
+                  onCheckedChange={toggleSelectAll}
+                  disabled={filteredRequests.length === 0}
+                  aria-label="Select all"
+                />
+              </TableHead>
               <TableHead>Referrer</TableHead>
               <TableHead>Company</TableHead>
               <TableHead>Date Requested</TableHead>
@@ -152,6 +238,13 @@ export function ReferralStatusPage() {
             {filteredRequests.length > 0 ? (
                 filteredRequests.map((request) => (
               <TableRow key={request.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedRequests.includes(request.id)}
+                    onCheckedChange={() => toggleSelection(request.id)}
+                    aria-label={`Select request ${request.id}`}
+                  />
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-4">
                     <Image
@@ -198,7 +291,7 @@ export function ReferralStatusPage() {
             ))
             ) : (
                 <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                         No requests found with the selected status.
                     </TableCell>
                 </TableRow>
