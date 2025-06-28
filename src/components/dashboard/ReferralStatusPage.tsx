@@ -18,7 +18,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Info, Inbox, Download, Clock, XCircle } from "lucide-react";
 import type { ReferralRequestStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -166,18 +173,24 @@ export function ReferralStatusPage() {
                        {request.status}
                      </Badge>
                      {request.status === 'Cancelled' && request.cancellationReason && (
-                        <TooltipProvider>
-                           <Tooltip>
-                               <TooltipTrigger asChild>
-                                  <button>
-                                     <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                                  </button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                   <p>Reason: {request.cancellationReason}</p>
-                               </TooltipContent>
-                           </Tooltip>
-                        </TooltipProvider>
+                        <Dialog>
+                           <DialogTrigger asChild>
+                              <button>
+                                 <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                              </button>
+                           </DialogTrigger>
+                           <DialogContent>
+                              <DialogHeader>
+                                 <DialogTitle>Reason for Cancellation</DialogTitle>
+                                 <DialogDescription>
+                                    The referrer provided the following reason.
+                                 </DialogDescription>
+                              </DialogHeader>
+                              <div className="py-4 bg-muted rounded-md p-4 text-sm">
+                                  <p>{request.cancellationReason}</p>
+                              </div>
+                           </DialogContent>
+                        </Dialog>
                      )}
                    </div>
                 </TableCell>
