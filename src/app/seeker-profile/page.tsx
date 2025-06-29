@@ -12,7 +12,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -21,10 +21,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, storage } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { importFromLinkedIn } from "@/ai/flows/linkedin-profile-flow";
 
 export const dynamic = 'force-dynamic';
 
@@ -122,15 +123,14 @@ function PageSkeleton() {
     );
 }
 
-
 export default function SeekerProfilePage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  // Loading and auth states
+  // Auth and loading states
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
   // General state
   const [profileView, setProfileView] = useState<'seeker' | 'referrer'>('seeker');
@@ -149,7 +149,7 @@ export default function SeekerProfilePage() {
   // Resume state
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [resumeName, setResumeName] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
   const [pendingResume, setPendingResume] = useState<File | null>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -164,60 +164,79 @@ export default function SeekerProfilePage() {
   const [referrerCompany, setReferrerCompany] = useState("");
   const [referrerAbout, setReferrerAbout] = useState("");
   const [referrerSpecialties, setReferrerSpecialties] = useState("");
+  
+  // LinkedIn Import states
+  const [isImporting, setIsImporting] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [linkedInUrl, setLinkedInUrl] = useState("");
 
-  // Effect to handle auth and load all user data
+
+  // Effect to handle auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUserId(user.uid);
-        try {
-            // Fetch main profile data
-            const profileDocRef = doc(db, "profiles", user.uid);
-            const profileDocSnap = await getDoc(profileDocRef);
-            if (profileDocSnap.exists()) {
-                const data = profileDocSnap.data();
-                setName(data.name || "");
-                setCurrentRole(data.currentRole || "");
-                setExperienceInRole(data.experienceInRole || "");
-                setTargetRole(data.targetRole || "");
-                setExpectedSalary(data.expectedSalary || "");
-                setIsSalaryVisible(data.isSalaryVisible !== false);
-                setAbout(data.about || "");
-                setCompanies(data.companies || []);
-                setExperiences(data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
-                setEducations(data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
-                setReferrerCompany(data.referrerCompany || "");
-                setReferrerAbout(data.referrerAbout || "");
-                setReferrerSpecialties(data.referrerSpecialties || "");
-                setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
-            }
-
-            // Fetch resume data
-            const resumeDocRef = doc(db, "resumes", user.uid);
-            const resumeDocSnap = await getDoc(resumeDocRef);
-            if (resumeDocSnap.exists()) {
-                const resumeData = resumeDocSnap.data();
-                setResumeUrl(resumeData.fileUrl);
-                setResumeName(resumeData.fileName);
-            }
-        } catch (error) {
-            console.error("Error loading user data:", error);
-            toast({
-                title: "Loading Error",
-                description: "Could not load your profile. Please try refreshing.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsLoading(false);
-        }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
       } else {
-        // No user logged in, redirect to login
         router.push("/login");
       }
     });
-
     return () => unsubscribe();
-  }, [router, toast]);
+  }, [router]);
+
+  // Effect to load user data once user is authenticated
+  useEffect(() => {
+    if (!user) return;
+
+    let isMounted = true;
+    
+    const loadUserData = async () => {
+      setIsLoading(true);
+      try {
+        const profileDocRef = doc(db, "profiles", user.uid);
+        const profileDocSnap = await getDoc(profileDocRef);
+        if (isMounted && profileDocSnap.exists()) {
+            const data = profileDocSnap.data();
+            setName(data.name || "");
+            setCurrentRole(data.currentRole || "");
+            setExperienceInRole(data.experienceInRole || "");
+            setTargetRole(data.targetRole || "");
+            setExpectedSalary(data.expectedSalary || "");
+            setIsSalaryVisible(data.isSalaryVisible !== false);
+            setAbout(data.about || "");
+            setCompanies(data.companies || []);
+            setExperiences(data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
+            setEducations(data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
+            setReferrerCompany(data.referrerCompany || "");
+            setReferrerAbout(data.referrerAbout || "");
+            setReferrerSpecialties(data.referrerSpecialties || "");
+            setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
+        }
+
+        const resumeDocRef = doc(db, "resumes", user.uid);
+        const resumeDocSnap = await getDoc(resumeDocRef);
+        if (isMounted && resumeDocSnap.exists()) {
+            const resumeData = resumeDocSnap.data();
+            setResumeUrl(resumeData.fileUrl);
+            setResumeName(resumeData.fileName);
+        }
+      } catch (error) {
+          console.error("Error loading user data:", error);
+          toast({
+              title: "Loading Error",
+              description: "Could not load your profile. Please try refreshing.",
+              variant: "destructive",
+          });
+      } finally {
+        if (isMounted) {
+            setIsLoading(false);
+        }
+      }
+    };
+
+    loadUserData();
+    
+    return () => { isMounted = false; };
+  }, [user, toast]);
 
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
@@ -249,7 +268,7 @@ export default function SeekerProfilePage() {
   };
 
   const handleProfilePicChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!userId) {
+    if (!user) {
         toast({ title: "Please log in", description: "You must be logged in to upload a photo.", variant: "destructive" });
         return;
     }
@@ -257,12 +276,11 @@ export default function SeekerProfilePage() {
     if (file && file.type.startsWith("image/")) {
         setIsUploadingPic(true);
         try {
-            const fileRef = storageRef(storage, `profile-pics/${userId}/${file.name}`);
+            const fileRef = storageRef(storage, `profile-pics/${user.uid}/${file.name}`);
             await uploadBytes(fileRef, file);
             const url = await getDownloadURL(fileRef);
             setProfilePic(url);
-            // Immediately update the profile so user doesn't have to click "Save"
-            await setDoc(doc(db, "profiles", userId), { profilePic: url }, { merge: true });
+            await setDoc(doc(db, "profiles", user.uid), { profilePic: url }, { merge: true });
             toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
         } catch (error) {
             console.error("Profile picture upload error:", error);
@@ -275,7 +293,7 @@ export default function SeekerProfilePage() {
     }
 };
 
-  const handleResumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResumeFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -294,18 +312,18 @@ export default function SeekerProfilePage() {
   };
 
   const uploadResume = async (file: File) => {
-      if (!userId) {
+      if (!user) {
           toast({ title: "Not Logged In", description: "You must be logged in to upload a resume.", variant: "destructive" });
           return;
       }
-      setIsUploading(true);
+      setIsUploadingResume(true);
       try {
-          const fileRef = storageRef(storage, `resumes/${userId}/${file.name}`);
+          const fileRef = storageRef(storage, `resumes/${user.uid}/${file.name}`);
           await uploadBytes(fileRef, file);
           const url = await getDownloadURL(fileRef);
 
-          await setDoc(doc(db, "resumes", userId), {
-              userId: userId,
+          await setDoc(doc(db, "resumes", user.uid), {
+              userId: user.uid,
               fileName: file.name,
               fileUrl: url,
               uploadedAt: new Date(),
@@ -318,7 +336,7 @@ export default function SeekerProfilePage() {
           console.error("Resume upload error:", error);
           toast({ title: "Upload Failed", description: "There was a problem uploading your resume.", variant: "destructive" });
       } finally {
-          setIsUploading(false);
+          setIsUploadingResume(false);
           setPendingResume(null);
       }
   };
@@ -342,7 +360,7 @@ export default function SeekerProfilePage() {
   };
 
   const handleSave = async () => {
-    if (!userId) {
+    if (!user) {
         toast({ title: "Error", description: "You must be logged in to save.", variant: "destructive" });
         return;
     }
@@ -365,7 +383,7 @@ export default function SeekerProfilePage() {
     };
     
     try {
-        await setDoc(doc(db, "profiles", userId), profileData, { merge: true });
+        await setDoc(doc(db, "profiles", user.uid), profileData, { merge: true });
         toast({
           title: "Profile Saved!",
           description: `Your ${profileView} profile has been successfully updated.`,
@@ -375,6 +393,61 @@ export default function SeekerProfilePage() {
         toast({ title: "Save Failed", description: "Could not save your profile. Please try again.", variant: "destructive" });
     } finally {
         setIsSaving(false);
+    }
+  };
+
+  const handleLinkedInImport = async () => {
+    if (!linkedInUrl) {
+        toast({ title: "URL Required", description: "Please enter a LinkedIn profile URL.", variant: "destructive" });
+        return;
+    }
+    setIsImporting(true);
+    try {
+        const output = await importFromLinkedIn({ url: linkedInUrl });
+
+        setName(output.name);
+        setProfilePic(output.profilePicUrl);
+        setAbout(output.aboutMe);
+        setReferrerCompany(output.referrerCompany);
+        setReferrerAbout(output.referrerBio);
+        setReferrerSpecialties(output.referrerSpecialties);
+
+        const parsedExperiences = output.experiences.map(exp => ({
+            id: Date.now() + Math.random(),
+            role: exp.role,
+            company: exp.company,
+            from: new Date(exp.startDate),
+            to: exp.endDate === 'Present' ? undefined : new Date(exp.endDate),
+            currentlyWorking: exp.endDate === 'Present',
+            description: exp.description,
+        }));
+        setExperiences(parsedExperiences);
+
+        const parsedEducations = output.educations.map(edu => ({
+            id: Date.now() + Math.random(),
+            institution: edu.institution,
+            degree: edu.degree,
+            from: new Date(edu.startDate),
+            to: new Date(edu.endDate),
+            description: edu.description,
+        }));
+        setEducations(parsedEducations);
+        
+        // Find current role from latest experience
+        if(parsedExperiences.length > 0) {
+            const latestExp = parsedExperiences.find(e => e.currentlyWorking) || parsedExperiences[0];
+            setCurrentRole(latestExp.role);
+        }
+
+        toast({ title: "Import Successful", description: "Your profile has been populated with data." });
+        setIsImportDialogOpen(false);
+        setLinkedInUrl("");
+
+    } catch (error) {
+        console.error("LinkedIn import error:", error);
+        toast({ title: "Import Failed", description: "Could not import data. Please try again.", variant: "destructive" });
+    } finally {
+        setIsImporting(false);
     }
   };
   
@@ -394,20 +467,39 @@ export default function SeekerProfilePage() {
           </div>
           <div className="flex items-center justify-between pt-4">
             <ProfileViewToggle currentView={profileView} setView={setProfileView} />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                toast({
-                  title: "Coming Soon!",
-                  description: "This feature is under development. For now, please fill in your details manually.",
-                });
-              }}
-              className="opacity-60"
-            >
-              <Linkedin className="mr-2 h-4 w-4" />
-              Import from LinkedIn
-            </Button>
+            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Linkedin className="mr-2 h-4 w-4" />
+                  Import from LinkedIn
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Import from LinkedIn</DialogTitle>
+                  <DialogDescription>
+                    Paste a LinkedIn profile URL to auto-fill your profile with AI-generated data. Note: The AI does not access the live URL.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2 py-2">
+                  <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
+                  <Input 
+                    id="linkedin-url" 
+                    placeholder="https://www.linkedin.com/in/..."
+                    value={linkedInUrl}
+                    onChange={(e) => setLinkedInUrl(e.target.value)}
+                    disabled={isImporting}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setIsImportDialogOpen(false)} disabled={isImporting}>Cancel</Button>
+                  <Button onClick={handleLinkedInImport} disabled={isImporting}>
+                    {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    {isImporting ? 'Importing...' : 'Generate & Import'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -716,7 +808,7 @@ export default function SeekerProfilePage() {
               <div className="space-y-2">
                 <Label>Resume</Label>
                   <Card className="p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center">
-                    {isUploading ? (
+                    {isUploadingResume ? (
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     ) : resumeUrl ? (
                       <div className="flex items-center justify-between gap-4 w-full">
@@ -748,9 +840,10 @@ export default function SeekerProfilePage() {
                   <input
                     type="file"
                     ref={resumeInputRef}
-                    onChange={handleResumeChange}
+                    onChange={handleResumeFileSelected}
                     className="hidden"
                     accept=".pdf,.doc,.docx"
+                    disabled={isUploadingResume}
                   />
                   <p className="text-xs text-muted-foreground pl-1">Upload your resume (PDF, DOC, DOCX). Max 5MB.</p>
               </div>
@@ -828,5 +921,3 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
-
-    
