@@ -129,11 +129,13 @@ export default function SeekerProfilePage() {
 
   // Loading and auth states
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
   // General state
   const [profileView, setProfileView] = useState<'seeker' | 'referrer'>('seeker');
   const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
+  const [isUploadingPic, setIsUploadingPic] = useState(false);
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   
   // Form fields states
@@ -246,16 +248,32 @@ export default function SeekerProfilePage() {
     setEducations(educations.map(edu => edu.id === id ? { ...edu, [field]: value } : edu));
   };
 
-  const handleProfilePicChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePicChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!userId) {
+        toast({ title: "Please log in", description: "You must be logged in to upload a photo.", variant: "destructive" });
+        return;
+    }
     const file = event.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onloadend = () => setProfilePic(reader.result as string);
-      reader.readAsDataURL(file);
+        setIsUploadingPic(true);
+        try {
+            const fileRef = storageRef(storage, `profile-pics/${userId}/${file.name}`);
+            await uploadBytes(fileRef, file);
+            const url = await getDownloadURL(fileRef);
+            setProfilePic(url);
+            // Immediately update the profile so user doesn't have to click "Save"
+            await setDoc(doc(db, "profiles", userId), { profilePic: url }, { merge: true });
+            toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
+        } catch (error) {
+            console.error("Profile picture upload error:", error);
+            toast({ title: "Upload Failed", description: "There was a problem uploading your photo.", variant: "destructive" });
+        } finally {
+            setIsUploadingPic(false);
+        }
     } else {
-      toast({ title: "Invalid File Type", description: "Please select an image file.", variant: "destructive" });
+        toast({ title: "Invalid File Type", description: "Please select an image file.", variant: "destructive" });
     }
-  };
+};
 
   const handleResumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -328,7 +346,7 @@ export default function SeekerProfilePage() {
         toast({ title: "Error", description: "You must be logged in to save.", variant: "destructive" });
         return;
     }
-
+    setIsSaving(true);
     const profileData = {
         name,
         currentRole,
@@ -347,7 +365,7 @@ export default function SeekerProfilePage() {
     };
     
     try {
-        await setDoc(doc(db, "profiles", userId), profileData);
+        await setDoc(doc(db, "profiles", userId), profileData, { merge: true });
         toast({
           title: "Profile Saved!",
           description: `Your ${profileView} profile has been successfully updated.`,
@@ -355,6 +373,8 @@ export default function SeekerProfilePage() {
     } catch (error) {
         console.error("Error saving profile:", error);
         toast({ title: "Save Failed", description: "Could not save your profile. Please try again.", variant: "destructive" });
+    } finally {
+        setIsSaving(false);
     }
   };
   
@@ -404,7 +424,7 @@ export default function SeekerProfilePage() {
                     data-ai-hint="person avatar"
                   />
                   <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <Eye className="text-white h-8 w-8" />
+                     {isUploadingPic ? <Loader2 className="text-white h-8 w-8 animate-spin" /> : <Eye className="text-white h-8 w-8" />}
                   </div>
                 </button>
               </DialogTrigger>
@@ -431,10 +451,11 @@ export default function SeekerProfilePage() {
               onChange={handleProfilePicChange}
               className="hidden"
               accept="image/*"
+              disabled={isUploadingPic}
             />
-            <Button variant="outline" onClick={() => profilePicInputRef.current?.click()}>
-              <Upload className="mr-2 h-4 w-4" />
-              Upload Photo
+            <Button variant="outline" onClick={() => profilePicInputRef.current?.click()} disabled={isUploadingPic}>
+              {isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+              {isUploadingPic ? 'Uploading...' : 'Upload Photo'}
             </Button>
           </div>
 
@@ -780,9 +801,9 @@ export default function SeekerProfilePage() {
               <Button variant="ghost" asChild>
                   <Link href="/dashboard">Cancel</Link>
               </Button>
-               <Button onClick={handleSave}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Changes
+               <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
 
