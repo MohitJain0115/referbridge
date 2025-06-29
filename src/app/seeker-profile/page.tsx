@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
+export const dynamic = 'force-dynamic';
 
 type Job = {
   id: number;
@@ -86,11 +87,16 @@ export default function SeekerProfilePage() {
   const profilePicInputRef = useRef<HTMLInputElement>(null);
 
   // Resume state
-  const initialResumeFile = new File(["dummy resume content"], "my_awesome_resume_final.pdf", { type: "application/pdf" });
-  const [resumeFile, setResumeFile] = useState<File | null>(initialResumeFile);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
   const [pendingResume, setPendingResume] = useState<File | null>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
+  
+  React.useEffect(() => {
+    // Initialize with a dummy file only on the client-side
+    const initialResumeFile = new File(["dummy resume content"], "my_awesome_resume_final.pdf", { type: "application/pdf" });
+    setResumeFile(initialResumeFile);
+  }, []);
 
   // Seeker states
   const [about, setAbout] = useState(
