@@ -91,12 +91,6 @@ export default function SeekerProfilePage() {
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
   const [pendingResume, setPendingResume] = useState<File | null>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
-  
-  React.useEffect(() => {
-    // Initialize with a dummy file only on the client-side
-    const initialResumeFile = new File(["dummy resume content"], "my_awesome_resume_final.pdf", { type: "application/pdf" });
-    setResumeFile(initialResumeFile);
-  }, []);
 
   // Seeker states
   const [about, setAbout] = useState(
