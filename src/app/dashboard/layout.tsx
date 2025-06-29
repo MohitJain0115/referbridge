@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,17 @@ import { Menu, UserCircle, LogOut, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export default function DashboardLayout({
   children,
@@ -20,7 +31,27 @@ export default function DashboardLayout({
 }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+
+  useEffect(() => {
+    const hasSeenProfilePrompt = localStorage.getItem('hasSeenProfilePrompt');
+    if (!hasSeenProfilePrompt && pathname !== '/seeker-profile') {
+      setShowProfileDialog(true);
+    }
+  }, [pathname]);
+
+  const handleGoToProfile = () => {
+    localStorage.setItem('hasSeenProfilePrompt', 'true');
+    setShowProfileDialog(false);
+    router.push('/seeker-profile');
+  };
+
+  const handleDismissDialog = () => {
+    localStorage.setItem('hasSeenProfilePrompt', 'true');
+    setShowProfileDialog(false);
+  };
 
   const handleLogout = async () => {
     if (!auth) {
@@ -107,6 +138,20 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+      <AlertDialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Welcome to ReferBridge!</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your profile is your ticket to getting noticed. Let's set it up to start connecting with referrers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDismissDialog}>Maybe Later</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGoToProfile}>Set Up Profile</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
