@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Eye, Sparkles, Building2, Calendar as CalendarIcon } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Eye, Sparkles, Building2, Calendar as CalendarIcon, Download, FileText } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
 
 type Job = {
   id: number;
@@ -54,18 +56,18 @@ function ProfileViewToggle({ currentView, setView }: { currentView: 'seeker' | '
 
   return (
     <div className="flex items-center gap-2 p-1 rounded-lg bg-muted">
-      <Button 
-        onClick={() => setView('seeker')} 
-        variant={currentView === 'seeker' ? 'default' : 'ghost'} 
-        size="sm" 
+      <Button
+        onClick={() => setView('seeker')}
+        variant={currentView === 'seeker' ? 'default' : 'ghost'}
+        size="sm"
         className={cn(baseClasses, {'shadow-md': currentView === 'seeker'})}
       >
         Job Seeker Profile
       </Button>
-      <Button 
-        onClick={() => setView('referrer')} 
-        variant={currentView === 'referrer' ? 'default' : 'ghost'} 
-        size="sm" 
+      <Button
+        onClick={() => setView('referrer')}
+        variant={currentView === 'referrer' ? 'default' : 'ghost'}
+        size="sm"
         className={cn(baseClasses, {'shadow-md': currentView === 'referrer'})}
       >
         Referrer Profile
@@ -77,12 +79,17 @@ function ProfileViewToggle({ currentView, setView }: { currentView: 'seeker' | '
 export default function SeekerProfilePage() {
   const { toast } = useToast();
   const [profileView, setProfileView] = useState<'seeker' | 'referrer'>('seeker');
-  
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
-  
+
+  // Profile picture state
   const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const profilePicInputRef = useRef<HTMLInputElement>(null);
+
+  // Resume state
+  const initialResumeFile = new File(["dummy resume content"], "my_awesome_resume_final.pdf", { type: "application/pdf" });
+  const [resumeFile, setResumeFile] = useState<File | null>(initialResumeFile);
+  const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
+  const [pendingResume, setPendingResume] = useState<File | null>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
   // Seeker states
@@ -111,7 +118,7 @@ export default function SeekerProfilePage() {
   const addJobLink = (companyId: number) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: [...c.jobs, { id: Date.now(), url: '' }] } : c));
   const removeJobLink = (companyId: number, jobId: number) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: c.jobs.filter(j => j.id !== jobId) } : c));
   const updateJobLink = (companyId: number, jobId: number, url: string) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: c.jobs.map(j => j.id === jobId ? { ...j, url } : j) } : c));
-  
+
   const addExperience = () => setExperiences([...experiences, {id: Date.now(), role: '', company: '', from: undefined, to: undefined, currentlyWorking: false, description: ''}]);
   const removeExperience = (id: number) => setExperiences(experiences.filter(e => e.id !== id));
   const handleExperienceChange = (id: number, field: keyof Omit<Experience, 'id'>, value: string | boolean | Date | undefined) => {
@@ -133,7 +140,6 @@ export default function SeekerProfilePage() {
     setEducations(educations.map(edu => edu.id === id ? { ...edu, [field]: value } : edu));
   };
 
-
   const handleProfilePicChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
@@ -147,12 +153,51 @@ export default function SeekerProfilePage() {
 
   const handleResumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({ title: "File Too Large", description: "Please select a file smaller than 5MB.", variant: "destructive" });
-        return;
-      }
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({ title: "File Too Large", description: "Please select a file smaller than 5MB.", variant: "destructive" });
+      return;
+    }
+
+    if (resumeFile) {
+      setPendingResume(file);
+      setShowOverwriteDialog(true);
+    } else {
       setResumeFile(file);
+    }
+    // Clear the input value so the same file can be selected again
+    event.target.value = '';
+  };
+
+  const handleConfirmOverwrite = () => {
+    if (pendingResume) {
+      const oldFileName = resumeFile?.name || 'the previous file';
+      setResumeFile(pendingResume);
+      toast({
+          title: "Resume Updated",
+          description: `Replaced ${oldFileName} with ${pendingResume.name}.`
+      });
+    }
+    setShowOverwriteDialog(false);
+    setPendingResume(null);
+  };
+
+  const handleCancelOverwrite = () => {
+    setShowOverwriteDialog(false);
+    setPendingResume(null);
+  };
+
+  const handleDownloadResume = () => {
+    if (resumeFile) {
+      const url = URL.createObjectURL(resumeFile);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = resumeFile.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -238,7 +283,7 @@ export default function SeekerProfilePage() {
               Upload Photo
             </Button>
           </div>
-          
+
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -251,7 +296,7 @@ export default function SeekerProfilePage() {
               </div>
             </div>
           </div>
-          
+
           {profileView === 'seeker' ? (
             <div className="space-y-6">
               <div className="space-y-4">
@@ -296,9 +341,9 @@ export default function SeekerProfilePage() {
                 <Label htmlFor="about" className="flex items-center gap-2 font-medium">
                     <User className="h-4 w-4 text-primary" /> About Me
                 </Label>
-                <Textarea 
-                    id="about" 
-                    placeholder="A brief summary about your professional background, skills, and career aspirations." 
+                <Textarea
+                    id="about"
+                    placeholder="A brief summary about your professional background, skills, and career aspirations."
                     className="min-h-[100px]"
                     value={about}
                     onChange={(e) => setAbout(e.target.value)}
@@ -327,7 +372,7 @@ export default function SeekerProfilePage() {
                                     <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)} />
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                                 <div className="space-y-2">
                                     <Label htmlFor={`exp-from-${exp.id}`}>From</Label>
@@ -398,7 +443,7 @@ export default function SeekerProfilePage() {
                                     <Input id={`edu-degree-${edu.id}`} placeholder="e.g., M.S. in HCI" value={edu.degree} onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)} />
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div className="space-y-2">
                                     <Label htmlFor={`edu-from-${edu.id}`}>From</Label>
@@ -454,8 +499,8 @@ export default function SeekerProfilePage() {
                   {companies.map((company) => (
                     <Card key={company.id} className="p-4 bg-muted/20 border-dashed">
                       <div className="flex items-center gap-2 mb-4">
-                        <Input 
-                          placeholder="Company Name" 
+                        <Input
+                          placeholder="Company Name"
                           value={company.name}
                           onChange={(e) => updateCompanyName(company.id, e.target.value)}
                           className="text-base font-semibold"
@@ -468,8 +513,8 @@ export default function SeekerProfilePage() {
                         <Label className="text-xs text-muted-foreground font-normal">Links to job postings</Label>
                         {company.jobs.map((job) => (
                           <div key={job.id} className="flex items-center gap-2">
-                            <Input 
-                              placeholder="https://..." 
+                            <Input
+                              placeholder="https://..."
                               value={job.url}
                               onChange={(e) => updateJobLink(company.id, job.id, e.target.value)}
                             />
@@ -494,34 +539,54 @@ export default function SeekerProfilePage() {
 
               <div className="space-y-2">
                 <Label>Resume</Label>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/50 w-full">
-                        <span className="text-sm text-muted-foreground truncate">{resumeFile?.name || 'my_awesome_resume_final.pdf'}</span>
-                    </div>
-                    <input 
-                        type="file" 
-                        ref={resumeInputRef} 
-                        onChange={handleResumeChange} 
-                        className="hidden" 
-                        accept=".pdf,.doc,.docx"
-                    />
-                    <Button variant="outline" onClick={() => resumeInputRef.current?.click()}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload
-                    </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">Upload your resume (PDF, DOCX). Max 5MB.</p>
+                  <Card className="p-4 bg-muted/20 border-dashed">
+                    {resumeFile ? (
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                          <span className="font-medium text-sm truncate">{resumeFile.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button variant="outline" size="sm" onClick={handleDownloadResume}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={() => resumeInputRef.current?.click()}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Replace
+                            </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-4 text-center">
+                        <p className="mb-2 text-sm text-muted-foreground">No resume uploaded.</p>
+                        <Button variant="outline" onClick={() => resumeInputRef.current?.click()}>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Resume
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                  <input
+                    type="file"
+                    ref={resumeInputRef}
+                    onChange={handleResumeChange}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx"
+                  />
+                  <p className="text-xs text-muted-foreground pl-1">Upload your resume (PDF, DOC, DOCX). Max 5MB.</p>
               </div>
+
             </div>
           ) : (
             <div className="space-y-6">
                 <div className="space-y-2">
                     <Label htmlFor="referrer-company">Your Company</Label>
-                    <Input 
-                      id="referrer-company" 
-                      placeholder="e.g., Google" 
-                      value={referrerCompany} 
-                      onChange={(e) => setReferrerCompany(e.target.value)} 
+                    <Input
+                      id="referrer-company"
+                      placeholder="e.g., Google"
+                      value={referrerCompany}
+                      onChange={(e) => setReferrerCompany(e.target.value)}
                     />
                 </div>
 
@@ -529,9 +594,9 @@ export default function SeekerProfilePage() {
                     <Label htmlFor="referrer-about" className="flex items-center gap-2 font-medium">
                         <User className="h-4 w-4 text-primary" /> Referrer Bio
                     </Label>
-                    <Textarea 
-                        id="referrer-about" 
-                        placeholder="Describe your role and the types of candidates you can refer." 
+                    <Textarea
+                        id="referrer-about"
+                        placeholder="Describe your role and the types of candidates you can refer."
                         className="min-h-[100px]"
                         value={referrerAbout}
                         onChange={(e) => setReferrerAbout(e.target.value)}
@@ -543,9 +608,9 @@ export default function SeekerProfilePage() {
                     <Label htmlFor="referrer-specialties" className="flex items-center gap-2 font-medium">
                         <Sparkles className="h-4 w-4 text-primary" /> Your Specialties
                     </Label>
-                    <Input 
-                        id="referrer-specialties" 
-                        placeholder="e.g., Frontend, React, Product Management" 
+                    <Input
+                        id="referrer-specialties"
+                        placeholder="e.g., Frontend, React, Product Management"
                         value={referrerSpecialties}
                         onChange={(e) => setReferrerSpecialties(e.target.value)}
                     />
@@ -566,6 +631,22 @@ export default function SeekerProfilePage() {
 
         </CardContent>
       </Card>
+
+      <AlertDialog open={showOverwriteDialog} onOpenChange={setShowOverwriteDialog}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Replace existing resume?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    You have already uploaded a resume. Do you want to replace "{resumeFile?.name}" with "{pendingResume?.name}"?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleCancelOverwrite}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmOverwrite}>Replace</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
