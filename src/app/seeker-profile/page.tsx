@@ -19,9 +19,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import { auth, app } from "@/lib/firebase";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { auth, db, storage } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const dynamic = 'force-dynamic';
@@ -114,7 +114,6 @@ export default function SeekerProfilePage() {
     const fetchResumeData = async (uid: string) => {
       setIsResumeLoading(true);
       try {
-        const db = getFirestore(app);
         const resumeDocRef = doc(db, 'resumes', uid);
         const docSnap = await getDoc(resumeDocRef);
 
@@ -149,7 +148,7 @@ export default function SeekerProfilePage() {
     });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, []);
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
   const removeCompany = (companyId: number) => setCompanies(companies.filter(c => c.id !== companyId));
@@ -216,8 +215,6 @@ export default function SeekerProfilePage() {
       }
       setIsUploading(true);
       try {
-          const storage = getStorage(app);
-          const db = getFirestore(app);
           const user = auth.currentUser;
 
           const fileRef = storageRef(storage, `resumes/${user.uid}/${file.name}`);
