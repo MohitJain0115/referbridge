@@ -86,6 +86,9 @@ export default function SeekerProfilePage() {
   const [profileView, setProfileView] = useState<'seeker' | 'referrer'>('seeker');
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
 
+  // User ID state
+  const [userId, setUserId] = useState<string | null>(null);
+
   // Profile picture state
   const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
   const profilePicInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +113,15 @@ export default function SeekerProfilePage() {
   const [referrerAbout, setReferrerAbout] = useState("");
   const [referrerSpecialties, setReferrerSpecialties] = useState("");
 
+  // Effect to get user ID from auth state
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUserId(user ? user.uid : null);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Effect to fetch resume data once user ID is available
   useEffect(() => {
     const fetchResumeData = async (uid: string) => {
       setIsResumeLoading(true);
@@ -137,18 +149,15 @@ export default function SeekerProfilePage() {
       }
     };
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        fetchResumeData(user.uid);
-      } else {
-        setIsResumeLoading(false);
-        setResumeUrl(null);
-        setResumeName(null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+    if (userId) {
+      fetchResumeData(userId);
+    } else {
+      // Handles logged out state or initial load before user ID is set
+      setIsResumeLoading(false);
+      setResumeUrl(null);
+      setResumeName(null);
+    }
+  }, [userId, toast]);
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
   const removeCompany = (companyId: number) => setCompanies(companies.filter(c => c.id !== companyId));
@@ -209,20 +218,18 @@ export default function SeekerProfilePage() {
   };
 
   const uploadResume = async (file: File) => {
-      if (!auth.currentUser) {
+      if (!userId) {
           toast({ title: "Not Logged In", description: "You must be logged in to upload a resume.", variant: "destructive" });
           return;
       }
       setIsUploading(true);
       try {
-          const user = auth.currentUser;
-
-          const fileRef = storageRef(storage, `resumes/${user.uid}/${file.name}`);
+          const fileRef = storageRef(storage, `resumes/${userId}/${file.name}`);
           await uploadBytes(fileRef, file);
           const url = await getDownloadURL(fileRef);
 
-          await setDoc(doc(db, "resumes", user.uid), {
-              userId: user.uid,
+          await setDoc(doc(db, "resumes", userId), {
+              userId: userId,
               fileName: file.name,
               fileUrl: url,
               uploadedAt: new Date(),
