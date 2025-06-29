@@ -111,30 +111,40 @@ export default function SeekerProfilePage() {
   const [referrerSpecialties, setReferrerSpecialties] = useState("");
 
   useEffect(() => {
-    const fetchResume = async () => {
-      if (auth.currentUser) {
-        try {
-          const db = getFirestore(app);
-          const resumeDocRef = doc(db, "resumes", auth.currentUser.uid);
-          const docSnap = await getDoc(resumeDocRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setResumeUrl(data.fileUrl);
-            setResumeName(data.fileName);
-          }
-        } catch (error) {
-          console.error("Error fetching resume:", error);
-          toast({ title: "Error", description: "Could not load your resume.", variant: "destructive" });
+    const fetchResumeData = async (uid: string) => {
+      setIsResumeLoading(true);
+      try {
+        const db = getFirestore(app);
+        const resumeDocRef = doc(db, 'resumes', uid);
+        const docSnap = await getDoc(resumeDocRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setResumeUrl(data.fileUrl);
+          setResumeName(data.fileName);
+        } else {
+          setResumeUrl(null);
+          setResumeName(null);
         }
+      } catch (error) {
+        console.error('Error fetching resume:', error);
+        toast({
+          title: 'Error',
+          description: 'Could not load your resume.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsResumeLoading(false);
       }
-      setIsResumeLoading(false);
     };
 
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        fetchResume();
+        fetchResumeData(user.uid);
       } else {
         setIsResumeLoading(false);
+        setResumeUrl(null);
+        setResumeName(null);
       }
     });
 
