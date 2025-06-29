@@ -93,24 +93,15 @@ export default function SeekerProfilePage() {
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
   // Seeker states
-  const [about, setAbout] = useState(
-    "Passionate Product Manager with 3 years of experience in fast-paced tech environments. Skilled in user research, agile methodologies, and cross-functional team leadership. Eager to leverage my skills to build innovative products that users love."
-  );
-  const [companies, setCompanies] = useState<Company[]>([
-    { id: 1, name: 'Google', jobs: [{ id: 1, url: 'https://www.linkedin.com/jobs/view/12345' }] },
-    { id: 2, name: 'Stripe', jobs: [{ id: 1, url: '' }] },
-  ]);
-  const [experiences, setExperiences] = useState<Experience[]>([
-      { id: 101, role: 'Product Manager', company: 'TechCorp', from: new Date(2021, 0, 1), to: undefined, currentlyWorking: true, description: '- Managed the product lifecycle...\n- Increased user engagement by 15%...' }
-  ]);
-  const [educations, setEducations] = useState<Education[]>([
-      { id: 201, institution: 'Carnegie Mellon University', degree: 'M.S. in Human-Computer Interaction', from: new Date(2018, 7), to: new Date(2020, 4), description: 'Relevant coursework: User-Centered Research, Interaction Design.' }
-  ]);
+  const [about, setAbout] = useState("");
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [educations, setEducations] = useState<Education[]>([]);
 
   // Referrer states
-  const [referrerCompany, setReferrerCompany] = useState("InnovateX");
-  const [referrerAbout, setReferrerAbout] = useState("As a Senior Engineer at InnovateX, I often have visibility into new roles in the backend and cloud domains. Happy to refer strong candidates who are passionate about building scalable systems.");
-  const [referrerSpecialties, setReferrerSpecialties] = useState("Backend, Go, Python, AWS, Scaling");
+  const [referrerCompany, setReferrerCompany] = useState("");
+  const [referrerAbout, setReferrerAbout] = useState("");
+  const [referrerSpecialties, setReferrerSpecialties] = useState("");
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
   const removeCompany = (companyId: number) => setCompanies(companies.filter(c => c.id !== companyId));
@@ -288,11 +279,11 @@ export default function SeekerProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="e.g., Jane Doe" defaultValue="Jane Doe" />
+                <Input id="name" placeholder="e.g., Jane Doe" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="current-role">Current Role</Label>
-                <Input id="current-role" placeholder="e.g., Product Manager" defaultValue="Product Manager" />
+                <Input id="current-role" placeholder="e.g., Product Manager" />
               </div>
             </div>
           </div>
@@ -303,11 +294,11 @@ export default function SeekerProfilePage() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="current-experience">Experience in Current Role</Label>
-                      <Input id="current-experience" placeholder="e.g., 3 years" defaultValue="3 years" />
+                      <Input id="current-experience" placeholder="e.g., 3 years" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="target-role">Target Role</Label>
-                      <Input id="target-role" placeholder="e.g., Senior Product Manager" defaultValue="Senior Product Manager" />
+                      <Input id="target-role" placeholder="e.g., Senior Product Manager" />
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
@@ -317,7 +308,6 @@ export default function SeekerProfilePage() {
                       id="salary"
                       type="number"
                       placeholder="e.g., 150000"
-                      defaultValue="150000"
                       className={cn("transition-all", !isSalaryVisible && "blur-sm")}
                     />
                   </div>
