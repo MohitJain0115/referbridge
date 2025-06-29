@@ -25,7 +25,6 @@ import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, storage } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
-import { importFromLinkedIn } from "@/ai/flows/linkedin-profile-flow";
 
 export const dynamic = 'force-dynamic';
 
@@ -165,36 +164,13 @@ export default function SeekerProfilePage() {
   const [referrerAbout, setReferrerAbout] = useState("");
   const [referrerSpecialties, setReferrerSpecialties] = useState("");
   
-  // LinkedIn Import states
-  const [isImporting, setIsImporting] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [linkedInUrl, setLinkedInUrl] = useState("");
-
-
-  // Effect to handle auth state changes
+  // Effect to handle auth state changes and load data
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        router.push("/login");
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
-
-  // Effect to load user data once user is authenticated
-  useEffect(() => {
-    if (!user) return;
-
-    let isMounted = true;
-    
-    const loadUserData = async () => {
-      setIsLoading(true);
+    const loadUserData = async (currentUser: FirebaseUser) => {
       try {
-        const profileDocRef = doc(db, "profiles", user.uid);
+        const profileDocRef = doc(db, "profiles", currentUser.uid);
         const profileDocSnap = await getDoc(profileDocRef);
-        if (isMounted && profileDocSnap.exists()) {
+        if (profileDocSnap.exists()) {
             const data = profileDocSnap.data();
             setName(data.name || "");
             setCurrentRole(data.currentRole || "");
@@ -212,9 +188,9 @@ export default function SeekerProfilePage() {
             setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
         }
 
-        const resumeDocRef = doc(db, "resumes", user.uid);
+        const resumeDocRef = doc(db, "resumes", currentUser.uid);
         const resumeDocSnap = await getDoc(resumeDocRef);
-        if (isMounted && resumeDocSnap.exists()) {
+        if (resumeDocSnap.exists()) {
             const resumeData = resumeDocSnap.data();
             setResumeUrl(resumeData.fileUrl);
             setResumeName(resumeData.fileName);
@@ -227,17 +203,23 @@ export default function SeekerProfilePage() {
               variant: "destructive",
           });
       } finally {
-        if (isMounted) {
-            setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
-    loadUserData();
-    
-    return () => { isMounted = false; };
-  }, [user, toast]);
+    setIsLoading(true);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        loadUserData(currentUser);
+      } else {
+        setIsLoading(false);
+        router.push("/login");
+      }
+    });
 
+    return () => unsubscribe();
+  }, [router, toast]);
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
   const removeCompany = (companyId: number) => setCompanies(companies.filter(c => c.id !== companyId));
@@ -395,61 +377,6 @@ export default function SeekerProfilePage() {
         setIsSaving(false);
     }
   };
-
-  const handleLinkedInImport = async () => {
-    if (!linkedInUrl) {
-        toast({ title: "URL Required", description: "Please enter a LinkedIn profile URL.", variant: "destructive" });
-        return;
-    }
-    setIsImporting(true);
-    try {
-        const output = await importFromLinkedIn({ url: linkedInUrl });
-
-        setName(output.name);
-        setProfilePic(output.profilePicUrl);
-        setAbout(output.aboutMe);
-        setReferrerCompany(output.referrerCompany);
-        setReferrerAbout(output.referrerBio);
-        setReferrerSpecialties(output.referrerSpecialties);
-
-        const parsedExperiences = output.experiences.map(exp => ({
-            id: Date.now() + Math.random(),
-            role: exp.role,
-            company: exp.company,
-            from: new Date(exp.startDate),
-            to: exp.endDate === 'Present' ? undefined : new Date(exp.endDate),
-            currentlyWorking: exp.endDate === 'Present',
-            description: exp.description,
-        }));
-        setExperiences(parsedExperiences);
-
-        const parsedEducations = output.educations.map(edu => ({
-            id: Date.now() + Math.random(),
-            institution: edu.institution,
-            degree: edu.degree,
-            from: new Date(edu.startDate),
-            to: new Date(edu.endDate),
-            description: edu.description,
-        }));
-        setEducations(parsedEducations);
-        
-        // Find current role from latest experience
-        if(parsedExperiences.length > 0) {
-            const latestExp = parsedExperiences.find(e => e.currentlyWorking) || parsedExperiences[0];
-            setCurrentRole(latestExp.role);
-        }
-
-        toast({ title: "Import Successful", description: "Your profile has been populated with data." });
-        setIsImportDialogOpen(false);
-        setLinkedInUrl("");
-
-    } catch (error) {
-        console.error("LinkedIn import error:", error);
-        toast({ title: "Import Failed", description: "Could not import data. Please try again.", variant: "destructive" });
-    } finally {
-        setIsImporting(false);
-    }
-  };
   
   if (isLoading) {
     return <PageSkeleton />;
@@ -467,9 +394,9 @@ export default function SeekerProfilePage() {
           </div>
           <div className="flex items-center justify-between pt-4">
             <ProfileViewToggle currentView={profileView} setView={setProfileView} />
-            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+            <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" disabled>
                   <Linkedin className="mr-2 h-4 w-4" />
                   Import from LinkedIn
                 </Button>
@@ -478,26 +405,9 @@ export default function SeekerProfilePage() {
                 <DialogHeader>
                   <DialogTitle>Import from LinkedIn</DialogTitle>
                   <DialogDescription>
-                    Paste a LinkedIn profile URL to auto-fill your profile with AI-generated data. Note: The AI does not access the live URL.
+                    This feature is currently disabled.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-2 py-2">
-                  <Label htmlFor="linkedin-url">LinkedIn Profile URL</Label>
-                  <Input 
-                    id="linkedin-url" 
-                    placeholder="https://www.linkedin.com/in/..."
-                    value={linkedInUrl}
-                    onChange={(e) => setLinkedInUrl(e.target.value)}
-                    disabled={isImporting}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsImportDialogOpen(false)} disabled={isImporting}>Cancel</Button>
-                  <Button onClick={handleLinkedInImport} disabled={isImporting}>
-                    {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    {isImporting ? 'Importing...' : 'Generate & Import'}
-                  </Button>
-                </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
