@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Eye, Sparkles, Building2, Calendar as CalendarIcon, Download, FileText } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Eye, Sparkles, Building2, Calendar as CalendarIcon, Download, FileText, Loader2 } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch";
@@ -19,6 +19,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { auth, app } from "@/lib/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const dynamic = 'force-dynamic';
 
@@ -87,7 +91,10 @@ export default function SeekerProfilePage() {
   const profilePicInputRef = useRef<HTMLInputElement>(null);
 
   // Resume state
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  const [resumeName, setResumeName] = useState<string | null>(null);
+  const [isResumeLoading, setIsResumeLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
   const [pendingResume, setPendingResume] = useState<File | null>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -102,6 +109,37 @@ export default function SeekerProfilePage() {
   const [referrerCompany, setReferrerCompany] = useState("");
   const [referrerAbout, setReferrerAbout] = useState("");
   const [referrerSpecialties, setReferrerSpecialties] = useState("");
+
+  useEffect(() => {
+    const fetchResume = async () => {
+      if (auth.currentUser) {
+        try {
+          const db = getFirestore(app);
+          const resumeDocRef = doc(db, "resumes", auth.currentUser.uid);
+          const docSnap = await getDoc(resumeDocRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setResumeUrl(data.fileUrl);
+            setResumeName(data.fileName);
+          }
+        } catch (error) {
+          console.error("Error fetching resume:", error);
+          toast({ title: "Error", description: "Could not load your resume.", variant: "destructive" });
+        }
+      }
+      setIsResumeLoading(false);
+    };
+
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        fetchResume();
+      } else {
+        setIsResumeLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
   const removeCompany = (companyId: number) => setCompanies(companies.filter(c => c.id !== companyId));
@@ -151,24 +189,58 @@ export default function SeekerProfilePage() {
       return;
     }
 
-    if (resumeFile) {
+    if (resumeUrl) {
       setPendingResume(file);
       setShowOverwriteDialog(true);
     } else {
-      setResumeFile(file);
+      uploadResume(file);
     }
     // Clear the input value so the same file can be selected again
     event.target.value = '';
   };
 
+  const uploadResume = async (file: File) => {
+      if (!auth.currentUser) {
+          toast({ title: "Not Logged In", description: "You must be logged in to upload a resume.", variant: "destructive" });
+          return;
+      }
+      setIsUploading(true);
+      try {
+          const storage = getStorage(app);
+          const db = getFirestore(app);
+          const user = auth.currentUser;
+
+          const fileRef = storageRef(storage, `resumes/${user.uid}/${file.name}`);
+          await uploadBytes(fileRef, file);
+          const url = await getDownloadURL(fileRef);
+
+          await setDoc(doc(db, "resumes", user.uid), {
+              userId: user.uid,
+              fileName: file.name,
+              fileUrl: url,
+              uploadedAt: new Date(),
+          });
+
+          setResumeUrl(url);
+          setResumeName(file.name);
+          toast({ title: "Success", description: "Your resume has been uploaded successfully." });
+      } catch (error) {
+          console.error("Resume upload error:", error);
+          toast({ title: "Upload Failed", description: "There was a problem uploading your resume.", variant: "destructive" });
+      } finally {
+          setIsUploading(false);
+      }
+  };
+
+
   const handleConfirmOverwrite = () => {
     if (pendingResume) {
-      const oldFileName = resumeFile?.name || 'the previous file';
-      setResumeFile(pendingResume);
-      toast({
-          title: "Resume Updated",
-          description: `Replaced ${oldFileName} with ${pendingResume.name}.`
-      });
+        const oldFileName = resumeName || 'the previous file';
+        toast({
+            title: "Replacing Resume",
+            description: `Uploading ${pendingResume.name}...`
+        });
+        uploadResume(pendingResume);
     }
     setShowOverwriteDialog(false);
     setPendingResume(null);
@@ -180,15 +252,8 @@ export default function SeekerProfilePage() {
   };
 
   const handleDownloadResume = () => {
-    if (resumeFile) {
-      const url = URL.createObjectURL(resumeFile);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = resumeFile.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+    if (resumeUrl) {
+      window.open(resumeUrl, '_blank');
     }
   };
 
@@ -529,29 +594,31 @@ export default function SeekerProfilePage() {
 
               <div className="space-y-2">
                 <Label>Resume</Label>
-                  <Card className="p-4 bg-muted/20 border-dashed">
-                    {resumeFile ? (
-                      <div className="flex items-center justify-between gap-4">
+                  <Card className="p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center">
+                    {isResumeLoading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    ) : resumeUrl ? (
+                      <div className="flex items-center justify-between gap-4 w-full">
                         <div className="flex items-center gap-2 overflow-hidden">
                           <FileText className="h-5 w-5 text-primary flex-shrink-0" />
-                          <span className="font-medium text-sm truncate">{resumeFile.name}</span>
+                          <span className="font-medium text-sm truncate">{resumeName}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                            <Button variant="outline" size="sm" onClick={handleDownloadResume}>
+                            <Button variant="outline" size="sm" onClick={handleDownloadResume} disabled={isUploading}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Download
                             </Button>
-                            <Button variant="secondary" size="sm" onClick={() => resumeInputRef.current?.click()}>
-                                <Upload className="mr-2 h-4 w-4" />
+                            <Button variant="secondary" size="sm" onClick={() => resumeInputRef.current?.click()} disabled={isUploading}>
+                                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                                 Replace
                             </Button>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center p-4 text-center">
+                      <div className="flex flex-col items-center justify-center text-center">
                         <p className="mb-2 text-sm text-muted-foreground">No resume uploaded.</p>
-                        <Button variant="outline" onClick={() => resumeInputRef.current?.click()}>
-                          <Upload className="mr-2 h-4 w-4" />
+                        <Button variant="outline" onClick={() => resumeInputRef.current?.click()} disabled={isUploading}>
+                          {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                           Upload Resume
                         </Button>
                       </div>
@@ -627,7 +694,7 @@ export default function SeekerProfilePage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Replace existing resume?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    You have already uploaded a resume. Do you want to replace "{resumeFile?.name}" with "{pendingResume?.name}"?
+                    You have already uploaded a resume. Do you want to replace "{resumeName}" with "{pendingResume?.name}"?
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
