@@ -21,8 +21,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, setDoc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth, db, storage } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 
@@ -81,22 +83,70 @@ function ProfileViewToggle({ currentView, setView }: { currentView: 'seeker' | '
   );
 }
 
+function PageSkeleton() {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
+            <Card className="w-full max-w-2xl">
+                <CardHeader>
+                    <Skeleton className="h-8 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex flex-col items-center gap-4 border-b pb-6">
+                        <Skeleton className="h-32 w-32 rounded-full" />
+                        <Skeleton className="h-10 w-32" />
+                    </div>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-1/5" />
+                        <Skeleton className="h-24 w-full" />
+                    </div>
+                     <div className="space-y-2">
+                        <Skeleton className="h-4 w-1/5" />
+                        <Skeleton className="h-24 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+
 export default function SeekerProfilePage() {
   const { toast } = useToast();
-  const [profileView, setProfileView] = useState<'seeker' | 'referrer'>('seeker');
-  const [isSalaryVisible, setIsSalaryVisible] = useState(true);
+  const router = useRouter();
 
-  // User ID state
+  // Loading and auth states
+  const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Profile picture state
+  // General state
+  const [profileView, setProfileView] = useState<'seeker' | 'referrer'>('seeker');
   const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
   const profilePicInputRef = useRef<HTMLInputElement>(null);
+  
+  // Form fields states
+  const [name, setName] = useState("");
+  const [currentRole, setCurrentRole] = useState("");
+  const [experienceInRole, setExperienceInRole] = useState("");
+  const [targetRole, setTargetRole] = useState("");
+  const [expectedSalary, setExpectedSalary] = useState<number | string>("");
+  const [isSalaryVisible, setIsSalaryVisible] = useState(true);
 
   // Resume state
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [resumeName, setResumeName] = useState<string | null>(null);
-  const [isResumeLoading, setIsResumeLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
   const [pendingResume, setPendingResume] = useState<File | null>(null);
@@ -113,51 +163,60 @@ export default function SeekerProfilePage() {
   const [referrerAbout, setReferrerAbout] = useState("");
   const [referrerSpecialties, setReferrerSpecialties] = useState("");
 
-  // Effect to get user ID from auth state
+  // Effect to handle auth and load all user data
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUserId(user ? user.uid : null);
-    });
-    return () => unsubscribe();
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserId(user.uid);
+        try {
+            // Fetch main profile data
+            const profileDocRef = doc(db, "profiles", user.uid);
+            const profileDocSnap = await getDoc(profileDocRef);
+            if (profileDocSnap.exists()) {
+                const data = profileDocSnap.data();
+                setName(data.name || "");
+                setCurrentRole(data.currentRole || "");
+                setExperienceInRole(data.experienceInRole || "");
+                setTargetRole(data.targetRole || "");
+                setExpectedSalary(data.expectedSalary || "");
+                setIsSalaryVisible(data.isSalaryVisible !== false);
+                setAbout(data.about || "");
+                setCompanies(data.companies || []);
+                setExperiences(data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
+                setEducations(data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
+                setReferrerCompany(data.referrerCompany || "");
+                setReferrerAbout(data.referrerAbout || "");
+                setReferrerSpecialties(data.referrerSpecialties || "");
+                setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
+            }
 
-  // Effect to fetch resume data once user ID is available
-  useEffect(() => {
-    const fetchResumeData = async (uid: string) => {
-      setIsResumeLoading(true);
-      try {
-        const resumeDocRef = doc(db, 'resumes', uid);
-        const docSnap = await getDoc(resumeDocRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setResumeUrl(data.fileUrl);
-          setResumeName(data.fileName);
-        } else {
-          setResumeUrl(null);
-          setResumeName(null);
+            // Fetch resume data
+            const resumeDocRef = doc(db, "resumes", user.uid);
+            const resumeDocSnap = await getDoc(resumeDocRef);
+            if (resumeDocSnap.exists()) {
+                const resumeData = resumeDocSnap.data();
+                setResumeUrl(resumeData.fileUrl);
+                setResumeName(resumeData.fileName);
+            }
+        } catch (error) {
+            console.error("Error loading user data:", error);
+            toast({
+                title: "Loading Error",
+                description: "Could not load your profile. Please try refreshing.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching resume:', error);
-        toast({
-          title: 'Error',
-          description: 'Could not load your resume.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsResumeLoading(false);
+      } else {
+        // No user logged in, redirect to login
+        router.push("/login");
       }
-    };
+    });
 
-    if (userId) {
-      fetchResumeData(userId);
-    } else {
-      // Handles logged out state or initial load before user ID is set
-      setIsResumeLoading(false);
-      setResumeUrl(null);
-      setResumeName(null);
-    }
-  }, [userId, toast]);
+    return () => unsubscribe();
+  }, [router, toast]);
+
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
   const removeCompany = (companyId: number) => setCompanies(companies.filter(c => c.id !== companyId));
@@ -213,7 +272,6 @@ export default function SeekerProfilePage() {
     } else {
       uploadResume(file);
     }
-    // Clear the input value so the same file can be selected again
     event.target.value = '';
   };
 
@@ -243,21 +301,15 @@ export default function SeekerProfilePage() {
           toast({ title: "Upload Failed", description: "There was a problem uploading your resume.", variant: "destructive" });
       } finally {
           setIsUploading(false);
+          setPendingResume(null);
       }
   };
 
-
   const handleConfirmOverwrite = () => {
     if (pendingResume) {
-        const oldFileName = resumeName || 'the previous file';
-        toast({
-            title: "Replacing Resume",
-            description: `Uploading ${pendingResume.name}...`
-        });
         uploadResume(pendingResume);
     }
     setShowOverwriteDialog(false);
-    setPendingResume(null);
   };
 
   const handleCancelOverwrite = () => {
@@ -271,12 +323,44 @@ export default function SeekerProfilePage() {
     }
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Profile Saved!",
-      description: `Your ${profileView} profile has been successfully updated.`,
-    });
+  const handleSave = async () => {
+    if (!userId) {
+        toast({ title: "Error", description: "You must be logged in to save.", variant: "destructive" });
+        return;
+    }
+
+    const profileData = {
+        name,
+        currentRole,
+        experienceInRole,
+        targetRole,
+        expectedSalary: Number(expectedSalary) || 0,
+        isSalaryVisible,
+        about,
+        companies,
+        experiences,
+        educations,
+        referrerCompany,
+        referrerAbout,
+        referrerSpecialties,
+        profilePic,
+    };
+    
+    try {
+        await setDoc(doc(db, "profiles", userId), profileData);
+        toast({
+          title: "Profile Saved!",
+          description: `Your ${profileView} profile has been successfully updated.`,
+        });
+    } catch (error) {
+        console.error("Error saving profile:", error);
+        toast({ title: "Save Failed", description: "Could not save your profile. Please try again.", variant: "destructive" });
+    }
   };
+  
+  if (isLoading) {
+    return <PageSkeleton />;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
@@ -358,11 +442,11 @@ export default function SeekerProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="e.g., Jane Doe" />
+                <Input id="name" placeholder="e.g., Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="current-role">Current Role</Label>
-                <Input id="current-role" placeholder="e.g., Product Manager" />
+                <Input id="current-role" placeholder="e.g., Product Manager" value={currentRole} onChange={(e) => setCurrentRole(e.target.value)}/>
               </div>
             </div>
           </div>
@@ -373,11 +457,11 @@ export default function SeekerProfilePage() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="current-experience">Experience in Current Role</Label>
-                      <Input id="current-experience" placeholder="e.g., 3 years" />
+                      <Input id="current-experience" placeholder="e.g., 3 years" value={experienceInRole} onChange={(e) => setExperienceInRole(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="target-role">Target Role</Label>
-                      <Input id="target-role" placeholder="e.g., Senior Product Manager" />
+                      <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
@@ -388,6 +472,8 @@ export default function SeekerProfilePage() {
                       type="number"
                       placeholder="e.g., 150000"
                       className={cn("transition-all", !isSalaryVisible && "blur-sm")}
+                      value={expectedSalary}
+                      onChange={(e) => setExpectedSalary(e.target.value)}
                     />
                   </div>
                   <div className="flex items-center space-x-3">
@@ -609,7 +695,7 @@ export default function SeekerProfilePage() {
               <div className="space-y-2">
                 <Label>Resume</Label>
                   <Card className="p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center">
-                    {isResumeLoading ? (
+                    {isUploading ? (
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     ) : resumeUrl ? (
                       <div className="flex items-center justify-between gap-4 w-full">
@@ -618,12 +704,12 @@ export default function SeekerProfilePage() {
                           <span className="font-medium text-sm truncate">{resumeName}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                            <Button variant="outline" size="sm" onClick={handleDownloadResume} disabled={isUploading}>
+                            <Button variant="outline" size="sm" onClick={handleDownloadResume}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Download
                             </Button>
-                            <Button variant="secondary" size="sm" onClick={() => resumeInputRef.current?.click()} disabled={isUploading}>
-                                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                            <Button variant="secondary" size="sm" onClick={() => resumeInputRef.current?.click()}>
+                                <Upload className="mr-2 h-4 w-4" />
                                 Replace
                             </Button>
                         </div>
@@ -631,8 +717,8 @@ export default function SeekerProfilePage() {
                     ) : (
                       <div className="flex flex-col items-center justify-center text-center">
                         <p className="mb-2 text-sm text-muted-foreground">No resume uploaded.</p>
-                        <Button variant="outline" onClick={() => resumeInputRef.current?.click()} disabled={isUploading}>
-                          {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                        <Button variant="outline" onClick={() => resumeInputRef.current?.click()}>
+                          <Upload className="mr-2 h-4 w-4" />
                           Upload Resume
                         </Button>
                       </div>
@@ -721,3 +807,5 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
+
+    
