@@ -7,7 +7,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyB70zT7LUKxVAtos0IP6LhRPdY203XxLx4",
   authDomain: "referbridge.firebaseapp.com",
   projectId: "referbridge",
-  storageBucket: "referbridge.firebasestorage.app",
+  storageBucket: "referbridge.appspot.com",
   messagingSenderId: "280892968691",
   appId: "1:280892968691:web:b99516ec81ec2f21e8f186",
 };
