@@ -4,12 +4,12 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB70zT7LUKxVAtos0IP6LhRPdY203XxLx4",
-  authDomain: "referbridge.firebaseapp.com",
-  projectId: "referbridge",
-  storageBucket: "referbridge.appspot.com",
-  messagingSenderId: "280892968691",
-  appId: "1:280892968691:web:b99516ec81ec2f21e8f186",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
