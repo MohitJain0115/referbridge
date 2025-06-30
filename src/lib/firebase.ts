@@ -3,6 +3,8 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
+// This configuration is now loaded from environment variables.
+// Make sure your .env file is populated with the correct values from your Firebase project.
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -12,10 +14,41 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth: Auth = getAuth(app);
-const db: Firestore = getFirestore(app);
-const storage: FirebaseStorage = getStorage(app);
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
+
+// Check if all required environment variables are set
+const areCredsSet =
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  firebaseConfig.storageBucket &&
+  firebaseConfig.messagingSenderId &&
+  firebaseConfig.appId;
+
+if (areCredsSet && !firebaseConfig.apiKey.startsWith("your_")) {
+  try {
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+  } catch (e) {
+    console.error("Firebase initialization error:", e);
+    // Set to null to indicate services are not available
+    app = null!;
+    auth = null!;
+    db = null!;
+    storage = null!;
+  }
+} else {
+  console.warn("Firebase credentials are not set. Please check your .env file. Using null services.");
+  app = null!;
+  auth = null!;
+  db = null!;
+  storage = null!;
+}
+
 
 export { auth, app, db, storage };

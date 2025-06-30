@@ -127,6 +127,7 @@ export default function SeekerProfilePage() {
   const router = useRouter();
 
   // Auth and loading states
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -163,56 +164,74 @@ export default function SeekerProfilePage() {
   const [referrerAbout, setReferrerAbout] = useState("");
   const [referrerSpecialties, setReferrerSpecialties] = useState("");
   
-  // Effect to handle auth state changes and load data
+  // Effect to handle auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        try {
-          const profileDocRef = doc(db, "profiles", currentUser.uid);
-          const profileDocSnap = await getDoc(profileDocRef);
-          if (profileDocSnap.exists()) {
-              const data = profileDocSnap.data();
-              setName(data.name || "");
-              setCurrentRole(data.currentRole || "");
-              setExperienceInRole(data.experienceInRole || "");
-              setTargetRole(data.targetRole || "");
-              setExpectedSalary(data.expectedSalary || "");
-              setIsSalaryVisible(data.isSalaryVisible !== false);
-              setAbout(data.about || "");
-              setCompanies(data.companies || []);
-              setExperiences(data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
-              setEducations(data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
-              setReferrerCompany(data.referrerCompany || "");
-              setReferrerAbout(data.referrerAbout || "");
-              setReferrerSpecialties(data.referrerSpecialties || "");
-              setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
-          }
-
-          const resumeDocRef = doc(db, "resumes", currentUser.uid);
-          const resumeDocSnap = await getDoc(resumeDocRef);
-          if (resumeDocSnap.exists()) {
-              const resumeData = resumeDocSnap.data();
-              setResumeUrl(resumeData.fileUrl);
-              setResumeName(resumeData.fileName);
-          }
-        } catch (error) {
-            console.error("Error loading user data:", error);
-            toast({
-                title: "Loading Error",
-                description: "Could not load your profile. Please try refreshing.",
-                variant: "destructive",
-            });
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
+    if (!auth) {
+        toast({
+            title: "Firebase Not Configured",
+            description: "Please make sure your Firebase environment variables are set correctly.",
+            variant: "destructive",
+            duration: 10000,
+        });
         setIsLoading(false);
-        router.push("/login");
-      }
+        return;
+    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            setCurrentUser(user);
+        } else {
+            router.push("/login");
+        }
     });
-
     return () => unsubscribe();
   }, [router, toast]);
+
+  // Effect to load data once user is authenticated
+  useEffect(() => {
+    async function loadUserData() {
+      if (!currentUser || !db) return;
+      
+      try {
+        const profileDocRef = doc(db, "profiles", currentUser.uid);
+        const profileDocSnap = await getDoc(profileDocRef);
+        if (profileDocSnap.exists()) {
+            const data = profileDocSnap.data();
+            setName(data.name || "");
+            setCurrentRole(data.currentRole || "");
+            setExperienceInRole(data.experienceInRole || "");
+            setTargetRole(data.targetRole || "");
+            setExpectedSalary(data.expectedSalary || "");
+            setIsSalaryVisible(data.isSalaryVisible !== false);
+            setAbout(data.about || "");
+            setCompanies(data.companies || []);
+            setExperiences(data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
+            setEducations(data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
+            setReferrerCompany(data.referrerCompany || "");
+            setReferrerAbout(data.referrerAbout || "");
+            setReferrerSpecialties(data.referrerSpecialties || "");
+            setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
+        }
+
+        const resumeDocRef = doc(db, "resumes", currentUser.uid);
+        const resumeDocSnap = await getDoc(resumeDocRef);
+        if (resumeDocSnap.exists()) {
+            const resumeData = resumeDocSnap.data();
+            setResumeUrl(resumeData.fileUrl);
+            setResumeName(resumeData.fileName);
+        }
+      } catch (error) {
+          console.error("Error loading user data:", error);
+          toast({
+              title: "Loading Error",
+              description: "Could not load your profile. Please try refreshing.",
+              variant: "destructive",
+          });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadUserData();
+  }, [currentUser, toast]);
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
   const removeCompany = (companyId: number) => setCompanies(companies.filter(c => c.id !== companyId));
@@ -243,8 +262,7 @@ export default function SeekerProfilePage() {
   };
 
   const handleProfilePicChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
+    if (!currentUser || !storage) {
         toast({ title: "Please log in", description: "You must be logged in to upload a photo.", variant: "destructive" });
         return;
     }
@@ -297,8 +315,7 @@ export default function SeekerProfilePage() {
   };
 
   const uploadResume = async (file: File) => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
+    if (!currentUser || !storage || !db) {
         toast({ title: "Not Logged In", description: "You must be logged in to upload a resume.", variant: "destructive" });
         return;
     }
@@ -322,8 +339,8 @@ export default function SeekerProfilePage() {
         console.error("Resume upload error:", error);
         if (error.code === 'storage/unauthorized') {
           toast({
-            title: "CORS Configuration Needed",
-            description: "The storage bucket needs to be configured to allow uploads from this website. Please check your Firebase Storage settings.",
+            title: "Permission Denied",
+            description: "Please check your Firebase Storage CORS and Security Rules configuration. This is a common issue for new projects.",
             variant: "destructive",
             duration: 10000,
           });
@@ -355,8 +372,7 @@ export default function SeekerProfilePage() {
   };
 
   const handleSave = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
+    if (!currentUser || !db) {
         toast({ title: "Error", description: "You must be logged in to save.", variant: "destructive" });
         return;
     }
@@ -376,6 +392,7 @@ export default function SeekerProfilePage() {
         referrerAbout,
         referrerSpecialties,
         profilePic,
+        updatedAt: new Date(),
     };
     
     try {
@@ -818,7 +835,7 @@ export default function SeekerProfilePage() {
               <Button variant="ghost" asChild>
                   <Link href="/dashboard">Cancel</Link>
               </Button>
-               <Button onClick={handleSave} disabled={isSaving}>
+               <Button onClick={handleSave} disabled={isSaving || isUploadingPic || isUploadingResume}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
