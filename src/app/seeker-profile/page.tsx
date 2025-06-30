@@ -127,7 +127,6 @@ export default function SeekerProfilePage() {
   const router = useRouter();
 
   // Auth and loading states
-  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -166,52 +165,46 @@ export default function SeekerProfilePage() {
   
   // Effect to handle auth state changes and load data
   useEffect(() => {
-    const loadUserData = async (currentUser: FirebaseUser) => {
-      try {
-        const profileDocRef = doc(db, "profiles", currentUser.uid);
-        const profileDocSnap = await getDoc(profileDocRef);
-        if (profileDocSnap.exists()) {
-            const data = profileDocSnap.data();
-            setName(data.name || "");
-            setCurrentRole(data.currentRole || "");
-            setExperienceInRole(data.experienceInRole || "");
-            setTargetRole(data.targetRole || "");
-            setExpectedSalary(data.expectedSalary || "");
-            setIsSalaryVisible(data.isSalaryVisible !== false);
-            setAbout(data.about || "");
-            setCompanies(data.companies || []);
-            setExperiences(data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
-            setEducations(data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
-            setReferrerCompany(data.referrerCompany || "");
-            setReferrerAbout(data.referrerAbout || "");
-            setReferrerSpecialties(data.referrerSpecialties || "");
-            setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
-        }
-
-        const resumeDocRef = doc(db, "resumes", currentUser.uid);
-        const resumeDocSnap = await getDoc(resumeDocRef);
-        if (resumeDocSnap.exists()) {
-            const resumeData = resumeDocSnap.data();
-            setResumeUrl(resumeData.fileUrl);
-            setResumeName(resumeData.fileName);
-        }
-      } catch (error) {
-          console.error("Error loading user data:", error);
-          toast({
-              title: "Loading Error",
-              description: "Could not load your profile. Please try refreshing.",
-              variant: "destructive",
-          });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    setIsLoading(true);
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        setUser(currentUser);
-        loadUserData(currentUser);
+        try {
+          const profileDocRef = doc(db, "profiles", currentUser.uid);
+          const profileDocSnap = await getDoc(profileDocRef);
+          if (profileDocSnap.exists()) {
+              const data = profileDocSnap.data();
+              setName(data.name || "");
+              setCurrentRole(data.currentRole || "");
+              setExperienceInRole(data.experienceInRole || "");
+              setTargetRole(data.targetRole || "");
+              setExpectedSalary(data.expectedSalary || "");
+              setIsSalaryVisible(data.isSalaryVisible !== false);
+              setAbout(data.about || "");
+              setCompanies(data.companies || []);
+              setExperiences(data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
+              setEducations(data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
+              setReferrerCompany(data.referrerCompany || "");
+              setReferrerAbout(data.referrerAbout || "");
+              setReferrerSpecialties(data.referrerSpecialties || "");
+              setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
+          }
+
+          const resumeDocRef = doc(db, "resumes", currentUser.uid);
+          const resumeDocSnap = await getDoc(resumeDocRef);
+          if (resumeDocSnap.exists()) {
+              const resumeData = resumeDocSnap.data();
+              setResumeUrl(resumeData.fileUrl);
+              setResumeName(resumeData.fileName);
+          }
+        } catch (error) {
+            console.error("Error loading user data:", error);
+            toast({
+                title: "Loading Error",
+                description: "Could not load your profile. Please try refreshing.",
+                variant: "destructive",
+            });
+        } finally {
+          setIsLoading(false);
+        }
       } else {
         setIsLoading(false);
         router.push("/login");
@@ -250,7 +243,8 @@ export default function SeekerProfilePage() {
   };
 
   const handleProfilePicChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
         toast({ title: "Please log in", description: "You must be logged in to upload a photo.", variant: "destructive" });
         return;
     }
@@ -258,22 +252,31 @@ export default function SeekerProfilePage() {
     if (file && file.type.startsWith("image/")) {
         setIsUploadingPic(true);
         try {
-            const fileRef = storageRef(storage, `profile-pics/${user.uid}/${file.name}`);
+            const fileRef = storageRef(storage, `profile-pics/${currentUser.uid}/${file.name}`);
             await uploadBytes(fileRef, file);
             const url = await getDownloadURL(fileRef);
             setProfilePic(url);
-            await setDoc(doc(db, "profiles", user.uid), { profilePic: url }, { merge: true });
+            await setDoc(doc(db, "profiles", currentUser.uid), { profilePic: url }, { merge: true });
             toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Profile picture upload error:", error);
-            toast({ title: "Upload Failed", description: "There was a problem uploading your photo.", variant: "destructive" });
+            if (error.code === 'storage/unauthorized') {
+                toast({
+                    title: "Storage Access Denied",
+                    description: "Please check your Firebase Storage CORS and Security Rules configuration.",
+                    variant: "destructive",
+                    duration: 10000
+                });
+            } else {
+                toast({ title: "Upload Failed", description: "There was a problem uploading your photo.", variant: "destructive" });
+            }
         } finally {
             setIsUploadingPic(false);
         }
     } else {
         toast({ title: "Invalid File Type", description: "Please select an image file.", variant: "destructive" });
     }
-};
+  };
 
   const handleResumeFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -294,33 +297,43 @@ export default function SeekerProfilePage() {
   };
 
   const uploadResume = async (file: File) => {
-      if (!user) {
-          toast({ title: "Not Logged In", description: "You must be logged in to upload a resume.", variant: "destructive" });
-          return;
-      }
-      setIsUploadingResume(true);
-      try {
-          const fileRef = storageRef(storage, `resumes/${user.uid}/${file.name}`);
-          await uploadBytes(fileRef, file);
-          const url = await getDownloadURL(fileRef);
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        toast({ title: "Not Logged In", description: "You must be logged in to upload a resume.", variant: "destructive" });
+        return;
+    }
+    setIsUploadingResume(true);
+    try {
+        const fileRef = storageRef(storage, `resumes/${currentUser.uid}/${file.name}`);
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
 
-          await setDoc(doc(db, "resumes", user.uid), {
-              userId: user.uid,
-              fileName: file.name,
-              fileUrl: url,
-              uploadedAt: new Date(),
+        await setDoc(doc(db, "resumes", currentUser.uid), {
+            userId: currentUser.uid,
+            fileName: file.name,
+            fileUrl: url,
+            uploadedAt: new Date(),
+        });
+
+        setResumeUrl(url);
+        setResumeName(file.name);
+        toast({ title: "Success", description: "Your resume has been uploaded successfully." });
+    } catch (error: any) {
+        console.error("Resume upload error:", error);
+        if (error.code === 'storage/unauthorized') {
+          toast({
+            title: "CORS Configuration Needed",
+            description: "The storage bucket needs to be configured to allow uploads from this website. Please check your Firebase Storage settings.",
+            variant: "destructive",
+            duration: 10000,
           });
-
-          setResumeUrl(url);
-          setResumeName(file.name);
-          toast({ title: "Success", description: "Your resume has been uploaded successfully." });
-      } catch (error) {
-          console.error("Resume upload error:", error);
+        } else {
           toast({ title: "Upload Failed", description: "There was a problem uploading your resume.", variant: "destructive" });
-      } finally {
-          setIsUploadingResume(false);
-          setPendingResume(null);
-      }
+        }
+    } finally {
+        setIsUploadingResume(false);
+        setPendingResume(null);
+    }
   };
 
   const handleConfirmOverwrite = () => {
@@ -342,7 +355,8 @@ export default function SeekerProfilePage() {
   };
 
   const handleSave = async () => {
-    if (!user) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
         toast({ title: "Error", description: "You must be logged in to save.", variant: "destructive" });
         return;
     }
@@ -365,7 +379,7 @@ export default function SeekerProfilePage() {
     };
     
     try {
-        await setDoc(doc(db, "profiles", user.uid), profileData, { merge: true });
+        await setDoc(doc(db, "profiles", currentUser.uid), profileData, { merge: true });
         toast({
           title: "Profile Saved!",
           description: `Your ${profileView} profile has been successfully updated.`,
