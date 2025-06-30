@@ -59,10 +59,10 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
 
     if (!firebaseReady) {
       toast({
-        title: "Firebase Error",
-        description: "Firebase is not configured. Please add your credentials to the .env file.",
+        title: "Firebase Not Configured",
+        description: "Please make sure your Firebase environment variables are set correctly in the .env file.",
         variant: "destructive",
-        duration: 10000
+        duration: 10000,
       });
       setIsLoading(false);
       return;
@@ -92,8 +92,8 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
         } catch (error: any) {
             const errorCode = error.code;
             let errorMessage = "An unknown error occurred.";
-            if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
-                errorMessage = "Invalid email or password.";
+            if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential' || errorCode === 'auth/api-key-not-valid') {
+                errorMessage = "Invalid email or password, or API key issue. Please check your credentials.";
             } else {
                 errorMessage = error.message;
             }

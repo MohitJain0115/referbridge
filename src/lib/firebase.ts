@@ -3,8 +3,6 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
-// This configuration is now loaded from environment variables.
-// Make sure your .env file is populated with the correct values from your Firebase project.
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -20,7 +18,6 @@ let db: Firestore;
 let storage: FirebaseStorage;
 let firebaseReady = false;
 
-// Check if all required environment variables are set
 const areCredsSet =
   firebaseConfig.apiKey &&
   firebaseConfig.authDomain &&
@@ -38,7 +35,6 @@ if (areCredsSet && !firebaseConfig.apiKey.startsWith("your_")) {
     firebaseReady = true;
   } catch (e) {
     console.error("Firebase initialization error:", e);
-    // Set to null to indicate services are not available
     app = null!;
     auth = null!;
     db = null!;
@@ -53,6 +49,5 @@ if (areCredsSet && !firebaseConfig.apiKey.startsWith("your_")) {
   storage = null!;
   firebaseReady = false;
 }
-
 
 export { auth, app, db, storage, firebaseReady };
