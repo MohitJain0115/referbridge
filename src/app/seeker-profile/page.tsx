@@ -22,7 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
-import { auth, db, storage } from "@/lib/firebase";
+import { auth, db, storage, firebaseReady } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 
@@ -166,10 +166,10 @@ export default function SeekerProfilePage() {
   
   // Effect to handle auth state changes
   useEffect(() => {
-    if (!auth) {
+    if (!firebaseReady) {
         toast({
             title: "Firebase Not Configured",
-            description: "Please make sure your Firebase environment variables are set correctly.",
+            description: "Please make sure your Firebase environment variables are set correctly in the .env file.",
             variant: "destructive",
             duration: 10000,
         });

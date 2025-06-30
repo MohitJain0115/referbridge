@@ -18,6 +18,7 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
+let firebaseReady = false;
 
 // Check if all required environment variables are set
 const areCredsSet =
@@ -34,6 +35,7 @@ if (areCredsSet && !firebaseConfig.apiKey.startsWith("your_")) {
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
+    firebaseReady = true;
   } catch (e) {
     console.error("Firebase initialization error:", e);
     // Set to null to indicate services are not available
@@ -41,14 +43,16 @@ if (areCredsSet && !firebaseConfig.apiKey.startsWith("your_")) {
     auth = null!;
     db = null!;
     storage = null!;
+    firebaseReady = false;
   }
 } else {
-  console.warn("Firebase credentials are not set. Please check your .env file. Using null services.");
+  console.warn("Firebase credentials are not set correctly in your .env file. Firebase services will be disabled.");
   app = null!;
   auth = null!;
   db = null!;
   storage = null!;
+  firebaseReady = false;
 }
 
 
-export { auth, app, db, storage };
+export { auth, app, db, storage, firebaseReady };

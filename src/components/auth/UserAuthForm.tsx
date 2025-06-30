@@ -19,7 +19,7 @@ import {
   sendEmailVerification,
   signOut,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, firebaseReady } from "@/lib/firebase";
 
 
 const signupSchema = z.object({
@@ -57,11 +57,12 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
   async function onSubmit(data: FormData) {
     setIsLoading(true);
 
-    if (!auth) {
+    if (!firebaseReady) {
       toast({
         title: "Firebase Error",
-        description: "Authentication service is not available. Please try again later.",
+        description: "Firebase is not configured. Please add your credentials to the .env file.",
         variant: "destructive",
+        duration: 10000
       });
       setIsLoading(false);
       return;
