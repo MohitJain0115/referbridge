@@ -12,6 +12,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Log the config to the browser console for debugging
+console.log("Firebase Config Object from process.env:", firebaseConfig);
+
+
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
@@ -26,13 +30,15 @@ const areCredsSet =
   firebaseConfig.messagingSenderId &&
   firebaseConfig.appId;
 
-if (areCredsSet && !firebaseConfig.apiKey.startsWith("your_")) {
+if (areCredsSet && !firebaseConfig.apiKey.includes("your_")) {
   try {
+    console.log("Attempting to initialize Firebase...");
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
     firebaseReady = true;
+    console.log("Firebase initialized successfully.");
   } catch (e) {
     console.error("Firebase initialization error:", e);
     app = null!;
@@ -42,7 +48,8 @@ if (areCredsSet && !firebaseConfig.apiKey.startsWith("your_")) {
     firebaseReady = false;
   }
 } else {
-  console.warn("Firebase credentials are not set correctly in your .env file. Firebase services will be disabled.");
+  console.warn("Firebase credentials are not set correctly in .env file or are placeholders. Firebase services will be disabled.");
+  console.log("API Key found:", firebaseConfig.apiKey);
   app = null!;
   auth = null!;
   db = null!;
