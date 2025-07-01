@@ -4,12 +4,12 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCXb-i_tL5bTj4g-9gSROEyh3iV3H8G_U0",
-  authDomain: "referbridge.firebaseapp.com",
-  projectId: "referbridge",
-  storageBucket: "referbridge.firebasestorage.app",
-  messagingSenderId: "365313904576",
-  appId: "1:365313904576:web:658b7250424a13e7178121",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 let app: FirebaseApp;
@@ -18,19 +18,32 @@ let db: Firestore;
 let storage: FirebaseStorage;
 let firebaseReady = false;
 
-try {
-  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-  storage = getStorage(app);
-  firebaseReady = true;
-} catch (e) {
-  console.error("Firebase initialization error:", e);
-  app = null!;
-  auth = null!;
-  db = null!;
-  storage = null!;
-  firebaseReady = false;
+// Check that all required environment variables are present
+if (
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  firebaseConfig.storageBucket &&
+  firebaseConfig.messagingSenderId &&
+  firebaseConfig.appId
+) {
+    try {
+      app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      storage = getStorage(app);
+      firebaseReady = true;
+    } catch (e) {
+      console.error("Firebase initialization error:", e);
+      app = null!;
+      auth = null!;
+      db = null!;
+      storage = null!;
+      firebaseReady = false;
+    }
+} else {
+    console.error("Firebase environment variables are not set correctly.");
 }
+
 
 export { auth, app, db, storage, firebaseReady };
