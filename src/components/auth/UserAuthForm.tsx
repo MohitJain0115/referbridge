@@ -93,7 +93,7 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
             const errorCode = error.code;
             let errorMessage = "An unknown error occurred.";
             if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential' || errorCode === 'auth/api-key-not-valid') {
-                errorMessage = "Invalid email or password, or API key issue. Please check your credentials.";
+                errorMessage = "Invalid email or password. Please check your credentials and that your Firebase config is correct.";
             } else {
                 errorMessage = error.message;
             }
