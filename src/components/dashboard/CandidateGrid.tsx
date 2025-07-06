@@ -22,9 +22,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 type CandidateGridProps = {
     candidates: Candidate[];
+    showCancelAction?: boolean;
 };
 
-export function CandidateGrid({ candidates: initialCandidates }: CandidateGridProps) {
+export function CandidateGrid({ candidates: initialCandidates, showCancelAction = false }: CandidateGridProps) {
   const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>(initialCandidates);
   const [company, setCompany] = useState("all");
   const [experience, setExperience] = useState("all");
@@ -348,10 +349,12 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
                     <Download className="mr-2 h-4 w-4" />
                     Download/Share Resume
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setIsCancelDialogOpen(true)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Cancel Request
-                  </DropdownMenuItem>
+                  {showCancelAction && (
+                    <DropdownMenuItem onSelect={() => setIsCancelDialogOpen(true)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Cancel Request
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
 

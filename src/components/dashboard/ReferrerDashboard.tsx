@@ -84,7 +84,7 @@ export function ReferrerDashboard() {
 
   return (
     <div className="space-y-6">
-      {isLoading && candidates.length === 0 ? <CandidateGridSkeleton /> : <CandidateGrid candidates={candidates} />}
+      {isLoading && candidates.length === 0 ? <CandidateGridSkeleton /> : <CandidateGrid candidates={candidates} showCancelAction={false} />}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -46,7 +47,7 @@ export function ReferralRequestsPage() {
           Candidates who have specifically requested a referral from you.
         </p>
       </div>
-      {isLoading ? <CandidateGridSkeleton /> : <CandidateGrid candidates={requestedCandidates} />}
+      {isLoading ? <CandidateGridSkeleton /> : <CandidateGrid candidates={requestedCandidates} showCancelAction={true} />}
     </div>
   );
 }
