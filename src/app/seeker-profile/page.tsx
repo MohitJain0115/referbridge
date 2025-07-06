@@ -129,6 +129,9 @@ export default function SeekerProfilePage() {
   const router = useRouter();
   const currentYear = new Date().getFullYear();
 
+  // State for which calendar popover is open
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+
   // Auth and loading states
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -196,6 +199,7 @@ export default function SeekerProfilePage() {
             const data = profileDocSnap.data();
             setName(data.name || "");
             setCurrentRole(data.currentRole || "");
+            setTargetRole(data.targetRole || "");
             setExperienceYears(data.experienceYears || "");
             setExperienceMonths(data.experienceMonths || "");
             setTargetRole(data.targetRole || "");
@@ -403,9 +407,9 @@ export default function SeekerProfilePage() {
     const profileData = {
         name,
         currentRole,
+        targetRole,
         experienceYears: Number(experienceYears) || 0,
         experienceMonths: Number(experienceMonths) || 0,
-        targetRole,
         expectedSalary: Number(expectedSalary) || 0,
         isSalaryVisible,
         about,
@@ -541,7 +545,7 @@ export default function SeekerProfilePage() {
             <div className="space-y-6">
               <div className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                     <div className="space-y-2">
                         <Label>Experience in Current Role</Label>
                         <div className="grid grid-cols-2 gap-2">
                             <div>
@@ -646,7 +650,7 @@ export default function SeekerProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                                 <div className="space-y-2">
                                     <Label htmlFor={`exp-from-${exp.id}`}>From</Label>
-                                    <Popover>
+                                    <Popover open={openPopoverId === `exp-from-${exp.id}`} onOpenChange={(open) => setOpenPopoverId(open ? `exp-from-${exp.id}` : null)}>
                                         <PopoverTrigger asChild>
                                             <Button id={`exp-from-${exp.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !exp.from && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -657,7 +661,10 @@ export default function SeekerProfilePage() {
                                             <Calendar 
                                                 mode="single" 
                                                 selected={exp.from} 
-                                                onSelect={(date) => handleExperienceChange(exp.id, 'from', date)}
+                                                onSelect={(date) => {
+                                                    handleExperienceChange(exp.id, 'from', date);
+                                                    setOpenPopoverId(null);
+                                                }}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear + 4}
@@ -667,7 +674,7 @@ export default function SeekerProfilePage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor={`exp-to-${exp.id}`}>To</Label>
-                                    <Popover>
+                                    <Popover open={openPopoverId === `exp-to-${exp.id}`} onOpenChange={(open) => setOpenPopoverId(open ? `exp-to-${exp.id}` : null)}>
                                         <PopoverTrigger asChild>
                                             <Button id={`exp-to-${exp.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !exp.to && "text-muted-foreground")} disabled={exp.currentlyWorking}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -678,7 +685,10 @@ export default function SeekerProfilePage() {
                                             <Calendar 
                                                 mode="single" 
                                                 selected={exp.to} 
-                                                onSelect={(date) => handleExperienceChange(exp.id, 'to', date)} 
+                                                onSelect={(date) => {
+                                                    handleExperienceChange(exp.id, 'to', date);
+                                                    setOpenPopoverId(null);
+                                                }}
                                                 disabled={exp.currentlyWorking}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
@@ -732,7 +742,7 @@ export default function SeekerProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div className="space-y-2">
                                     <Label htmlFor={`edu-from-${edu.id}`}>From</Label>
-                                    <Popover>
+                                    <Popover open={openPopoverId === `edu-from-${edu.id}`} onOpenChange={(open) => setOpenPopoverId(open ? `edu-from-${edu.id}` : null)}>
                                         <PopoverTrigger asChild>
                                             <Button id={`edu-from-${edu.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !edu.from && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -743,7 +753,10 @@ export default function SeekerProfilePage() {
                                             <Calendar 
                                                 mode="single" 
                                                 selected={edu.from} 
-                                                onSelect={(date) => handleEducationChange(edu.id, 'from', date)}
+                                                onSelect={(date) => {
+                                                    handleEducationChange(edu.id, 'from', date);
+                                                    setOpenPopoverId(null);
+                                                }}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear + 4}
@@ -753,7 +766,7 @@ export default function SeekerProfilePage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor={`edu-to-${edu.id}`}>To</Label>
-                                    <Popover>
+                                    <Popover open={openPopoverId === `edu-to-${edu.id}`} onOpenChange={(open) => setOpenPopoverId(open ? `edu-to-${edu.id}` : null)}>
                                         <PopoverTrigger asChild>
                                             <Button id={`edu-to-${edu.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !edu.to && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -764,7 +777,10 @@ export default function SeekerProfilePage() {
                                             <Calendar 
                                                 mode="single" 
                                                 selected={edu.to} 
-                                                onSelect={(date) => handleEducationChange(edu.id, 'to', date)}
+                                                onSelect={(date) => {
+                                                    handleEducationChange(edu.id, 'to', date);
+                                                    setOpenPopoverId(null);
+                                                }}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear + 4}
