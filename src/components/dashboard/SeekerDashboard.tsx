@@ -5,9 +5,10 @@ import { ReferrerCard } from "./ReferrerCard";
 import { ReferrerFilters } from "./ReferrerFilters";
 import type { Referrer } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db, firebaseReady } from "@/lib/firebase";
+import { auth, db, firebaseReady } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import type { User } from "firebase/auth";
 
 function ReferrerGridSkeleton() {
   return (
@@ -24,14 +25,23 @@ export function SeekerDashboard() {
   const [filteredReferrers, setFilteredReferrers] = useState<Referrer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   const [search, setSearch] = useState("");
   const [company, setCompany] = useState("all");
   const [field, setField] = useState("all");
 
   useEffect(() => {
+    if (!firebaseReady) return;
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+        setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     async function fetchData() {
-      if (!firebaseReady) {
+      if (!firebaseReady || !currentUser) {
           setIsLoading(false);
           return;
       }
@@ -42,19 +52,21 @@ export function SeekerDashboard() {
         const q = query(profilesRef, where("referrerCompany", "!=", ""));
         const querySnapshot = await getDocs(q);
 
-        const fetchedReferrers = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                name: data.name || "Unnamed Referrer",
-                avatar: data.profilePic || "https://placehold.co/100x100.png",
-                role: data.currentRole || "N/A",
-                company: data.referrerCompany || "N/A",
-                location: data.location || "Remote",
-                specialties: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
-                connections: Math.floor(Math.random() * 451) + 50, // Placeholder
-            } as Referrer;
-        });
+        const fetchedReferrers = querySnapshot.docs
+            .filter(doc => doc.id !== currentUser.uid) // Filter out the current user
+            .map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    name: data.name || "Unnamed Referrer",
+                    avatar: data.profilePic || "https://placehold.co/100x100.png",
+                    role: data.currentRole || "N/A",
+                    company: data.referrerCompany || "N/A",
+                    location: data.location || "Remote",
+                    specialties: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
+                    connections: Math.floor(Math.random() * 451) + 50, // Placeholder
+                } as Referrer;
+            });
         
         setAllReferrers(fetchedReferrers);
         setFilteredReferrers(fetchedReferrers);
@@ -70,7 +82,7 @@ export function SeekerDashboard() {
       }
     }
     fetchData();
-  }, [toast]);
+  }, [currentUser, toast]);
 
   const availableCompanies = useMemo(() => {
     const companies = new Set(allReferrers.map(r => r.company));

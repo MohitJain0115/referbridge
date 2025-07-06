@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { CandidateGrid } from "./CandidateGrid";
 import type { Candidate } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db, firebaseReady } from "@/lib/firebase";
+import { auth, db, firebaseReady } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import type { User } from "firebase/auth";
 
 function CandidateGridSkeleton() {
   return (
@@ -21,37 +22,49 @@ function CandidateGridSkeleton() {
 export function ReferrerDashboard() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!firebaseReady) return;
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+        setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+
+  useEffect(() => {
     async function fetchData() {
-        if (!firebaseReady) {
+        if (!firebaseReady || !currentUser) {
             setIsLoading(false);
             return;
         }
         setIsLoading(true);
         try {
             const querySnapshot = await getDocs(collection(db, "profiles"));
-            const fetchedCandidates = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                const experienceYears = parseInt(data.experienceInRole, 10) || 0;
+            const fetchedCandidates = querySnapshot.docs
+                .filter(doc => doc.id !== currentUser.uid) // Filter out the current user
+                .map(doc => {
+                    const data = doc.data();
+                    const experienceYears = parseInt(data.experienceInRole, 10) || 0;
 
-                return {
-                    id: doc.id,
-                    name: data.name || "Unnamed Candidate",
-                    avatar: data.profilePic || "https://placehold.co/100x100.png",
-                    role: data.targetRole || data.currentRole || "N/A",
-                    company: data.experiences?.[0]?.company || "", // From work experience
-                    salary: data.expectedSalary || 0,
-                    // Use referrerSpecialties as a stand-in for skills
-                    skills: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
-                    location: data.location || "Remote",
-                    experience: experienceYears,
-                    status: 'Pending',
-                    jobPostUrl: data.companies?.[0]?.jobs?.[0]?.url || '',
-                    targetCompanies: data.companies?.map((c: any) => c.name).filter(Boolean) || [],
-                } as Candidate
-            });
+                    return {
+                        id: doc.id,
+                        name: data.name || "Unnamed Candidate",
+                        avatar: data.profilePic || "https://placehold.co/100x100.png",
+                        role: data.targetRole || data.currentRole || "N/A",
+                        company: data.experiences?.[0]?.company || "", // From work experience
+                        salary: data.expectedSalary || 0,
+                        // Use referrerSpecialties as a stand-in for skills
+                        skills: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
+                        location: data.location || "Remote",
+                        experience: experienceYears,
+                        status: 'Pending',
+                        jobPostUrl: data.companies?.[0]?.jobs?.[0]?.url || '',
+                        targetCompanies: data.companies?.map((c: any) => c.name).filter(Boolean) || [],
+                    } as Candidate
+                });
             
             setCandidates(fetchedCandidates);
         } catch (error) {
@@ -66,11 +79,11 @@ export function ReferrerDashboard() {
         }
     }
     fetchData();
-  }, [toast]);
+  }, [currentUser, toast]);
 
   return (
     <div className="space-y-6">
-      {isLoading ? <CandidateGridSkeleton /> : <CandidateGrid candidates={candidates} />}
+      {isLoading && candidates.length === 0 ? <CandidateGridSkeleton /> : <CandidateGrid candidates={candidates} />}
     </div>
   );
 }

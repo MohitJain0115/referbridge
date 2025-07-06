@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from 'next/link';
 import type { Candidate } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -128,8 +129,10 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
            </div>
         </CardContent>
         <CardFooter>
-          <Button className="w-full">
+          <Button className="w-full" asChild>
+            <Link href={`/profile/${candidate.id}`}>
               <Eye className="mr-2 h-4 w-4" /> View Profile
+            </Link>
           </Button>
         </CardFooter>
       </Card>
