@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -60,7 +61,7 @@ export function ReferrerDashboard() {
                         skills: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
                         location: data.location || "Remote",
                         experience: experienceYears,
-                        status: 'Pending',
+                        status: data.status || 'Pending',
                         jobPostUrl: data.companies?.[0]?.jobs?.[0]?.url || '',
                         targetCompanies: data.companies?.map((c: any) => c.name).filter(Boolean) || [],
                     } as Candidate

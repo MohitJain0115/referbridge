@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from 'next/link';
 import type { Candidate } from "@/lib/types";
@@ -8,11 +9,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download } from "lucide-react";
+import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, firebaseReady } from "@/lib/firebase";
 
 type CandidateCardProps = {
@@ -23,6 +24,7 @@ type CandidateCardProps = {
 
 export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCardProps) {
   const { toast } = useToast();
+  const [currentStatus, setCurrentStatus] = useState<Candidate['status']>(candidate.status);
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Prevent click event from firing on interactive elements inside the card
@@ -57,6 +59,50 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
     }
   };
 
+  const handleSetStatus = async (newStatus: Candidate['status']) => {
+    if (!firebaseReady || !db) {
+      toast({ title: "Database not available", variant: "destructive" });
+      return;
+    }
+    try {
+      const profileRef = doc(db, "profiles", candidate.id);
+      await updateDoc(profileRef, { status: newStatus });
+      setCurrentStatus(newStatus);
+      toast({
+        title: "Status Updated",
+        description: `${candidate.name}'s status set to ${newStatus}.`,
+      });
+    } catch (error: any) {
+      console.error("Error updating status:", error);
+      let description = "Could not update candidate status.";
+      if (error.code === 'permission-denied') {
+        description = "Permission denied. Please check your Firestore security rules.";
+      }
+      toast({ title: "Update Failed", description, variant: "destructive" });
+    }
+  };
+  
+  const getStatusBadgeVariant = (status: Candidate['status']) => {
+    switch (status) {
+      case 'Referred':
+        return 'default';
+      case 'Viewed':
+        return 'secondary';
+      case 'Not a Fit':
+        return 'destructive';
+      case 'Pending':
+      default:
+        return 'outline';
+    }
+  };
+  
+  const statusIcons: Record<Candidate['status'], React.ElementType> = {
+    'Pending': Circle,
+    'Viewed': Eye,
+    'Referred': CheckCircle,
+    'Not a Fit': XCircle
+  };
+
   return (
       <Card 
         className={cn(
@@ -74,7 +120,7 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
           />
         </div>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <Image
               src={candidate.avatar}
               alt={candidate.name}
@@ -94,28 +140,34 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleDownloadResume}>
+                <DropdownMenuItem onSelect={handleDownloadResume}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Resume
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Set Status</DropdownMenuLabel>
-                <DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleSetStatus('Viewed')}>
                   <Eye className="mr-2 h-4 w-4" />
                   Mark as Viewed
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleSetStatus('Referred')}>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Mark as Referred
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleSetStatus('Not a Fit')}>
                   <XCircle className="mr-2 h-4 w-4" />
                   Not a Fit
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <CardTitle className="font-headline pt-4">{candidate.name}</CardTitle>
+          <div className="flex items-center gap-2 pt-4">
+            <CardTitle className="font-headline">{candidate.name}</CardTitle>
+            <Badge variant={getStatusBadgeVariant(currentStatus)} className="capitalize">
+              {React.createElement(statusIcons[currentStatus], { className: "mr-1 h-3 w-3" })}
+              {currentStatus}
+            </Badge>
+          </div>
           <CardDescription>{candidate.role}</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow space-y-4">
@@ -138,7 +190,7 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
         </CardContent>
         <CardFooter>
           <Button className="w-full" asChild>
-            <Link href={`/profile/${candidate.id}`}>
+            <Link href={`/profile/${candidate.id}`} onClick={e => e.stopPropagation()}>
               <Eye className="mr-2 h-4 w-4" /> View Profile
             </Link>
           </Button>
