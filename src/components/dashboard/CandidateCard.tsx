@@ -1,20 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Link from 'next/link';
 import type { Candidate } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DollarSign, Download, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Mail, Loader2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc } from "firebase/firestore";
-import { db, firebaseReady, auth } from "@/lib/firebase";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -23,9 +18,6 @@ type CandidateCardProps = {
 };
 
 export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCardProps) {
-  const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
-  const [isActionLoading, setIsActionLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Prevent click event from firing on interactive elements inside the card
@@ -35,81 +27,7 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
     onSelect(candidate.id);
   };
 
-  const getResumeUrl = async (): Promise<string | null> => {
-    if (!firebaseReady || !db) {
-        toast({ title: "Firebase not ready", description: "The database connection is not available.", variant: "destructive" });
-        return null;
-    }
-    try {
-        const resumeDocRef = doc(db, "resumes", candidate.id);
-        const resumeDoc = await getDoc(resumeDocRef);
-        if (resumeDoc.exists()) {
-            return resumeDoc.data().fileUrl || null;
-        }
-        return null;
-    } catch (error) {
-        console.error("Error fetching resume:", error);
-        toast({ title: "Error", description: "Could not fetch resume. Check Firestore security rules.", variant: "destructive" });
-        return null;
-    }
-  };
-
-
-  const handleDownload = async () => {
-    setIsActionLoading(true);
-    const resumeUrl = await getResumeUrl();
-    if (resumeUrl) {
-      window.open(resumeUrl, '_blank');
-      toast({
-        title: "Resume Downloading",
-        description: "Your download should begin shortly.",
-      });
-    } else {
-      toast({
-        title: "No Resume Found",
-        description: `${candidate.name} has not uploaded a resume.`,
-        variant: "destructive",
-      });
-    }
-    setIsActionLoading(false);
-    setIsActionDialogOpen(false);
-  };
-
-  const handleEmail = async () => {
-    setIsActionLoading(true);
-    if (!auth.currentUser?.email) {
-      toast({
-        title: "Error",
-        description: "Could not find your email address. Please log in again.",
-        variant: "destructive",
-      });
-      setIsActionLoading(false);
-      setIsActionDialogOpen(false);
-      return;
-    }
-
-    const resumeUrl = await getResumeUrl();
-    if (resumeUrl) {
-      const subject = `Referral Resume: ${candidate.name}`;
-      const body = `Hi,\n\nHere is the resume link for ${candidate.name} for your referral consideration:\n\n${resumeUrl}\n\nSent from ReferBridge`;
-      window.location.href = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-       toast({
-        title: "Opening Email Client",
-        description: `Preparing an email to be sent from your account to ${auth.currentUser.email}.`,
-      });
-    } else {
-      toast({
-        title: "No Resume Found",
-        description: `${candidate.name} has not uploaded a resume.`,
-        variant: "destructive",
-      });
-    }
-    setIsActionLoading(false);
-    setIsActionDialogOpen(false);
-  };
-
   return (
-    <>
       <Card 
         className={cn(
           "flex flex-col transition-all relative cursor-pointer", 
@@ -145,12 +63,6 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onSelect={() => setIsActionDialogOpen(true)}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download/Share Resume
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuLabel>Set Status</DropdownMenuLabel>
                 <DropdownMenuItem>
                   <Eye className="mr-2 h-4 w-4" />
@@ -196,27 +108,5 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
           </Button>
         </CardFooter>
       </Card>
-
-      <Dialog open={isActionDialogOpen} onOpenChange={setIsActionDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Resume for {candidate.name}</DialogTitle>
-            <DialogDescription>
-              Choose how you would like to handle the resume for {candidate.name}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-            <Button variant="outline" onClick={handleDownload} className="flex-1" disabled={isActionLoading}>
-                {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                Download to Device
-            </Button>
-            <Button onClick={handleEmail} className="flex-1" disabled={isActionLoading}>
-                {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                Email Link to Myself
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
   );
 }

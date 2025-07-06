@@ -7,12 +7,14 @@ import { CandidateFilters } from "./CandidateFilters";
 import type { Candidate } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, ChevronDown, XCircle, Send } from "lucide-react";
+import { Download, Mail, ChevronDown, XCircle, Send, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { doc, getDoc } from "firebase/firestore";
+import { db, firebaseReady, auth } from "@/lib/firebase";
 
 
 type CandidateGridProps = {
@@ -26,6 +28,7 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
   const [role, setRole] = useState("all");
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
   const [otherReasonText, setOtherReasonText] = useState("");
@@ -102,26 +105,86 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
         : [...prev, candidateId]
     );
   };
+  
+  const getResumeLinksForSelected = async (): Promise<{name: string, url: string}[]> => {
+    if (!firebaseReady || !db) {
+        toast({ title: "Firebase not ready", description: "The database connection is not available.", variant: "destructive" });
+        return [];
+    }
+    const links = [];
+    for (const candidateId of selectedCandidates) {
+      try {
+        const resumeDocRef = doc(db, "resumes", candidateId);
+        const resumeDoc = await getDoc(resumeDocRef);
+        if (resumeDoc.exists() && resumeDoc.data().fileUrl) {
+            const candidate = initialCandidates.find(c => c.id === candidateId);
+            links.push({ 
+                name: candidate?.name || 'Unknown Candidate',
+                url: resumeDoc.data().fileUrl 
+            });
+        }
+      } catch (error) {
+          console.error(`Error fetching resume for ${candidateId}:`, error);
+      }
+    }
+    return links;
+  };
 
-  const handleBulkDownload = () => {
+
+  const handleBulkDownload = async () => {
     if (selectedCandidates.length === 0) return;
-    toast({
-        title: "Download Started",
-        description: `Preparing resumes for ${selectedCandidates.length} candidate(s).`
-    });
+    setIsActionLoading(true);
+    
+    const resumeLinks = await getResumeLinksForSelected();
+
+    if (resumeLinks.length === 0) {
+        toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive"});
+    } else {
+        resumeLinks.forEach(link => window.open(link.url, '_blank'));
+        toast({
+            title: "Download Started",
+            description: `Opened ${resumeLinks.length} resume(s) in new tabs.`
+        });
+    }
+
+    setIsActionLoading(false);
     setIsActionDialogOpen(false);
     setSelectedCandidates([]);
   };
 
-  const handleBulkEmail = () => {
+  const handleBulkEmail = async () => {
     if (selectedCandidates.length === 0) return;
-    toast({
-        title: "Email Sent",
-        description: `${selectedCandidates.length} resume(s) have been sent to your email.`
-    });
+    setIsActionLoading(true);
+
+    if (!auth.currentUser?.email) {
+      toast({
+        title: "Error",
+        description: "Could not find your email address. Please log in again.",
+        variant: "destructive",
+      });
+      setIsActionLoading(false);
+      return;
+    }
+
+    const resumeLinks = await getResumeLinksForSelected();
+
+    if (resumeLinks.length === 0) {
+        toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive"});
+    } else {
+        const subject = `Resumes for ${resumeLinks.length} selected candidate(s)`;
+        const body = `Hi,\n\nHere are the resume links for the candidates you selected:\n\n${resumeLinks.map(link => `${link.name}: ${link.url}`).join('\n')}\n\nSent from ReferBridge`;
+        window.location.href = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        toast({
+            title: "Opening Email Client",
+            description: `Preparing an email with ${resumeLinks.length} resume link(s).`
+        });
+    }
+
+    setIsActionLoading(false);
     setIsActionDialogOpen(false);
     setSelectedCandidates([]);
   };
+
 
   const handleCancelRequest = () => {
     if (selectedCandidates.length === 0) return;
@@ -215,13 +278,13 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-                <Button variant="outline" onClick={handleBulkDownload} className="flex-1">
-                    <Download className="mr-2 h-4 w-4" />
+                <Button variant="outline" onClick={handleBulkDownload} className="flex-1" disabled={isActionLoading}>
+                    {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                     Download to Device
                 </Button>
-                <Button onClick={handleBulkEmail} className="flex-1">
-                    <Mail className="mr-2 h-4 w-4" />
-                    Share via Email
+                <Button onClick={handleBulkEmail} className="flex-1" disabled={isActionLoading}>
+                    {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                    Email Links to Myself
                 </Button>
             </div>
         </DialogContent>
