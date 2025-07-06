@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -29,7 +30,6 @@ export function SeekerDashboard() {
   
   const [search, setSearch] = useState("");
   const [company, setCompany] = useState("all");
-  const [field, setField] = useState("all");
 
   useEffect(() => {
     if (!firebaseReady) return;
@@ -89,8 +89,8 @@ export function SeekerDashboard() {
   }, [allReferrers]);
 
   const isFiltered = useMemo(() => {
-    return search !== "" || company !== "all" || field !== "all";
-  }, [search, company, field]);
+    return search !== "" || company !== "all";
+  }, [search, company]);
 
   const handleApplyFilters = () => {
     let referrers = [...allReferrers];
@@ -106,21 +106,6 @@ export function SeekerDashboard() {
     if (company !== "all") {
       referrers = referrers.filter(r => r.company === company);
     }
-
-    if (field !== "all") {
-       const fieldKeywords: Record<string, string[]> = {
-          'engineering': ['engineer', 'developer'],
-          'product': ['product'],
-          'design': ['design'],
-          'data': ['data', 'scientist'],
-          'marketing': ['marketing'],
-      };
-      if (fieldKeywords[field]) {
-        referrers = referrers.filter(r => 
-            fieldKeywords[field].some(keyword => r.role.toLowerCase().includes(keyword))
-        );
-      }
-    }
     
     setFilteredReferrers(referrers);
   };
@@ -128,7 +113,6 @@ export function SeekerDashboard() {
   const handleClearFilters = () => {
     setSearch("");
     setCompany("all");
-    setField("all");
     setFilteredReferrers(allReferrers);
   };
 
@@ -140,8 +124,6 @@ export function SeekerDashboard() {
         company={company}
         setCompany={setCompany}
         availableCompanies={availableCompanies}
-        field={field}
-        setField={setField}
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isFiltered={isFiltered}

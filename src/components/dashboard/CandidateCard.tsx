@@ -257,14 +257,16 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               <Briefcase className="h-4 w-4" />
               <span>{candidate.experience} {candidate.experience === 1 ? 'year' : 'years'} of experience</span>
           </div>
-           <div className="space-y-2">
-              <h4 className="text-sm font-medium">Top Skills</h4>
-              <div className="flex flex-wrap gap-2">
-                  {candidate.skills.slice(0,3).map(skill => (
-                      <Badge key={skill} variant="secondary">{skill}</Badge>
-                  ))}
-              </div>
-           </div>
+          {candidate.skills && candidate.skills.length > 0 && (
+            <div className="space-y-2">
+                <h4 className="text-sm font-medium">Top Skills</h4>
+                <div className="flex flex-wrap gap-2">
+                    {candidate.skills.slice(0,3).map(skill => (
+                        <Badge key={skill} variant="secondary">{skill}</Badge>
+                    ))}
+                </div>
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           <Button className="w-full" asChild>

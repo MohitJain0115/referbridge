@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Input } from "@/components/ui/input";
@@ -11,19 +12,17 @@ type ReferrerFiltersProps = {
     company: string;
     setCompany: (value: string) => void;
     availableCompanies: string[];
-    field: string;
-    setField: (value: string) => void;
     onApplyFilters: () => void;
     onClearFilters: () => void;
     isFiltered: boolean;
 }
 
 export function ReferrerFilters({
-    search, setSearch, company, setCompany, availableCompanies, field, setField, onApplyFilters, onClearFilters, isFiltered
+    search, setSearch, company, setCompany, availableCompanies, onApplyFilters, onClearFilters, isFiltered
 }: ReferrerFiltersProps) {
     return (
         <div className="p-4 bg-card rounded-lg shadow-sm border">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                 <div className="space-y-2">
                     <label htmlFor="search" className="text-sm font-medium">Search by name or role</label>
                     <div className="relative">
@@ -48,22 +47,6 @@ export function ReferrerFilters({
                             {availableCompanies.map(c => (
                                 <SelectItem key={c} value={c}>{c}</SelectItem>
                             ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                 <div className="space-y-2">
-                    <label htmlFor="field" className="text-sm font-medium">Industry / Field</label>
-                     <Select value={field} onValueChange={setField}>
-                        <SelectTrigger id="field">
-                            <SelectValue placeholder="All Fields" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Fields</SelectItem>
-                            <SelectItem value="engineering">Engineering</SelectItem>
-                            <SelectItem value="product">Product</SelectItem>
-                            <SelectItem value="design">Design</SelectItem>
-                             <SelectItem value="data">Data Science</SelectItem>
-                             <SelectItem value="marketing">Marketing</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
