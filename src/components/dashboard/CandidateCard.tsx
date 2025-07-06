@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc } from "firebase/firestore";
-import { db, firebaseReady } from "@/lib/firebase";
+import { db, firebaseReady, auth } from "@/lib/firebase";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -77,11 +77,26 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
 
   const handleEmail = async () => {
     setIsActionLoading(true);
+    if (!auth.currentUser?.email) {
+      toast({
+        title: "Error",
+        description: "Could not find your email address. Please log in again.",
+        variant: "destructive",
+      });
+      setIsActionLoading(false);
+      setIsActionDialogOpen(false);
+      return;
+    }
+
     const resumeUrl = await getResumeUrl();
     if (resumeUrl) {
-      const subject = `Resume for ${candidate.name}`;
-      const body = `Hi,\n\nPlease find the resume for ${candidate.name} at the following link:\n\n${resumeUrl}\n\nThank you,`;
-      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const subject = `Referral Resume: ${candidate.name}`;
+      const body = `Hi,\n\nHere is the resume link for ${candidate.name} for your referral consideration:\n\n${resumeUrl}\n\nSent from ReferBridge`;
+      window.location.href = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+       toast({
+        title: "Opening Email Client",
+        description: `Preparing an email to be sent from your account to ${auth.currentUser.email}.`,
+      });
     } else {
       toast({
         title: "No Resume Found",
@@ -197,7 +212,7 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
             </Button>
             <Button onClick={handleEmail} className="flex-1" disabled={isActionLoading}>
                 {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                Share via Email
+                Email Link to Myself
             </Button>
           </div>
         </DialogContent>
