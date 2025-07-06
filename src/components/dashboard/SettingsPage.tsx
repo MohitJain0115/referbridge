@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -38,7 +39,10 @@ import {
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { KeyRound, Loader2, Trash2 } from "lucide-react";
+import { KeyRound, Loader2, Save, Trash2 } from "lucide-react";
+import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
+import { auth, db, firebaseReady } from "@/lib/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 
 const passwordChangeSchema = z.object({
@@ -57,6 +61,15 @@ const passwordChangeSchema = z.object({
 export function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
+
+  // State for Account Info
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // State for other sections
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -69,6 +82,44 @@ export function SettingsPage() {
       confirmPassword: "",
     },
   });
+
+  useEffect(() => {
+    if (!firebaseReady) return;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        router.push('/login');
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+    async function loadUserData() {
+      if (!currentUser || !db) return;
+      setIsLoading(true);
+      setEmail(currentUser.email || "No email found");
+      try {
+        const profileDocRef = doc(db, "profiles", currentUser.uid);
+        const profileDocSnap = await getDoc(profileDocRef);
+        if (profileDocSnap.exists()) {
+          setName(profileDocSnap.data().name || "");
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        toast({
+          title: "Loading Error",
+          description: "Could not load your profile data.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadUserData();
+  }, [currentUser, toast]);
+
 
   const handleDeleteAccount = () => {
     toast({
@@ -98,6 +149,28 @@ export function SettingsPage() {
     setDeleteConfirmation("");
   };
 
+  const handleSaveDetails = async () => {
+    if (!currentUser) return;
+    setIsSaving(true);
+    try {
+        const profileRef = doc(db, "profiles", currentUser.uid);
+        await updateDoc(profileRef, { name });
+        toast({
+            title: "Success",
+            description: "Your name has been updated.",
+        });
+    } catch (error) {
+        console.error("Failed to update profile", error);
+        toast({
+            title: "Error",
+            description: "Failed to update your details. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -117,13 +190,19 @@ export function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
-            <Input id="name" defaultValue="Jane Doe" readOnly />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isLoading || isSaving} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" defaultValue="jane.doe@example.com" readOnly />
+            <Input id="email" value={email} readOnly disabled />
           </div>
         </CardContent>
+        <CardFooter className="justify-end border-t pt-6">
+            <Button onClick={handleSaveDetails} disabled={isLoading || isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+        </CardFooter>
       </Card>
 
       <Card>
@@ -140,7 +219,7 @@ export function SettingsPage() {
             </div>
             <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" disabled>
                   <KeyRound className="mr-2 h-4 w-4" />
                   Change Password
                 </Button>
@@ -149,7 +228,7 @@ export function SettingsPage() {
                 <DialogHeader>
                   <DialogTitle>Change Password</DialogTitle>
                   <DialogDescription>
-                    Choose a new password that is at least 6 characters long and includes both letters and numbers.
+                    Choose a new password that is at least 6 characters long and includes both letters and numbers. This feature is currently disabled.
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -225,7 +304,7 @@ export function SettingsPage() {
             </div>
             <AlertDialog onOpenChange={(open) => !open && resetDeleteConfirmation()}>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">
+                <Button variant="destructive" disabled>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Account
                 </Button>
@@ -235,7 +314,7 @@ export function SettingsPage() {
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete
-                    your account and remove your data from our servers.
+                    your account and remove your data from our servers. This feature is currently disabled.
                     <br />
                     <br />
                     Please type <strong>delete</strong> below to confirm.
