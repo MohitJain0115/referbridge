@@ -151,6 +151,8 @@ export default function SeekerProfilePage() {
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
+  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean }>({});
+
 
   // Resume state
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
@@ -400,49 +402,70 @@ export default function SeekerProfilePage() {
 
   const handleSave = async () => {
     if (!currentUser || !db) {
-        toast({ title: "Error", description: "You must be logged in to save.", variant: "destructive" });
-        return;
+      toast({ title: "Error", description: "You must be logged in to save.", variant: "destructive" });
+      return;
     }
+  
+    const validationErrors: { name?: boolean; currentRole?: boolean } = {};
+    if (!name.trim()) {
+      validationErrors.name = true;
+    }
+    if (!currentRole.trim()) {
+      validationErrors.currentRole = true;
+    }
+  
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast({
+        title: "Missing Required Fields",
+        description: "Please fill in all fields marked with an asterisk (*).",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    setErrors({});
     setIsSaving(true);
+  
     const profileData = {
-        name,
-        currentRole,
-        targetRole,
-        experienceYears: Number(experienceYears) || 0,
-        experienceMonths: Number(experienceMonths) || 0,
-        expectedSalary: Number(expectedSalary) || 0,
-        isSalaryVisible,
-        about,
-        companies,
-        experiences,
-        educations,
-        referrerCompany,
-        referrerAbout,
-        referrerSpecialties,
-        profilePic,
-        updatedAt: new Date(),
+      name,
+      currentRole,
+      targetRole,
+      experienceYears: Number(experienceYears) || 0,
+      experienceMonths: Number(experienceMonths) || 0,
+      expectedSalary: Number(expectedSalary) || 0,
+      isSalaryVisible,
+      about,
+      companies,
+      experiences,
+      educations,
+      referrerCompany,
+      referrerAbout,
+      referrerSpecialties,
+      profilePic,
+      updatedAt: new Date(),
     };
-    
+  
     try {
-        await setDoc(doc(db, "profiles", currentUser.uid), profileData, { merge: true });
-        toast({
-          title: "Profile Saved!",
-          description: `Your ${profileView} profile has been successfully updated.`,
-        });
+      await setDoc(doc(db, "profiles", currentUser.uid), profileData, { merge: true });
+      toast({
+        title: "Profile Saved!",
+        description: `Your ${profileView} profile has been successfully updated.`,
+      });
     } catch (error: any) {
-        console.error("Error saving profile:", error);
-        if (error.code === 'permission-denied') {
-            toast({
-              title: "Permission Denied",
-              description: "Could not save profile. Please check your Firestore Security Rules to allow writes.",
-              variant: "destructive",
-              duration: 10000,
-            });
-        } else {
-            toast({ title: "Save Failed", description: "Could not save your profile. Please try again.", variant: "destructive" });
-        }
+      console.error("Error saving profile:", error);
+      if (error.code === 'permission-denied') {
+        toast({
+          title: "Permission Denied",
+          description: "Could not save profile. Please check your Firestore Security Rules to allow writes.",
+          variant: "destructive",
+          duration: 10000,
+        });
+      } else {
+        toast({ title: "Save Failed", description: "Could not save your profile. Please try again.", variant: "destructive" });
+      }
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
   
@@ -531,12 +554,12 @@ export default function SeekerProfilePage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="e.g., Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
+                <Label htmlFor="name">Full Name<span className="text-destructive pl-1">*</span></Label>
+                <Input id="name" placeholder="e.g., Jane Doe" value={name} onChange={(e) => setName(e.target.value)} className={cn(errors.name && "border-destructive")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="current-role">Current Role</Label>
-                <Input id="current-role" placeholder="e.g., Product Manager" value={currentRole} onChange={(e) => setCurrentRole(e.target.value)}/>
+                <Label htmlFor="current-role">Current Role<span className="text-destructive pl-1">*</span></Label>
+                <Input id="current-role" placeholder="e.g., Product Manager" value={currentRole} onChange={(e) => setCurrentRole(e.target.value)} className={cn(errors.currentRole && "border-destructive")}/>
               </div>
             </div>
           </div>
