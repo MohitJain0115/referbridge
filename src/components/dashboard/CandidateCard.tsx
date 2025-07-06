@@ -113,6 +113,13 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
       toast({ title: "Database not available", variant: "destructive" });
       return;
     }
+    
+    // For single-card "Not a fit", trigger the dialog instead of direct update
+    if (newStatus === 'Not a Fit') {
+        setIsCancelDialogOpen(true);
+        return;
+    }
+
     try {
       const docRef = candidate.requestId
         ? doc(db, "referral_requests", candidate.requestId)
@@ -216,7 +223,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Mark as Referred
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setIsCancelDialogOpen(true)}>
+                <DropdownMenuItem onSelect={() => handleSetStatus('Not a Fit')}>
                   <XCircle className="mr-2 h-4 w-4" />
                   Not a Fit
                 </DropdownMenuItem>
@@ -233,10 +240,12 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
           <CardDescription>{candidate.role}</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow space-y-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <DollarSign className="h-4 w-4" />
-            <span>{candidate.salary.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })} expected salary</span>
-          </div>
+          {candidate.isSalaryVisible && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <DollarSign className="h-4 w-4" />
+              <span>{candidate.salary.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })} expected salary</span>
+            </div>
+          )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Briefcase className="h-4 w-4" />
               <span>{candidate.experience} {candidate.experience === 1 ? 'year' : 'years'} of experience</span>

@@ -77,6 +77,7 @@ export function ReferralRequestsPage() {
               role: seekerData.targetRole || seekerData.currentRole || "N/A",
               company: seekerData.experiences?.[0]?.company || "",
               salary: seekerData.expectedSalary || 0,
+              isSalaryVisible: seekerData.isSalaryVisible !== false,
               skills: seekerData.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
               location: seekerData.location || "Remote",
               experience: experienceYears,

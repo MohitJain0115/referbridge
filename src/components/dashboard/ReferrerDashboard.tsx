@@ -57,7 +57,7 @@ export function ReferrerDashboard() {
                         role: data.targetRole || data.currentRole || "N/A",
                         company: data.experiences?.[0]?.company || "", // From work experience
                         salary: data.expectedSalary || 0,
-                        // Use referrerSpecialties as a stand-in for skills
+                        isSalaryVisible: data.isSalaryVisible !== false,
                         skills: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
                         location: data.location || "Remote",
                         experience: experienceYears,

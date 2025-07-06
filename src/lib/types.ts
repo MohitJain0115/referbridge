@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+// From tracked-requests-flow.ts
+export const RequestStatusSchema = z.enum(['Pending', 'Viewed', 'Referred', 'Not a Fit', 'Resume Downloaded', 'Cancelled']);
+export type ReferralRequestStatus = z.infer<typeof RequestStatusSchema>;
+
 // From candidates-flow.ts
 export const CandidateSchema = z.object({
   id: z.string().describe("A unique UUID for the candidate."),
@@ -9,10 +13,11 @@ export const CandidateSchema = z.object({
   role: z.string().describe("The candidate's current or target job title."),
   company: z.string().describe("The candidate's current or most recent company."),
   salary: z.number().min(40000).max(250000).describe("The candidate's expected annual salary in USD."),
+  isSalaryVisible: z.boolean().optional().default(true).describe("Whether the salary is visible to referrers."),
   skills: z.array(z.string()).describe("A list of 3-5 key skills."),
   location: z.string().describe("The candidate's location (e.g., 'San Francisco, CA')."),
   experience: z.number().min(0).max(20).describe("The candidate's years of professional experience."),
-  status: z.enum(['Pending', 'Viewed', 'Referred', 'Not a Fit']).describe("The current status of their application (for referrer view)."),
+  status: RequestStatusSchema.describe("The current status of their application (for referrer view)."),
   jobPostUrl: z.string().describe("A sample URL to a job posting."),
   targetCompanies: z.array(z.string()).describe("A list of 1-3 companies the candidate is targeting."),
 });
@@ -30,9 +35,6 @@ export const ReferrerSchema = z.object({
 });
 export type Referrer = z.infer<typeof ReferrerSchema>;
 
-// From tracked-requests-flow.ts
-export const RequestStatusSchema = z.enum(['Pending', 'Viewed', 'Referred', 'Not a Fit', 'Resume Downloaded', 'Cancelled']);
-export type ReferralRequestStatus = z.infer<typeof RequestStatusSchema>;
 
 export const TrackedRequestSchema = z.object({
   id: z.string().describe("A unique UUID for the tracked request."),
