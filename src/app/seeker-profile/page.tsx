@@ -151,7 +151,7 @@ export default function SeekerProfilePage() {
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
-  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean }>({});
+  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; experienceYears?: boolean; experienceMonths?: boolean, experiences?: boolean; educations?: boolean; }>({});
 
 
   // Resume state
@@ -406,12 +406,27 @@ export default function SeekerProfilePage() {
       return;
     }
   
-    const validationErrors: { name?: boolean; currentRole?: boolean } = {};
+    const validationErrors: typeof errors = {};
     if (!name.trim()) {
       validationErrors.name = true;
     }
     if (!currentRole.trim()) {
       validationErrors.currentRole = true;
+    }
+
+    if (profileView === 'seeker') {
+      if (experienceYears === '') {
+        validationErrors.experienceYears = true;
+      }
+      if (experienceMonths === '') {
+        validationErrors.experienceMonths = true;
+      }
+      if (experiences.length === 0) {
+        validationErrors.experiences = true;
+      }
+      if (educations.length === 0) {
+        validationErrors.educations = true;
+      }
     }
   
     if (Object.keys(validationErrors).length > 0) {
@@ -569,7 +584,7 @@ export default function SeekerProfilePage() {
               <div className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <div className="space-y-2">
-                        <Label>Experience in Current Role</Label>
+                        <Label>Experience in Current Role<span className="text-destructive pl-1">*</span></Label>
                         <div className="grid grid-cols-2 gap-2">
                             <div>
                                 <Label htmlFor="experience-years" className="sr-only">Years of Experience</Label>
@@ -580,6 +595,7 @@ export default function SeekerProfilePage() {
                                     value={experienceYears} 
                                     onChange={(e) => setExperienceYears(e.target.value)}
                                     min="0"
+                                    className={cn(errors.experienceYears && "border-destructive")}
                                 />
                             </div>
                             <div>
@@ -597,6 +613,7 @@ export default function SeekerProfilePage() {
                                     }}
                                     max="11"
                                     min="0"
+                                    className={cn(errors.experienceMonths && "border-destructive")}
                                 />
                             </div>
                         </div>
@@ -648,8 +665,8 @@ export default function SeekerProfilePage() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="flex items-center gap-2 font-medium text-base">
-                    <Briefcase className="h-5 w-5 text-primary" /> Work Experience
+                <h3 className={cn("flex items-center gap-2 font-medium text-base", errors.experiences && "text-destructive")}>
+                    <Briefcase className="h-5 w-5 text-primary" /> Work Experience<span className="text-destructive pl-1">*</span>
                 </h3>
                 <div className="space-y-4">
                     {experiences.map((exp) => (
@@ -688,7 +705,7 @@ export default function SeekerProfilePage() {
                                                     handleExperienceChange(exp.id, 'from', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                disabled={{ after: new Date() }}
+                                                disabled={(date) => date > new Date()}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
@@ -713,7 +730,7 @@ export default function SeekerProfilePage() {
                                                     handleExperienceChange(exp.id, 'to', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                disabled={{ after: new Date() }}
+                                                disabled={(date) => date > new Date()}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
@@ -741,8 +758,8 @@ export default function SeekerProfilePage() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="flex items-center gap-2 font-medium text-base">
-                    <GraduationCap className="h-5 w-5 text-primary" /> Education
+                <h3 className={cn("flex items-center gap-2 font-medium text-base", errors.educations && "text-destructive")}>
+                    <GraduationCap className="h-5 w-5 text-primary" /> Education<span className="text-destructive pl-1">*</span>
                 </h3>
                 <div className="space-y-4">
                     {educations.map((edu) => (
@@ -781,7 +798,7 @@ export default function SeekerProfilePage() {
                                                     handleEducationChange(edu.id, 'from', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                disabled={{ after: new Date() }}
+                                                disabled={(date) => date > new Date()}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
@@ -806,7 +823,7 @@ export default function SeekerProfilePage() {
                                                     handleEducationChange(edu.id, 'to', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                disabled={{ after: new Date() }}
+                                                disabled={(date) => date > new Date()}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
