@@ -215,6 +215,7 @@ export default function SeekerProfilePage() {
         }
       } catch (error: any) {
           console.error("Error loading user data:", error);
+          console.log("Firestore error code:", error.code);
           if (error.code === 'permission-denied') {
             toast({
               title: "Permission Denied",
