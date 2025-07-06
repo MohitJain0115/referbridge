@@ -295,13 +295,10 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
 
       await batch.commit();
 
-      const updatedCandidates = filteredCandidates.map(c => {
-        if (selectedCandidates.includes(c.id)) {
-          return { ...c, status: 'Cancelled' as const };
-        }
-        return c;
-      }).filter(c => c.status !== 'Cancelled'); // Optionally hide cancelled requests immediately
-      setFilteredCandidates(updatedCandidates);
+      // Remove the cancelled candidates from the current view
+      setFilteredCandidates(currentCandidates =>
+        currentCandidates.filter(c => !selectedCandidates.includes(c.id))
+      );
 
 
       toast({
