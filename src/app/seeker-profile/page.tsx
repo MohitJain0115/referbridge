@@ -665,9 +665,10 @@ export default function SeekerProfilePage() {
                                                     handleExperienceChange(exp.id, 'from', date);
                                                     setOpenPopoverId(null);
                                                 }}
+                                                disabled={{ after: new Date() }}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
-                                                toYear={currentYear + 4}
+                                                toYear={currentYear}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -689,10 +690,10 @@ export default function SeekerProfilePage() {
                                                     handleExperienceChange(exp.id, 'to', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                disabled={exp.currentlyWorking}
+                                                disabled={{ after: new Date() }}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
-                                                toYear={currentYear + 4}
+                                                toYear={currentYear}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -757,9 +758,10 @@ export default function SeekerProfilePage() {
                                                     handleEducationChange(edu.id, 'from', date);
                                                     setOpenPopoverId(null);
                                                 }}
+                                                disabled={{ after: new Date() }}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
-                                                toYear={currentYear + 4}
+                                                toYear={currentYear}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -781,9 +783,10 @@ export default function SeekerProfilePage() {
                                                     handleEducationChange(edu.id, 'to', date);
                                                     setOpenPopoverId(null);
                                                 }}
+                                                disabled={{ after: new Date() }}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
-                                                toYear={currentYear + 4}
+                                                toYear={currentYear}
                                             />
                                         </PopoverContent>
                                     </Popover>
