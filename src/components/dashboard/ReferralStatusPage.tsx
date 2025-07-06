@@ -3,8 +3,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { generateTrackedRequests } from "@/ai/flows/tracked-requests-flow";
-import type { TrackedRequest, ReferralRequestStatus } from "@/lib/types";
+import type { TrackedRequest, ReferralRequestStatus, Referrer } from "@/lib/types";
 import {
   Table,
   TableBody,
@@ -39,38 +38,97 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog";
-import { Info, Inbox, Download, Clock, XCircle, Trash2 } from "lucide-react";
+import { Info, Inbox, Eye, Clock, XCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
+import { auth, db, firebaseReady } from "@/lib/firebase";
+import { collection, query, where, getDocs, doc, getDoc, writeBatch } from "firebase/firestore";
+import { formatDistanceToNow } from 'date-fns';
 
 export function ReferralStatusPage() {
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [requests, setRequests] = useState<TrackedRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<ReferralRequestStatus | 'all'>('all');
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
   const { toast } = useToast();
+  
+  useEffect(() => {
+    if (!firebaseReady) return;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            setCurrentUser(user);
+        } else {
+            setIsLoading(false);
+        }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
+      if (!currentUser || !db) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
-        const generatedRequests = await generateTrackedRequests(4);
-        setRequests(generatedRequests);
+        const requestsQuery = query(collection(db, "referral_requests"), where("seekerId", "==", currentUser.uid));
+        const requestSnapshots = await getDocs(requestsQuery);
+
+        const trackedRequestsPromises = requestSnapshots.docs.map(async (requestDoc) => {
+          const requestData = requestDoc.data();
+          const referrerDocRef = doc(db, "profiles", requestData.referrerId);
+          const referrerDoc = await getDoc(referrerDocRef);
+
+          if (!referrerDoc.exists()) {
+            console.warn(`Referrer profile not found for ID: ${requestData.referrerId}`);
+            return null;
+          }
+
+          const referrerData = referrerDoc.data();
+          
+          return {
+            id: requestDoc.id,
+            referrer: {
+              id: referrerDoc.id,
+              name: referrerData.name || "Unknown Referrer",
+              avatar: referrerData.profilePic || "https://placehold.co/100x100.png",
+              role: referrerData.currentRole || "N/A",
+              company: referrerData.referrerCompany || "N/A",
+              specialties: referrerData.referrerSpecialties?.split(',').map((s:string) => s.trim()).filter(Boolean) || [],
+            },
+            status: requestData.status,
+            cancellationReason: requestData.cancellationReason,
+            requestedAt: requestData.requestedAt?.toDate() || new Date(),
+          } as TrackedRequest;
+        });
+
+        const results = (await Promise.all(trackedRequestsPromises)).filter(Boolean) as TrackedRequest[];
+        // Sort by most recent
+        results.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+        setRequests(results);
+
       } catch (error) {
-        console.error("Failed to generate tracked requests:", error);
+        console.error("Failed to fetch tracked requests:", error);
+        toast({ title: "Error", description: "Could not fetch your referral requests.", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
     }
-    fetchData();
-  }, []);
+    if (currentUser) {
+      fetchData();
+    }
+  }, [currentUser, toast]);
   
   const getStatusBadgeVariant = (status: ReferralRequestStatus) => {
     switch (status) {
-      case "Resume Downloaded":
+      case "Viewed":
+      case "Referred":
         return "default";
       case "Pending":
         return "secondary";
@@ -89,8 +147,8 @@ export function ReferralStatusPage() {
   }, [filterStatus, requests]);
 
   const totalRequests = requests.length;
-  const downloadedRequests = requests.filter(
-    (r) => r.status === "Resume Downloaded"
+  const viewedRequests = requests.filter(
+    (r) => r.status === "Viewed" || r.status === "Referred"
   ).length;
   const pendingRequests = requests.filter(
     (r) => r.status === "Pending"
@@ -113,13 +171,28 @@ export function ReferralStatusPage() {
     }
   };
 
-  const handleDelete = () => {
-    setRequests(requests.filter((r) => !selectedRequests.includes(r.id)));
-    setSelectedRequests([]);
-    toast({
-      title: "Requests Deleted",
-      description: "The selected referral requests have been removed.",
+  const handleDelete = async () => {
+    if (!db) return;
+    const batch = writeBatch(db);
+    selectedRequests.forEach(id => {
+      batch.delete(doc(db, "referral_requests", id));
     });
+    
+    try {
+      await batch.commit();
+      setRequests(requests.filter((r) => !selectedRequests.includes(r.id)));
+      setSelectedRequests([]);
+      toast({
+        title: "Requests Deleted",
+        description: "The selected referral requests have been removed.",
+      });
+    } catch (error) {
+       toast({
+        title: "Deletion Failed",
+        description: "Could not delete the selected requests.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoading) {
@@ -165,18 +238,18 @@ export function ReferralStatusPage() {
               </CardContent>
           </Card>
           <Card
-            onClick={() => { setFilterStatus('Resume Downloaded'); setSelectedRequests([]); }}
+            onClick={() => { setFilterStatus('Viewed'); setSelectedRequests([]); }}
             className={cn(
               "cursor-pointer transition-all hover:border-primary",
-              filterStatus === 'Resume Downloaded' && "border-primary ring-2 ring-primary"
+              filterStatus === 'Viewed' && "border-primary ring-2 ring-primary"
             )}
           >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Downloaded</CardTitle>
-                  <Download className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Viewed / Referred</CardTitle>
+                  <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                  <div className="text-2xl font-bold">{downloadedRequests}</div>
+                  <div className="text-2xl font-bold">{viewedRequests}</div>
               </CardContent>
           </Card>
           <Card
@@ -290,7 +363,7 @@ export function ReferralStatusPage() {
                   </div>
                 </TableCell>
                 <TableCell>{request.referrer.company}</TableCell>
-                <TableCell>{new Date(request.requestedAt).toLocaleDateString()}</TableCell>
+                <TableCell>{formatDistanceToNow(new Date(request.requestedAt), { addSuffix: true })}</TableCell>
                 <TableCell>
                    <div className="flex items-center gap-2">
                      <Badge variant={getStatusBadgeVariant(request.status)}>
@@ -323,7 +396,7 @@ export function ReferralStatusPage() {
             ) : (
                 <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
-                        No requests found with the selected status.
+                        No requests found. You can find referrers in the main dashboard.
                     </TableCell>
                 </TableRow>
             )}

@@ -10,7 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Briefcase, Sparkles, Send } from "lucide-react";
+import { Briefcase, Sparkles, Send, Loader2 } from "lucide-react";
+import { auth, db, firebaseReady } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 
 type ReferrerCardProps = {
   referrer: Referrer;
@@ -19,19 +21,63 @@ type ReferrerCardProps = {
 export function ReferrerCard({ referrer }: ReferrerCardProps) {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [jobInfo, setJobInfo] = useState("");
 
-  const handleSendRequest = () => {
-    // In a real app, this would send the request to a backend.
-    console.log(`Sending profile to ${referrer.name} for job (link/ID): ${jobInfo}`);
+  const handleSendRequest = async () => {
+    if (!firebaseReady || !auth.currentUser) {
+      toast({ title: "Please log in to send a request.", variant: "destructive" });
+      return;
+    }
+    setIsSending(true);
     
-    toast({
-      title: "Profile Sent!",
-      description: `Your profile and resume have been shared with ${referrer.name}.`,
-    });
+    try {
+      // Check if a request already exists
+      const requestsRef = collection(db, "referral_requests");
+      const q = query(
+        requestsRef,
+        where("seekerId", "==", auth.currentUser.uid),
+        where("referrerId", "==", referrer.id)
+      );
+      const querySnapshot = await getDocs(q);
 
-    setIsDialogOpen(false);
-    setJobInfo("");
+      if (!querySnapshot.empty) {
+        toast({
+          title: "Request Already Sent",
+          description: `You have already sent a referral request to ${referrer.name}.`,
+          variant: "destructive",
+        });
+        setIsSending(false);
+        setIsDialogOpen(false);
+        return;
+      }
+
+      await addDoc(collection(db, "referral_requests"), {
+        seekerId: auth.currentUser.uid,
+        referrerId: referrer.id,
+        jobInfo: jobInfo,
+        status: "Pending",
+        requestedAt: serverTimestamp(),
+        cancellationReason: null,
+      });
+      
+      toast({
+        title: "Profile Sent!",
+        description: `Your profile and resume have been shared with ${referrer.name}. You can track the status in 'My Requests'.`,
+      });
+
+      setIsDialogOpen(false);
+      setJobInfo("");
+    } catch (error: any) {
+      console.error("Error sending referral request:", error);
+      let description = "Could not send your request. Please try again.";
+      if (error.code === 'permission-denied') {
+        description = "Permission denied. Please check your Firestore security rules for the 'referral_requests' collection.";
+      }
+      toast({ title: "Request Failed", description, variant: "destructive" });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -92,10 +138,10 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
                   />
               </div>
               <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleSendRequest}>
-                      <Send className="mr-2 h-4 w-4" />
-                      Share Profile
+                  <Button variant="ghost" onClick={() => setIsDialogOpen(false)} disabled={isSending}>Cancel</Button>
+                  <Button onClick={handleSendRequest} disabled={isSending}>
+                      {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                      {isSending ? 'Sending...' : 'Share Profile'}
                   </Button>
               </DialogFooter>
           </DialogContent>

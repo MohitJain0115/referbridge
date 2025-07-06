@@ -3,6 +3,7 @@ import { z } from 'zod';
 // From candidates-flow.ts
 export const CandidateSchema = z.object({
   id: z.string().describe("A unique UUID for the candidate."),
+  requestId: z.string().optional().describe("The ID of the specific referral request, if applicable."),
   name: z.string().describe("The candidate's full name."),
   avatar: z.string().describe("A placeholder avatar URL from placehold.co (e.g., https://placehold.co/100x100.png)."),
   role: z.string().describe("The candidate's current or target job title."),
@@ -30,14 +31,14 @@ export const ReferrerSchema = z.object({
 export type Referrer = z.infer<typeof ReferrerSchema>;
 
 // From tracked-requests-flow.ts
-export const RequestStatusSchema = z.enum(['Pending', 'Resume Downloaded', 'Cancelled']);
+export const RequestStatusSchema = z.enum(['Pending', 'Viewed', 'Referred', 'Not a Fit', 'Resume Downloaded', 'Cancelled']);
 export type ReferralRequestStatus = z.infer<typeof RequestStatusSchema>;
 
 export const TrackedRequestSchema = z.object({
   id: z.string().describe("A unique UUID for the tracked request."),
-  referrer: ReferrerSchema,
+  referrer: ReferrerSchema.omit({id: true, location: true}).extend({id: z.string(), profilePic: z.string().optional(), currentRole: z.string().optional(), referrerCompany: z.string().optional(), referrerSpecialties: z.string().optional()}),
   status: RequestStatusSchema.describe("The current status of the referral request."),
-  cancellationReason: z.string().optional().describe("The reason for cancellation, if applicable. Provide a reason only if the status is 'Cancelled'."),
-  requestedAt: z.string().datetime().describe("The ISO 8601 timestamp when the request was made."),
+  cancellationReason: z.string().nullable().optional().describe("The reason for cancellation, if applicable. Provide a reason only if the status is 'Cancelled'."),
+  requestedAt: z.union([z.string().datetime(), z.date()]).describe("The ISO 8601 timestamp when the request was made."),
 });
 export type TrackedRequest = z.infer<typeof TrackedRequestSchema>;

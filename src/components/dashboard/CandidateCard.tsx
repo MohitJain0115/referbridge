@@ -1,7 +1,7 @@
 
 "use client";
 
-import * as React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from 'next/link';
 import type { Candidate } from "@/lib/types";
@@ -24,7 +24,7 @@ type CandidateCardProps = {
 
 export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCardProps) {
   const { toast } = useToast();
-  const [currentStatus, setCurrentStatus] = React.useState<Candidate['status']>(candidate.status);
+  const [currentStatus, setCurrentStatus] = useState<Candidate['status']>(candidate.status);
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Prevent click event from firing on interactive elements inside the card
@@ -65,8 +65,13 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
       return;
     }
     try {
-      const profileRef = doc(db, "profiles", candidate.id);
-      await updateDoc(profileRef, { status: newStatus });
+      // If a requestId is present, update the request document.
+      // Otherwise, update the general profile document.
+      const docRef = candidate.requestId
+        ? doc(db, "referral_requests", candidate.requestId)
+        : doc(db, "profiles", candidate.id);
+        
+      await updateDoc(docRef, { status: newStatus });
       setCurrentStatus(newStatus);
       toast({
         title: "Status Updated",
