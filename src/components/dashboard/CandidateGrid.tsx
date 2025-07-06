@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { doc, getDoc } from "firebase/firestore";
 import { db, firebaseReady, auth } from "@/lib/firebase";
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 type CandidateGridProps = {
@@ -36,6 +37,25 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
   const [selectedReason, setSelectedReason] = useState("");
   const [otherReasonText, setOtherReasonText] = useState("");
   const { toast } = useToast();
+
+  const handleSelectAllToggle = () => {
+    const allVisibleCandidates = filteredCandidates.slice(0, 20);
+    const allVisibleIds = allVisibleCandidates.map(c => c.id);
+    const selectedVisibleCount = selectedCandidates.filter(id => allVisibleIds.includes(id)).length;
+    const isAllSelected = allVisibleIds.length > 0 && selectedVisibleCount === allVisibleIds.length;
+
+    if (isAllSelected) {
+        setSelectedCandidates([]);
+    } else {
+        setSelectedCandidates(allVisibleIds);
+        if (filteredCandidates.length > 20) {
+            toast({
+                title: "Selection Limit",
+                description: "Selected the first 20 candidates. A maximum of 20 can be selected at once.",
+            });
+        }
+    }
+  };
 
   useEffect(() => {
     setFilteredCandidates(initialCandidates);
@@ -142,7 +162,7 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
     setIsActionLoading(true);
 
     const resumeLinks = await getResumeLinksForSelected();
-
+    
     if (resumeLinks.length === 0) {
       toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive" });
     } else if (resumeLinks.length === 1) {
@@ -265,6 +285,16 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
     setOtherReasonText("");
   }
 
+  const allVisibleCandidates = filteredCandidates.slice(0, 20);
+  const allVisibleIds = allVisibleCandidates.map(c => c.id);
+  const selectedVisibleCount = selectedCandidates.filter(id => allVisibleIds.includes(id)).length;
+
+  const selectAllCheckedState =
+    allVisibleIds.length > 0 && selectedVisibleCount === allVisibleIds.length
+        ? true
+        : selectedVisibleCount > 0
+        ? 'indeterminate'
+        : false;
 
   return (
     <>
@@ -283,9 +313,25 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
         isFiltered={isFiltered}
       />
       
-      <div className="flex items-center justify-start min-h-[40px] -mb-2">
+      <div className="flex items-center justify-between min-h-[40px] -mb-2">
+        <div className="flex items-center gap-2">
+           {filteredCandidates.length > 0 && (
+            <>
+                <Checkbox
+                    id="select-all"
+                    onCheckedChange={handleSelectAllToggle}
+                    checked={selectAllCheckedState}
+                    aria-label="Select all candidates"
+                />
+                <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                    Select All (Max 20)
+                </Label>
+            </>
+           )}
+        </div>
+        
         {selectedCandidates.length > 0 && (
-          <div className="flex items-center gap-4 p-2 rounded-lg bg-muted">
+          <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground font-medium pl-2">
                 {selectedCandidates.length} candidate(s) selected
               </span>
@@ -297,7 +343,7 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem onSelect={() => setIsActionDialogOpen(true)}>
                     <Download className="mr-2 h-4 w-4" />
                     Download/Share Resume
