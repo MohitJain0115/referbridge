@@ -3,9 +3,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { ReferrerCard } from "./ReferrerCard";
 import { ReferrerFilters } from "./ReferrerFilters";
-import { generateReferrers } from "@/ai/flows/referrers-flow";
 import type { Referrer } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { db, firebaseReady } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 function ReferrerGridSkeleton() {
   return (
@@ -21,6 +23,7 @@ export function SeekerDashboard() {
   const [allReferrers, setAllReferrers] = useState<Referrer[]>([]);
   const [filteredReferrers, setFilteredReferrers] = useState<Referrer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
   const [search, setSearch] = useState("");
   const [company, setCompany] = useState("all");
@@ -28,19 +31,46 @@ export function SeekerDashboard() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!firebaseReady) {
+          setIsLoading(false);
+          return;
+      }
       setIsLoading(true);
       try {
-        const generatedReferrers = await generateReferrers({ count: 12 });
-        setAllReferrers(generatedReferrers);
-        setFilteredReferrers(generatedReferrers);
+        const profilesRef = collection(db, "profiles");
+        // We look for profiles where referrerCompany is explicitly set and not empty.
+        const q = query(profilesRef, where("referrerCompany", "!=", ""));
+        const querySnapshot = await getDocs(q);
+
+        const fetchedReferrers = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name || "Unnamed Referrer",
+                avatar: data.profilePic || "https://placehold.co/100x100.png",
+                role: data.currentRole || "N/A",
+                company: data.referrerCompany || "N/A",
+                location: data.location || "Remote",
+                specialties: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
+                connections: Math.floor(Math.random() * 451) + 50, // Placeholder
+            } as Referrer;
+        });
+        
+        setAllReferrers(fetchedReferrers);
+        setFilteredReferrers(fetchedReferrers);
       } catch (error) {
-        console.error("Failed to generate referrers:", error);
+        console.error("Failed to fetch referrers:", error);
+        toast({
+            title: "Error",
+            description: "Could not fetch referrer data. Please check your Firestore connection and rules.",
+            variant: "destructive"
+        })
       } finally {
         setIsLoading(false);
       }
     }
     fetchData();
-  }, []);
+  }, [toast]);
 
   const availableCompanies = useMemo(() => {
     const companies = new Set(allReferrers.map(r => r.company));
