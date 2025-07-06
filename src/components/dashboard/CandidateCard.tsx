@@ -237,7 +237,14 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               {displayStatus}
             </Badge>
           </div>
-          <CardDescription>{candidate.role}</CardDescription>
+          <CardDescription>
+            {candidate.currentRole}
+            {candidate.targetRole && candidate.targetRole !== candidate.currentRole && (
+                <span className="block text-primary/90 font-medium mt-1">
+                    Seeking: {candidate.targetRole}
+                </span>
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex-grow space-y-4">
           {candidate.isSalaryVisible && (

@@ -29,8 +29,13 @@ const prompt = ai.definePrompt({
   input: { schema: GenerateCandidatesInputSchema },
   output: { schema: GenerateCandidatesOutputSchema },
   prompt: `You are an AI assistant that generates realistic mock data for a job referral platform.
-Generate a list of {{{count}}} diverse candidate profiles. Ensure a good mix of roles (e.g., Software Engineer, Product Manager, UX/UI Designer, Data Scientist, DevOps Engineer), experience levels, locations, and target companies.
-The target companies should be well-known tech companies. Make the data feel authentic and varied.
+Generate a list of {{{count}}} diverse candidate profiles. For each profile:
+1.  Provide a realistic \`currentRole\` (e.g., Software Engineer, Product Manager).
+2.  Provide a \`targetRole\` which could be a more senior version of the current role or a related role. Sometimes, this can be the same as the current role if the candidate is not looking for a promotion.
+3.  Ensure a good mix of experience levels, locations, and target companies.
+4.  The target companies should be well-known tech companies.
+5.  Make the data feel authentic and varied.
+
 Return the data in the specified JSON format.
 `,
 });

@@ -100,8 +100,10 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
           'designer': ['designer']
       };
       if (roleKeywords[role]) {
-        candidates = candidates.filter(c => 
-            roleKeywords[role].some(keyword => c.role.toLowerCase().includes(keyword))
+        candidates = candidates.filter(c =>
+          roleKeywords[role].some(keyword =>
+            (c.currentRole?.toLowerCase().includes(keyword) || c.targetRole?.toLowerCase().includes(keyword))
+          )
         );
       }
     }

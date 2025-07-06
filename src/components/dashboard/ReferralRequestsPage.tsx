@@ -74,7 +74,8 @@ export function ReferralRequestsPage() {
               requestId: requestDoc.id, // Keep track of the request ID
               name: seekerData.name || "Unnamed Candidate",
               avatar: seekerData.profilePic || "https://placehold.co/100x100.png",
-              role: seekerData.targetRole || seekerData.currentRole || "N/A",
+              currentRole: seekerData.currentRole || "N/A",
+              targetRole: seekerData.targetRole,
               company: seekerData.experiences?.[0]?.company || "",
               salary: seekerData.expectedSalary || 0,
               isSalaryVisible: seekerData.isSalaryVisible !== false,

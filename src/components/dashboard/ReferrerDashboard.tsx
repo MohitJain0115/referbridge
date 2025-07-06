@@ -54,7 +54,8 @@ export function ReferrerDashboard() {
                         id: doc.id,
                         name: data.name || "Unnamed Candidate",
                         avatar: data.profilePic || "https://placehold.co/100x100.png",
-                        role: data.targetRole || data.currentRole || "N/A",
+                        currentRole: data.currentRole || "N/A",
+                        targetRole: data.targetRole,
                         company: data.experiences?.[0]?.company || "", // From work experience
                         salary: data.expectedSalary || 0,
                         isSalaryVisible: data.isSalaryVisible !== false,
