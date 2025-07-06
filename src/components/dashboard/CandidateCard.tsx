@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
 import Image from "next/image";
 import Link from 'next/link';
 import type { Candidate } from "@/lib/types";
@@ -24,7 +24,7 @@ type CandidateCardProps = {
 
 export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCardProps) {
   const { toast } = useToast();
-  const [currentStatus, setCurrentStatus] = useState<Candidate['status']>(candidate.status);
+  const [currentStatus, setCurrentStatus] = React.useState<Candidate['status']>(candidate.status);
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Prevent click event from firing on interactive elements inside the card
