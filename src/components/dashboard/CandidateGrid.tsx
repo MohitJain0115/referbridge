@@ -28,6 +28,7 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
   const [company, setCompany] = useState("all");
   const [experience, setExperience] = useState("all");
   const [role, setRole] = useState("all");
+  const [status, setStatus] = useState<Candidate['status'] | 'all'>('all');
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -37,12 +38,8 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
   const { toast } = useToast();
 
   useEffect(() => {
-    // Reset filters and candidates when the initial list changes
     setFilteredCandidates(initialCandidates);
-    setCompany("all");
-    setExperience("all");
-    setRole("all");
-    setSelectedCandidates([]);
+    handleClearFilters();
   }, [initialCandidates]);
 
   const availableCompanies = useMemo(() => {
@@ -51,8 +48,8 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
   }, [initialCandidates]);
 
   const isFiltered = useMemo(() => {
-    return company !== "all" || experience !== "all" || role !== "all";
-  }, [company, experience, role]);
+    return company !== "all" || experience !== "all" || role !== "all" || status !== "all";
+  }, [company, experience, role, status]);
 
   const handleApplyFilters = () => {
     let candidates = [...initialCandidates];
@@ -87,6 +84,10 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
         );
       }
     }
+
+    if (status !== "all") {
+      candidates = candidates.filter(c => c.status === status);
+    }
     
     setFilteredCandidates(candidates);
     setSelectedCandidates([]); // Clear selection on new filter
@@ -96,6 +97,7 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
     setCompany("all");
     setExperience("all");
     setRole("all");
+    setStatus("all");
     setFilteredCandidates(initialCandidates);
     setSelectedCandidates([]); // Clear selection on clear filters
   };
@@ -274,6 +276,8 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
         setExperience={setExperience}
         role={role}
         setRole={setRole}
+        status={status}
+        setStatus={setStatus}
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         isFiltered={isFiltered}

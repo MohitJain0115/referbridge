@@ -2,8 +2,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, firebaseReady } from '@/lib/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db, firebaseReady, auth } from '@/lib/firebase';
+import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { Briefcase, GraduationCap, User, DollarSign, Building2, Link as LinkIcon
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from "date-fns";
+import type { Candidate } from '@/lib/types';
 
 type ProfileData = {
     name: string;
@@ -25,6 +27,7 @@ type ProfileData = {
     expectedSalary: number;
     isSalaryVisible: boolean;
     referrerSpecialties: string;
+    status: Candidate['status'];
 };
 
 function ProfilePageSkeleton() {
@@ -66,6 +69,15 @@ export default function ProfilePage() {
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+
+    useEffect(() => {
+        if (!firebaseReady) return;
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+        });
+        return () => unsubscribe();
+    }, []);
 
     useEffect(() => {
         if (!firebaseReady || !userId) return;
@@ -78,6 +90,13 @@ export default function ProfilePage() {
 
                 if (profileDoc.exists()) {
                     const data = profileDoc.data();
+                    
+                    // Auto-update status to 'Viewed' if viewer is not owner and status is 'Pending'
+                    if (currentUser && currentUser.uid !== userId && data.status === 'Pending') {
+                        await updateDoc(profileDocRef, { status: 'Viewed' });
+                        data.status = 'Viewed'; // Reflect update locally
+                    }
+                    
                     const experiences = data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || [];
                     const educations = data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || [];
                     setProfile({ ...data, experiences, educations } as ProfileData);
@@ -93,7 +112,7 @@ export default function ProfilePage() {
         };
 
         fetchProfile();
-    }, [userId]);
+    }, [userId, currentUser]);
 
     if (loading) {
         return <ProfilePageSkeleton />;
