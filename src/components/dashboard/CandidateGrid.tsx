@@ -2,6 +2,8 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { CandidateCard } from "./CandidateCard";
 import { CandidateFilters } from "./CandidateFilters";
 import type { Candidate } from "@/lib/types";
@@ -106,7 +108,7 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
     );
   };
   
-  const getResumeLinksForSelected = async (): Promise<{name: string, url: string}[]> => {
+  const getResumeLinksForSelected = async (): Promise<{name: string, url: string, fileName: string}[]> => {
     if (!firebaseReady || !db) {
         toast({ title: "Firebase not ready", description: "The database connection is not available.", variant: "destructive" });
         return [];
@@ -116,11 +118,13 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
       try {
         const resumeDocRef = doc(db, "resumes", candidateId);
         const resumeDoc = await getDoc(resumeDocRef);
-        if (resumeDoc.exists() && resumeDoc.data().fileUrl) {
+        const resumeData = resumeDoc.data();
+        if (resumeDoc.exists() && resumeData?.fileUrl) {
             const candidate = initialCandidates.find(c => c.id === candidateId);
             links.push({ 
                 name: candidate?.name || 'Unknown Candidate',
-                url: resumeDoc.data().fileUrl 
+                url: resumeData.fileUrl,
+                fileName: resumeData.fileName || 'resume.pdf'
             });
         }
       } catch (error) {
@@ -139,21 +143,55 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
 
     if (resumeLinks.length === 0) {
       toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive" });
+    } else if (resumeLinks.length === 1) {
+        window.open(resumeLinks[0].url, '_blank');
+        toast({
+          title: "Download Started",
+          description: `Opening ${resumeLinks[0].name}'s resume.`
+        });
     } else {
-      // Browsers often block multiple pop-ups. Inform the user.
-      if (resumeLinks.length > 1) {
         toast({
-          title: "Download Started",
-          description: `Attempting to open ${resumeLinks.length} resumes. Please disable your pop-up blocker if not all tabs open.`,
-          duration: 7000,
+            title: "Preparing Download",
+            description: `Zipping ${resumeLinks.length} resumes. This may take a moment...`
         });
-      } else {
-        toast({
-          title: "Download Started",
-          description: `Opening ${resumeLinks[0].name}'s resume in a new tab.`
-        });
-      }
-      resumeLinks.forEach(link => window.open(link.url, '_blank'));
+        try {
+            const zip = new JSZip();
+            const filePromises = resumeLinks.map(async (link) => {
+                try {
+                    const response = await fetch(link.url);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch ${link.url}: ${response.statusText}`);
+                    }
+                    const blob = await response.blob();
+                    const sanitizedCandidateName = link.name.replace(/[^a-z0-9]/gi, '_');
+                    zip.file(`${sanitizedCandidateName}_${link.fileName}`, blob);
+                } catch (error) {
+                    console.error(`Could not add resume for ${link.name} to zip:`, error);
+                    toast({
+                        title: "Download Skipped",
+                        description: `Could not fetch resume for ${link.name}.`,
+                        variant: "destructive"
+                    });
+                }
+            });
+
+            await Promise.all(filePromises);
+            
+            const zipBlob = await zip.generateAsync({ type: "blob" });
+            saveAs(zipBlob, "ReferBridge_Resumes.zip");
+             toast({
+                title: "Download Ready",
+                description: `Your zip file is downloading.`
+            });
+
+        } catch (error) {
+            console.error("Error creating zip file:", error);
+            toast({
+                title: "Zip Creation Failed",
+                description: "An error occurred while creating the zip file.",
+                variant: "destructive"
+            });
+        }
     }
 
     setIsActionLoading(false);
