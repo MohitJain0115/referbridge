@@ -151,7 +151,7 @@ export default function SeekerProfilePage() {
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
-  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; experienceYears?: boolean; experienceMonths?: boolean; referrerCompany?: boolean; }>({});
+  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; experienceYears?: boolean; experienceMonths?: boolean; referrerCompany?: boolean; resume?: boolean; }>({});
 
 
   // Resume state
@@ -421,6 +421,9 @@ export default function SeekerProfilePage() {
       if (experienceMonths === '') {
         validationErrors.experienceMonths = true;
       }
+      if (!resumeUrl) {
+        validationErrors.resume = true;
+      }
     } else if (profileView === 'referrer') {
       if (!referrerCompany.trim()) {
         validationErrors.referrerCompany = true;
@@ -431,7 +434,7 @@ export default function SeekerProfilePage() {
       setErrors(validationErrors);
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in all fields marked with an asterisk (*).",
+        description: "Please fill in all fields marked with an asterisk (*), and make sure to upload a resume.",
         variant: "destructive",
       });
       return;
@@ -894,8 +897,8 @@ export default function SeekerProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Resume</Label>
-                  <Card className="p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center">
+                <Label>Resume<span className="text-destructive pl-1">*</span></Label>
+                  <Card className={cn("p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center", errors.resume && "border-destructive")}>
                     {isUploadingResume ? (
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     ) : resumeUrl ? (
