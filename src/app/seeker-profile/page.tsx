@@ -653,7 +653,7 @@ export default function SeekerProfilePage() {
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={exp.from} onSelect={(date) => handleExperienceChange(exp.id, 'from', date)} captionLayout="dropdown-buttons" fromYear={1980} toYear={new Date().getFullYear()} />
+                                            <Calendar mode="single" selected={exp.from} onSelect={(date) => handleExperienceChange(exp.id, 'from', date)} />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
@@ -667,7 +667,7 @@ export default function SeekerProfilePage() {
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={exp.to} onSelect={(date) => handleExperienceChange(exp.id, 'to', date)} disabled={exp.currentlyWorking} captionLayout="dropdown-buttons" fromYear={1980} toYear={new Date().getFullYear()}/>
+                                            <Calendar mode="single" selected={exp.to} onSelect={(date) => handleExperienceChange(exp.id, 'to', date)} disabled={exp.currentlyWorking} />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
@@ -724,7 +724,7 @@ export default function SeekerProfilePage() {
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={edu.from} onSelect={(date) => handleEducationChange(edu.id, 'from', date)} captionLayout="dropdown-buttons" fromYear={1980} toYear={new Date().getFullYear()} />
+                                            <Calendar mode="single" selected={edu.from} onSelect={(date) => handleEducationChange(edu.id, 'from', date)} />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
@@ -738,7 +738,7 @@ export default function SeekerProfilePage() {
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={edu.to} onSelect={(date) => handleEducationChange(edu.id, 'to', date)} captionLayout="dropdown-buttons" fromYear={1980} toYear={new Date().getFullYear()} />
+                                            <Calendar mode="single" selected={edu.to} onSelect={(date) => handleEducationChange(edu.id, 'to', date)} />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
