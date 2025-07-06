@@ -70,8 +70,8 @@ export function ReferralRequestsPage() {
           const experienceYears = seekerData.experienceYears || 0;
 
           return {
-              id: seekerDoc.id, // This is the seeker's ID
-              requestId: requestDoc.id, // Keep track of the request ID
+              id: seekerDoc.id, 
+              requestId: requestDoc.id, 
               name: seekerData.name || "Unnamed Candidate",
               avatar: seekerData.profilePic || "https://placehold.co/100x100.png",
               currentRole: seekerData.currentRole || "N/A",
@@ -82,7 +82,7 @@ export function ReferralRequestsPage() {
               skills: seekerData.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
               location: seekerData.location || "Remote",
               experience: experienceYears,
-              status: requestData.status, // Status comes from the request document
+              status: requestData.status, 
               jobPostUrl: requestData.jobInfo || seekerData.companies?.[0]?.jobs?.[0]?.url || '',
               targetCompanies: seekerData.companies?.map((c: any) => c.name).filter(Boolean) || [],
           } as Candidate;

@@ -91,15 +91,22 @@ export default function ProfilePage() {
                 if (profileDoc.exists()) {
                     const data = profileDoc.data();
                     
-                    // Auto-update status to 'Viewed' if viewer is not owner and status is 'Pending'
                     if (currentUser && currentUser.uid !== userId && data.status === 'Pending') {
                         await updateDoc(profileDocRef, { status: 'Viewed' });
-                        data.status = 'Viewed'; // Reflect update locally
+                        data.status = 'Viewed'; 
                     }
                     
                     const experiences = data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || [];
                     const educations = data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || [];
-                    setProfile({ ...data, experiences, educations } as ProfileData);
+                    
+                    const profileData = {
+                        ...data,
+                        isSalaryVisible: data.isSalaryVisible !== false,
+                        experiences,
+                        educations,
+                    } as ProfileData;
+
+                    setProfile(profileData);
                 } else {
                     setError('Profile not found.');
                 }

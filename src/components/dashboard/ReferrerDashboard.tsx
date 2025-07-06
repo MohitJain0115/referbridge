@@ -45,7 +45,7 @@ export function ReferrerDashboard() {
         try {
             const querySnapshot = await getDocs(collection(db, "profiles"));
             const fetchedCandidates = querySnapshot.docs
-                .filter(doc => doc.id !== currentUser.uid) // Filter out the current user
+                .filter(doc => doc.id !== currentUser.uid) 
                 .map(doc => {
                     const data = doc.data();
                     const experienceYears = data.experienceYears || 0;
@@ -56,7 +56,7 @@ export function ReferrerDashboard() {
                         avatar: data.profilePic || "https://placehold.co/100x100.png",
                         currentRole: data.currentRole || "N/A",
                         targetRole: data.targetRole,
-                        company: data.experiences?.[0]?.company || "", // From work experience
+                        company: data.experiences?.[0]?.company || "", 
                         salary: data.expectedSalary || 0,
                         isSalaryVisible: data.isSalaryVisible !== false,
                         skills: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
