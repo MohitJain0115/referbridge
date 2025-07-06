@@ -29,7 +29,7 @@ export function SeekerDashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   const [search, setSearch] = useState("");
-  const [company, setCompany] = useState("all");
+  const [company, setCompany] = useState("");
 
   useEffect(() => {
     if (!firebaseReady) return;
@@ -89,7 +89,7 @@ export function SeekerDashboard() {
   }, [allReferrers]);
 
   const isFiltered = useMemo(() => {
-    return search !== "" || company !== "all";
+    return search !== "" || company !== "";
   }, [search, company]);
 
   const handleApplyFilters = () => {
@@ -103,8 +103,8 @@ export function SeekerDashboard() {
       );
     }
 
-    if (company !== "all") {
-      referrers = referrers.filter(r => r.company === company);
+    if (company) {
+      referrers = referrers.filter(r => r.company.toLowerCase() === company.toLowerCase());
     }
     
     setFilteredReferrers(referrers);
@@ -112,7 +112,7 @@ export function SeekerDashboard() {
 
   const handleClearFilters = () => {
     setSearch("");
-    setCompany("all");
+    setCompany("");
     setFilteredReferrers(allReferrers);
   };
 

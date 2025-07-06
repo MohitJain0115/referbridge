@@ -1,10 +1,16 @@
 
 "use client";
 
+import * as React from "react"
 import { Button } from "@/components/ui/button";
-import { SlidersHorizontal, X } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SlidersHorizontal, X, Check, ChevronsUpDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import type { Candidate } from "@/lib/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 type Status = Candidate['status'] | 'all';
 
@@ -26,22 +32,57 @@ type CandidateFiltersProps = {
 export function CandidateFilters({
     company, setCompany, availableCompanies, experience, setExperience, role, setRole, status, setStatus, onApplyFilters, onClearFilters, isFiltered
 }: CandidateFiltersProps) {
+    const [open, setOpen] = React.useState(false)
+    const companyOptions = availableCompanies.map(c => ({ value: c, label: c }));
+
     return (
         <div className="p-4 bg-card rounded-lg shadow-sm border">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                 <div className="space-y-2">
                     <label htmlFor="company" className="text-sm font-medium">Target Company</label>
-                    <Select value={company} onValueChange={setCompany}>
-                        <SelectTrigger id="company">
-                            <SelectValue placeholder="All Companies" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Companies</SelectItem>
-                            {availableCompanies.map(c => (
-                                <SelectItem key={c} value={c}>{c}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                     <Popover open={open} onOpenChange={setOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={open}
+                          className="w-full justify-between font-normal"
+                        >
+                          {company
+                            ? companyOptions.find((c) => c.value.toLowerCase() === company.toLowerCase())?.label
+                            : "Select company..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="Search company..." />
+                          <CommandList>
+                            <CommandEmpty>No company found.</CommandEmpty>
+                            <CommandGroup>
+                              {companyOptions.map((c) => (
+                                <CommandItem
+                                  key={c.value}
+                                  value={c.value}
+                                  onSelect={(currentValue) => {
+                                    setCompany(currentValue.toLowerCase() === company.toLowerCase() ? "" : c.value)
+                                    setOpen(false)
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      company.toLowerCase() === c.value.toLowerCase() ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {c.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                 </div>
                 <div className="space-y-2">
                     <label htmlFor="experience" className="text-sm font-medium">Experience Level</label>
@@ -59,17 +100,12 @@ export function CandidateFilters({
                 </div>
                  <div className="space-y-2">
                     <label htmlFor="role" className="text-sm font-medium">Role</label>
-                     <Select value={role} onValueChange={setRole}>
-                        <SelectTrigger id="role">
-                            <SelectValue placeholder="All Roles" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Roles</SelectItem>
-                            <SelectItem value="frontend">Frontend Developer</SelectItem>
-                            <SelectItem value="product-manager">Product Manager</SelectItem>
-                            <SelectItem value="designer">UX/UI Designer</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <Input 
+                        id="role"
+                        placeholder="e.g. Software Engineer"
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                    />
                 </div>
                 <div className="space-y-2">
                     <label htmlFor="status" className="text-sm font-medium">Status</label>

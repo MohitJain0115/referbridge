@@ -27,9 +27,9 @@ type CandidateGridProps = {
 
 export function CandidateGrid({ candidates: initialCandidates, showCancelAction = false }: CandidateGridProps) {
   const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>(initialCandidates);
-  const [company, setCompany] = useState("all");
+  const [company, setCompany] = useState("");
   const [experience, setExperience] = useState("all");
-  const [role, setRole] = useState("all");
+  const [role, setRole] = useState("");
   const [status, setStatus] = useState<Candidate['status'] | 'all'>('all');
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
@@ -69,14 +69,14 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
   }, [initialCandidates]);
 
   const isFiltered = useMemo(() => {
-    return company !== "all" || experience !== "all" || role !== "all" || status !== "all";
+    return company !== "" || experience !== "all" || role !== "" || status !== "all";
   }, [company, experience, role, status]);
 
   const handleApplyFilters = () => {
     let candidates = [...initialCandidates];
 
-    if (company !== "all") {
-      candidates = candidates.filter(c => c.targetCompanies.includes(company));
+    if (company) {
+      candidates = candidates.filter(c => c.targetCompanies.some(tc => tc.toLowerCase() === company.toLowerCase()));
     }
 
     if (experience !== "all") {
@@ -93,19 +93,12 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
       }
     }
 
-    if (role !== "all") {
-      const roleKeywords: Record<string, string[]> = {
-          'frontend': ['frontend'],
-          'product-manager': ['product manager'],
-          'designer': ['designer']
-      };
-      if (roleKeywords[role]) {
-        candidates = candidates.filter(c =>
-          roleKeywords[role].some(keyword =>
-            (c.currentRole?.toLowerCase().includes(keyword) || c.targetRole?.toLowerCase().includes(keyword))
-          )
-        );
-      }
+    if (role) {
+      const lowercasedRole = role.toLowerCase();
+      candidates = candidates.filter(c =>
+        c.currentRole?.toLowerCase().includes(lowercasedRole) || 
+        (c.targetRole && c.targetRole.toLowerCase().includes(lowercasedRole))
+      );
     }
 
     if (status !== "all") {
@@ -117,9 +110,9 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
   };
 
   const handleClearFilters = () => {
-    setCompany("all");
+    setCompany("");
     setExperience("all");
-    setRole("all");
+    setRole("");
     setStatus("all");
     setFilteredCandidates(initialCandidates);
     setSelectedCandidates([]); // Clear selection on clear filters
