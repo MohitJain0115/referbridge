@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, writeBatch } from "firebase/firestore";
 import { db, firebaseReady, auth } from "@/lib/firebase";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -256,28 +256,72 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
   };
 
 
-  const handleCancelRequest = () => {
-    if (selectedCandidates.length === 0) return;
-
-    const finalReason = selectedReason === 'other' ? otherReasonText.trim() : selectedReason;
-    
-    if (!finalReason) {
-        toast({
-            title: "Reason Required",
-            description: "Please select or provide a reason for cancelling the request(s).",
-            variant: "destructive",
-        });
-        return;
+  const handleCancelRequest = async () => {
+    if (selectedCandidates.length === 0 || !db) {
+      toast({ title: "Something went wrong", description: "Database not available.", variant: "destructive" });
+      return;
     }
 
-    toast({
+    const finalReason = selectedReason === 'other' ? otherReasonText.trim() : selectedReason;
+
+    if (!finalReason) {
+      toast({
+        title: "Reason Required",
+        description: "Please select or provide a reason for cancelling the request(s).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsActionLoading(true);
+
+    try {
+      const batch = writeBatch(db);
+      const requestsToUpdate = filteredCandidates.filter(c => selectedCandidates.includes(c.id) && c.requestId);
+
+      if (requestsToUpdate.length === 0) {
+        toast({ title: "No valid requests found", variant: "destructive" });
+        setIsActionLoading(false);
+        return;
+      }
+
+      requestsToUpdate.forEach(candidate => {
+        const requestRef = doc(db, "referral_requests", candidate.requestId!);
+        batch.update(requestRef, {
+          status: 'Cancelled',
+          cancellationReason: finalReason
+        });
+      });
+
+      await batch.commit();
+
+      const updatedCandidates = filteredCandidates.map(c => {
+        if (selectedCandidates.includes(c.id)) {
+          return { ...c, status: 'Cancelled' as const };
+        }
+        return c;
+      }).filter(c => c.status !== 'Cancelled'); // Optionally hide cancelled requests immediately
+      setFilteredCandidates(updatedCandidates);
+
+
+      toast({
         title: "Request(s) Cancelled",
-        description: `${selectedCandidates.length} candidate request(s) have been cancelled.`
-    });
-    setIsCancelDialogOpen(false);
-    setSelectedCandidates([]);
-    setSelectedReason("");
-    setOtherReasonText("");
+        description: `${requestsToUpdate.length} candidate request(s) have been cancelled.`
+      });
+
+      setSelectedCandidates([]);
+      resetCancelDialog();
+
+    } catch (error) {
+      console.error("Error cancelling requests:", error);
+      toast({
+        title: "Update Failed",
+        description: "Could not cancel the request(s).",
+        variant: "destructive"
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
   };
   
   const resetCancelDialog = () => {
@@ -429,14 +473,14 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
                 )}
             </div>
             <DialogFooter>
-                <Button variant="ghost" onClick={resetCancelDialog}>Cancel</Button>
+                <Button variant="ghost" onClick={resetCancelDialog} disabled={isActionLoading}>Cancel</Button>
                 <Button 
                   variant="destructive" 
                   onClick={handleCancelRequest}
-                  disabled={!selectedReason || (selectedReason === 'other' && !otherReasonText.trim())}
+                  disabled={isActionLoading || !selectedReason || (selectedReason === 'other' && !otherReasonText.trim())}
                 >
-                    <Send className="mr-2 h-4 w-4" />
-                    Confirm Cancellation
+                    {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    {isActionLoading ? 'Cancelling...' : 'Confirm Cancellation'}
                 </Button>
             </DialogFooter>
         </DialogContent>
