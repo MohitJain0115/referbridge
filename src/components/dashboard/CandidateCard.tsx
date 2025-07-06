@@ -8,11 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DollarSign, Download, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Mail } from "lucide-react";
+import { DollarSign, Download, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Mail, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { doc, getDoc } from "firebase/firestore";
+import { db, firebaseReady } from "@/lib/firebase";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -22,6 +24,7 @@ type CandidateCardProps = {
 
 export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCardProps) {
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const { toast } = useToast();
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -32,19 +35,61 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
     onSelect(candidate.id);
   };
 
-  const handleDownload = () => {
-    toast({
-      title: "Download Started",
-      description: `Preparing resume for ${candidate.name}.`,
-    });
+  const getResumeUrl = async (): Promise<string | null> => {
+    if (!firebaseReady || !db) {
+        toast({ title: "Firebase not ready", description: "The database connection is not available.", variant: "destructive" });
+        return null;
+    }
+    try {
+        const resumeDocRef = doc(db, "resumes", candidate.id);
+        const resumeDoc = await getDoc(resumeDocRef);
+        if (resumeDoc.exists()) {
+            return resumeDoc.data().fileUrl || null;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching resume:", error);
+        toast({ title: "Error", description: "Could not fetch resume. Check Firestore security rules.", variant: "destructive" });
+        return null;
+    }
+  };
+
+
+  const handleDownload = async () => {
+    setIsActionLoading(true);
+    const resumeUrl = await getResumeUrl();
+    if (resumeUrl) {
+      window.open(resumeUrl, '_blank');
+      toast({
+        title: "Resume Downloading",
+        description: "Your download should begin shortly.",
+      });
+    } else {
+      toast({
+        title: "No Resume Found",
+        description: `${candidate.name} has not uploaded a resume.`,
+        variant: "destructive",
+      });
+    }
+    setIsActionLoading(false);
     setIsActionDialogOpen(false);
   };
 
-  const handleEmail = () => {
-    toast({
-      title: "Email Sent",
-      description: `Resume for ${candidate.name} has been sent to your email.`,
-    });
+  const handleEmail = async () => {
+    setIsActionLoading(true);
+    const resumeUrl = await getResumeUrl();
+    if (resumeUrl) {
+      const subject = `Resume for ${candidate.name}`;
+      const body = `Hi,\n\nPlease find the resume for ${candidate.name} at the following link:\n\n${resumeUrl}\n\nThank you,`;
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    } else {
+      toast({
+        title: "No Resume Found",
+        description: `${candidate.name} has not uploaded a resume.`,
+        variant: "destructive",
+      });
+    }
+    setIsActionLoading(false);
     setIsActionDialogOpen(false);
   };
 
@@ -88,7 +133,7 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onSelect={() => setIsActionDialogOpen(true)}>
                   <Download className="mr-2 h-4 w-4" />
-                  Download Resume
+                  Download/Share Resume
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Set Status</DropdownMenuLabel>
@@ -146,13 +191,13 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-            <Button variant="outline" onClick={handleDownload} className="flex-1">
-              <Download className="mr-2 h-4 w-4" />
-              Download to Device
+            <Button variant="outline" onClick={handleDownload} className="flex-1" disabled={isActionLoading}>
+                {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                Download to Device
             </Button>
-            <Button onClick={handleEmail} className="flex-1">
-              <Mail className="mr-2 h-4 w-4" />
-              Share via Email
+            <Button onClick={handleEmail} className="flex-1" disabled={isActionLoading}>
+                {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                Share via Email
             </Button>
           </div>
         </DialogContent>
