@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -6,10 +7,13 @@ import type { Candidate } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { doc, getDoc } from "firebase/firestore";
+import { db, firebaseReady } from "@/lib/firebase";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -18,6 +22,7 @@ type CandidateCardProps = {
 };
 
 export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCardProps) {
+  const { toast } = useToast();
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Prevent click event from firing on interactive elements inside the card
@@ -25,6 +30,31 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
       return;
     }
     onSelect(candidate.id);
+  };
+
+  const handleDownloadResume = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the card from being selected
+    if (!firebaseReady || !db) {
+      toast({ title: "Firebase not ready", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const resumeDocRef = doc(db, "resumes", candidate.id);
+      const resumeDoc = await getDoc(resumeDocRef);
+      if (resumeDoc.exists() && resumeDoc.data().fileUrl) {
+        window.open(resumeDoc.data().fileUrl, '_blank');
+        toast({
+          title: "Download Started",
+          description: `Opening ${candidate.name}'s resume.`
+        });
+      } else {
+        toast({ title: "No Resume Found", description: `${candidate.name} has not uploaded a resume.`, variant: "destructive" });
+      }
+    } catch (error) {
+      console.error("Error fetching resume:", error);
+      toast({ title: "Error", description: "Could not fetch the resume.", variant: "destructive" });
+    }
   };
 
   return (
@@ -58,11 +88,17 @@ export function CandidateCard({ candidate, isSelected, onSelect }: CandidateCard
                 <Button 
                   variant="ghost" 
                   size="icon"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDownloadResume}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Resume
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuLabel>Set Status</DropdownMenuLabel>
                 <DropdownMenuItem>
                   <Eye className="mr-2 h-4 w-4" />

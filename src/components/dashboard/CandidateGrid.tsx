@@ -134,17 +134,26 @@ export function CandidateGrid({ candidates: initialCandidates }: CandidateGridPr
   const handleBulkDownload = async () => {
     if (selectedCandidates.length === 0) return;
     setIsActionLoading(true);
-    
+
     const resumeLinks = await getResumeLinksForSelected();
 
     if (resumeLinks.length === 0) {
-        toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive"});
+      toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive" });
     } else {
-        resumeLinks.forEach(link => window.open(link.url, '_blank'));
+      // Browsers often block multiple pop-ups. Inform the user.
+      if (resumeLinks.length > 1) {
         toast({
-            title: "Download Started",
-            description: `Opened ${resumeLinks.length} resume(s) in new tabs.`
+          title: "Download Started",
+          description: `Attempting to open ${resumeLinks.length} resumes. Please disable your pop-up blocker if not all tabs open.`,
+          duration: 7000,
         });
+      } else {
+        toast({
+          title: "Download Started",
+          description: `Opening ${resumeLinks[0].name}'s resume in a new tab.`
+        });
+      }
+      resumeLinks.forEach(link => window.open(link.url, '_blank'));
     }
 
     setIsActionLoading(false);
