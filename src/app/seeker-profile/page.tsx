@@ -151,7 +151,7 @@ export default function SeekerProfilePage() {
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
-  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; experienceYears?: boolean; experienceMonths?: boolean, experiences?: boolean; educations?: boolean; }>({});
+  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; experienceYears?: boolean; experienceMonths?: boolean; }>({});
 
 
   // Resume state
@@ -421,12 +421,6 @@ export default function SeekerProfilePage() {
       if (experienceMonths === '') {
         validationErrors.experienceMonths = true;
       }
-      if (experiences.length === 0) {
-        validationErrors.experiences = true;
-      }
-      if (educations.length === 0) {
-        validationErrors.educations = true;
-      }
     }
   
     if (Object.keys(validationErrors).length > 0) {
@@ -665,8 +659,8 @@ export default function SeekerProfilePage() {
               </div>
 
               <div className="space-y-4">
-                <h3 className={cn("flex items-center gap-2 font-medium text-base", errors.experiences && "text-destructive")}>
-                    <Briefcase className="h-5 w-5 text-primary" /> Work Experience<span className="text-destructive pl-1">*</span>
+                <h3 className="flex items-center gap-2 font-medium text-base">
+                    <Briefcase className="h-5 w-5 text-primary" /> Work Experience
                 </h3>
                 <div className="space-y-4">
                     {experiences.map((exp) => (
@@ -758,8 +752,8 @@ export default function SeekerProfilePage() {
               </div>
 
               <div className="space-y-4">
-                <h3 className={cn("flex items-center gap-2 font-medium text-base", errors.educations && "text-destructive")}>
-                    <GraduationCap className="h-5 w-5 text-primary" /> Education<span className="text-destructive pl-1">*</span>
+                <h3 className="flex items-center gap-2 font-medium text-base">
+                    <GraduationCap className="h-5 w-5 text-primary" /> Education
                 </h3>
                 <div className="space-y-4">
                     {educations.map((edu) => (
