@@ -151,7 +151,7 @@ export default function SeekerProfilePage() {
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
-  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; experienceYears?: boolean; experienceMonths?: boolean; }>({});
+  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; experienceYears?: boolean; experienceMonths?: boolean; referrerCompany?: boolean; }>({});
 
 
   // Resume state
@@ -420,6 +420,10 @@ export default function SeekerProfilePage() {
       }
       if (experienceMonths === '') {
         validationErrors.experienceMonths = true;
+      }
+    } else if (profileView === 'referrer') {
+      if (!referrerCompany.trim()) {
+        validationErrors.referrerCompany = true;
       }
     }
   
@@ -936,12 +940,13 @@ export default function SeekerProfilePage() {
           ) : (
             <div className="space-y-6">
                 <div className="space-y-2">
-                    <Label htmlFor="referrer-company">Your Company</Label>
+                    <Label htmlFor="referrer-company">Your Company<span className="text-destructive pl-1">*</span></Label>
                     <Input
                       id="referrer-company"
                       placeholder="e.g., Google"
                       value={referrerCompany}
                       onChange={(e) => setReferrerCompany(e.target.value)}
+                      className={cn(errors.referrerCompany && "border-destructive")}
                     />
                 </div>
 
@@ -1005,5 +1010,7 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
+
+    
 
     
