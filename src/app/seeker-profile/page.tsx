@@ -167,12 +167,6 @@ export default function SeekerProfilePage() {
   // Effect to handle auth state changes
   useEffect(() => {
     if (!firebaseReady) {
-        toast({
-            title: "Firebase Not Configured",
-            description: "Please make sure your Firebase environment variables are set correctly in the .env file.",
-            variant: "destructive",
-            duration: 10000,
-        });
         setIsLoading(false);
         return;
     }
@@ -184,7 +178,7 @@ export default function SeekerProfilePage() {
         }
     });
     return () => unsubscribe();
-  }, [router, toast]);
+  }, [router]);
 
   // Effect to load data once user is authenticated
   useEffect(() => {
@@ -219,13 +213,22 @@ export default function SeekerProfilePage() {
             setResumeUrl(resumeData.fileUrl);
             setResumeName(resumeData.fileName);
         }
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error loading user data:", error);
-          toast({
-              title: "Loading Error",
-              description: "Could not load your profile. Please try refreshing.",
+          if (error.code === 'permission-denied') {
+            toast({
+              title: "Permission Denied",
+              description: "Could not load profile. Please check your Firestore Security Rules to allow reads.",
               variant: "destructive",
-          });
+              duration: 10000,
+            });
+          } else {
+            toast({
+                title: "Loading Error",
+                description: "Could not load your profile data. Please try refreshing.",
+                variant: "destructive",
+            });
+          }
       } finally {
         setIsLoading(false);
       }
@@ -284,6 +287,13 @@ export default function SeekerProfilePage() {
                     description: "Please check your Firebase Storage CORS and Security Rules configuration.",
                     variant: "destructive",
                     duration: 10000
+                });
+            } else if (error.code === 'permission-denied') {
+                 toast({
+                    title: "Permission Denied",
+                    description: "Could not save photo URL. Please check your Firestore Security Rules.",
+                    variant: "destructive",
+                    duration: 10000,
                 });
             } else {
                 toast({ title: "Upload Failed", description: "There was a problem uploading your photo.", variant: "destructive" });
@@ -344,6 +354,13 @@ export default function SeekerProfilePage() {
             variant: "destructive",
             duration: 10000,
           });
+        } else if (error.code === 'permission-denied') {
+             toast({
+                title: "Permission Denied",
+                description: "Could not save resume data. Please check your Firestore Security Rules.",
+                variant: "destructive",
+                duration: 10000,
+            });
         } else {
           toast({ title: "Upload Failed", description: "There was a problem uploading your resume.", variant: "destructive" });
         }
@@ -401,9 +418,18 @@ export default function SeekerProfilePage() {
           title: "Profile Saved!",
           description: `Your ${profileView} profile has been successfully updated.`,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error saving profile:", error);
-        toast({ title: "Save Failed", description: "Could not save your profile. Please try again.", variant: "destructive" });
+        if (error.code === 'permission-denied') {
+            toast({
+              title: "Permission Denied",
+              description: "Could not save profile. Please check your Firestore Security Rules to allow writes.",
+              variant: "destructive",
+              duration: 10000,
+            });
+        } else {
+            toast({ title: "Save Failed", description: "Could not save your profile. Please try again.", variant: "destructive" });
+        }
     } finally {
         setIsSaving(false);
     }
@@ -862,3 +888,5 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
+
+    
