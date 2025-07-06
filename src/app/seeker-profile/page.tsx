@@ -25,6 +25,7 @@ import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, storage, firebaseReady } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const dynamic = 'force-dynamic';
 
@@ -452,22 +453,21 @@ export default function SeekerProfilePage() {
           </div>
           <div className="flex items-center justify-between pt-4">
             <ProfileViewToggle currentView={profileView} setView={setProfileView} />
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled>
-                  <Linkedin className="mr-2 h-4 w-4" />
-                  Import from LinkedIn
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Import from LinkedIn</DialogTitle>
-                  <DialogDescription>
-                    This feature is currently disabled.
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0}>
+                    <Button variant="outline" size="sm" disabled>
+                      <Linkedin className="mr-2 h-4 w-4" />
+                      Import from LinkedIn
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Feature under development</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
