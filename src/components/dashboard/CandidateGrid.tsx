@@ -295,7 +295,6 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
 
       await batch.commit();
 
-      // Remove the cancelled candidates from the current view
       setFilteredCandidates(currentCandidates =>
         currentCandidates.filter(c => !selectedCandidates.includes(c.id))
       );
@@ -325,7 +324,11 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
     setIsCancelDialogOpen(false);
     setSelectedReason("");
     setOtherReasonText("");
-  }
+  };
+
+  const handleCandidateUpdate = (candidateId: string) => {
+    setFilteredCandidates(prev => prev.filter(c => c.id !== candidateId));
+  };
 
   const allVisibleCandidates = filteredCandidates.slice(0, 20);
   const allVisibleIds = allVisibleCandidates.map(c => c.id);
@@ -492,6 +495,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
                 candidate={candidate}
                 isSelected={selectedCandidates.includes(candidate.id)}
                 onSelect={toggleCandidateSelection}
+                onUpdateRequest={handleCandidateUpdate}
               />
             ))
         ) : (
