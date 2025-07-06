@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Briefcase, Sparkles, Users, Send } from "lucide-react";
+import { Briefcase, Sparkles, Send } from "lucide-react";
 
 type ReferrerCardProps = {
   referrer: Referrer;
@@ -54,10 +54,6 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Briefcase className="h-4 w-4" />
           <span>Works at <span className="font-semibold text-foreground">{referrer.company}</span></span>
-        </div>
-         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span>{referrer.connections}+ connections</span>
         </div>
         <div className="space-y-2">
             <h4 className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
