@@ -164,6 +164,7 @@ export default function SeekerProfilePage() {
 
   // Seeker states
   const [about, setAbout] = useState("");
+  const [skills, setSkills] = useState("");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [educations, setEducations] = useState<Education[]>([]);
@@ -208,6 +209,7 @@ export default function SeekerProfilePage() {
             setExpectedSalary(data.expectedSalary || "");
             setIsSalaryVisible(data.isSalaryVisible !== false);
             setAbout(data.about || "");
+            setSkills(data.skills?.join(', ') || "");
             setCompanies(data.companies || []);
             setExperiences(data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
             setEducations(data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
@@ -452,6 +454,7 @@ export default function SeekerProfilePage() {
       expectedSalary: Number(expectedSalary) || 0,
       isSalaryVisible,
       about,
+      skills: skills.split(',').map(s => s.trim()).filter(Boolean),
       companies,
       experiences,
       educations,
@@ -665,6 +668,20 @@ export default function SeekerProfilePage() {
                 />
               </div>
 
+              <div className="space-y-2">
+                  <Label htmlFor="skills" className="flex items-center gap-2 font-medium">
+                      <Sparkles className="h-4 w-4 text-primary" /> Top Skills
+                  </Label>
+                  <Input
+                      id="skills"
+                      placeholder="e.g., React, Node.js, TypeScript"
+                      value={skills}
+                      onChange={(e) => setSkills(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Enter your key skills, separated by commas.</p>
+              </div>
+
+
               <div className="space-y-4">
                 <h3 className="flex items-center gap-2 font-medium text-base">
                     <Briefcase className="h-5 w-5 text-primary" /> Work Experience
@@ -706,7 +723,7 @@ export default function SeekerProfilePage() {
                                                     handleExperienceChange(exp.id, 'from', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                disabled={(date) => date > new Date()}
+                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
@@ -731,7 +748,7 @@ export default function SeekerProfilePage() {
                                                     handleExperienceChange(exp.id, 'to', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                disabled={(date) => date > new Date()}
+                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
@@ -799,7 +816,7 @@ export default function SeekerProfilePage() {
                                                     handleEducationChange(edu.id, 'from', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                disabled={(date) => date > new Date()}
+                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
@@ -824,7 +841,7 @@ export default function SeekerProfilePage() {
                                                     handleEducationChange(edu.id, 'to', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                disabled={(date) => date > new Date()}
+                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
@@ -1013,7 +1030,3 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
-
-    
-
-    

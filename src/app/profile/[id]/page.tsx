@@ -26,7 +26,7 @@ type ProfileData = {
     companies: any[];
     expectedSalary: number;
     isSalaryVisible: boolean;
-    referrerSpecialties: string;
+    skills: string[];
     status: Candidate['status'];
 };
 
@@ -101,9 +101,10 @@ export default function ProfilePage() {
                     
                     const profileData = {
                         ...data,
-                        isSalaryVisible: data.hasOwnProperty('isSalaryVisible') ? data.isSalaryVisible : true,
+                        isSalaryVisible: data.isSalaryVisible === false ? false : true,
                         experiences,
                         educations,
+                        skills: data.skills || []
                     } as ProfileData;
 
                     setProfile(profileData);
@@ -138,8 +139,6 @@ export default function ProfilePage() {
     }
     
     if (!profile) return null;
-
-    const skills = profile.referrerSpecialties?.split(',').map(s => s.trim()).filter(Boolean) || [];
 
     return (
         <div className="bg-secondary min-h-screen p-4 md:p-10">
@@ -181,11 +180,11 @@ export default function ProfilePage() {
                             </div>
                         )}
                         
-                        {skills.length > 0 && (
+                        {profile.skills && profile.skills.length > 0 && (
                             <div>
                                 <h3 className="flex items-center gap-2 font-headline text-xl mb-4"><Sparkles className="h-5 w-5 text-primary" /> Skills</h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {skills.map(skill => (
+                                    {profile.skills.map(skill => (
                                         <Badge key={skill} variant="secondary" className="text-sm">{skill}</Badge>
                                     ))}
                                 </div>

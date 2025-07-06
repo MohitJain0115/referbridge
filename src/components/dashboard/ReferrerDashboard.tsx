@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -83,8 +84,8 @@ export function ReferrerDashboard() {
                         targetRole: data.targetRole,
                         company: data.experiences?.[0]?.company || "", 
                         salary: data.expectedSalary || 0,
-                        isSalaryVisible: data.hasOwnProperty('isSalaryVisible') ? data.isSalaryVisible : true,
-                        skills: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
+                        isSalaryVisible: data.isSalaryVisible === false ? false : true,
+                        skills: data.skills || [],
                         location: data.location || "Remote",
                         experience: totalExperience,
                         status: data.status || 'Pending',
