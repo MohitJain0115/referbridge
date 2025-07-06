@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -39,10 +38,10 @@ import {
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { KeyRound, Loader2, Save, Trash2 } from "lucide-react";
+import { KeyRound, Loader2, Trash2 } from "lucide-react";
 import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 
 const passwordChangeSchema = z.object({
@@ -67,7 +66,6 @@ export function SettingsPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
   // State for other sections
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
@@ -149,28 +147,6 @@ export function SettingsPage() {
     setDeleteConfirmation("");
   };
 
-  const handleSaveDetails = async () => {
-    if (!currentUser) return;
-    setIsSaving(true);
-    try {
-        const profileRef = doc(db, "profiles", currentUser.uid);
-        await updateDoc(profileRef, { name });
-        toast({
-            title: "Success",
-            description: "Your name has been updated.",
-        });
-    } catch (error) {
-        console.error("Failed to update profile", error);
-        toast({
-            title: "Error",
-            description: "Failed to update your details. Please try again.",
-            variant: "destructive",
-        });
-    } finally {
-        setIsSaving(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -185,24 +161,20 @@ export function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Account Information</CardTitle>
-          <CardDescription>Basic information about your account.</CardDescription>
+          <CardDescription>
+            This information is managed via your main profile page and cannot be edited here.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isLoading || isSaving} />
+            <Input id="name" value={name} readOnly disabled />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" value={email} readOnly disabled />
           </div>
         </CardContent>
-        <CardFooter className="justify-end border-t pt-6">
-            <Button onClick={handleSaveDetails} disabled={isLoading || isSaving}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {isSaving ? "Saving..." : "Save Changes"}
-            </Button>
-        </CardFooter>
       </Card>
 
       <Card>
