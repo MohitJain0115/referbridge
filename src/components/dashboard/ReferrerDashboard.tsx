@@ -20,6 +20,31 @@ function CandidateGridSkeleton() {
   );
 }
 
+const calculateTotalExperience = (experiences: any[] | undefined): number => {
+    if (!experiences) return 0;
+
+    let totalMonths = 0;
+    const now = new Date();
+
+    experiences.forEach((exp: any) => {
+        const startDate = exp.from?.toDate ? exp.from.toDate() : null;
+        if (!startDate) return;
+
+        const endDate = exp.currentlyWorking ? now : (exp.to?.toDate ? exp.to.toDate() : null);
+        if (!endDate) return;
+
+        let months = (endDate.getFullYear() - startDate.getFullYear()) * 12;
+        months -= startDate.getMonth();
+        months += endDate.getMonth();
+        
+        if (months > 0) {
+            totalMonths += months;
+        }
+    });
+
+    return Math.floor(totalMonths / 12);
+};
+
 export function ReferrerDashboard() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +73,7 @@ export function ReferrerDashboard() {
                 .filter(doc => doc.id !== currentUser.uid) 
                 .map(doc => {
                     const data = doc.data();
-                    const experienceYears = data.experienceYears || 0;
+                    const totalExperience = calculateTotalExperience(data.experiences);
 
                     return {
                         id: doc.id,
@@ -58,10 +83,10 @@ export function ReferrerDashboard() {
                         targetRole: data.targetRole,
                         company: data.experiences?.[0]?.company || "", 
                         salary: data.expectedSalary || 0,
-                        isSalaryVisible: data.isSalaryVisible !== false,
+                        isSalaryVisible: data.hasOwnProperty('isSalaryVisible') ? data.isSalaryVisible : true,
                         skills: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
                         location: data.location || "Remote",
-                        experience: experienceYears,
+                        experience: totalExperience,
                         status: data.status || 'Pending',
                         jobPostUrl: data.companies?.[0]?.jobs?.[0]?.url || '',
                         targetCompanies: data.companies?.map((c: any) => c.name).filter(Boolean) || [],

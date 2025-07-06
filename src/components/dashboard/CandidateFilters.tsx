@@ -75,10 +75,10 @@ export function CandidateFilters({
                     <label htmlFor="status" className="text-sm font-medium">Status</label>
                     <Select value={status} onValueChange={value => setStatus(value as Status)}>
                         <SelectTrigger id="status">
-                            <SelectValue placeholder="All Statuses" />
+                            <SelectValue placeholder="All" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="all">All</SelectItem>
                             <SelectItem value="Pending">Pending</SelectItem>
                             <SelectItem value="Viewed">Viewed</SelectItem>
                             <SelectItem value="Referred">Referred</SelectItem>

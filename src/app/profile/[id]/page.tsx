@@ -101,7 +101,7 @@ export default function ProfilePage() {
                     
                     const profileData = {
                         ...data,
-                        isSalaryVisible: data.isSalaryVisible !== false,
+                        isSalaryVisible: data.hasOwnProperty('isSalaryVisible') ? data.isSalaryVisible : true,
                         experiences,
                         educations,
                     } as ProfileData;

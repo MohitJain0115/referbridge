@@ -21,6 +21,32 @@ function CandidateGridSkeleton() {
   );
 }
 
+const calculateTotalExperience = (experiences: any[] | undefined): number => {
+    if (!experiences) return 0;
+
+    let totalMonths = 0;
+    const now = new Date();
+
+    experiences.forEach((exp: any) => {
+        const startDate = exp.from?.toDate ? exp.from.toDate() : null;
+        if (!startDate) return;
+
+        const endDate = exp.currentlyWorking ? now : (exp.to?.toDate ? exp.to.toDate() : null);
+        if (!endDate) return;
+
+        let months = (endDate.getFullYear() - startDate.getFullYear()) * 12;
+        months -= startDate.getMonth();
+        months += endDate.getMonth();
+        
+        if (months > 0) {
+            totalMonths += months;
+        }
+    });
+
+    return Math.floor(totalMonths / 12);
+};
+
+
 export function ReferralRequestsPage() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [requestedCandidates, setRequestedCandidates] = useState<Candidate[]>([]);
@@ -67,7 +93,7 @@ export function ReferralRequestsPage() {
           }
           
           const seekerData = seekerDoc.data();
-          const experienceYears = seekerData.experienceYears || 0;
+          const totalExperience = calculateTotalExperience(seekerData.experiences);
 
           return {
               id: seekerDoc.id, 
@@ -78,10 +104,10 @@ export function ReferralRequestsPage() {
               targetRole: seekerData.targetRole,
               company: seekerData.experiences?.[0]?.company || "",
               salary: seekerData.expectedSalary || 0,
-              isSalaryVisible: seekerData.isSalaryVisible !== false,
+              isSalaryVisible: seekerData.hasOwnProperty('isSalaryVisible') ? seekerData.isSalaryVisible : true,
               skills: seekerData.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
               location: seekerData.location || "Remote",
-              experience: experienceYears,
+              experience: totalExperience,
               status: requestData.status, 
               jobPostUrl: requestData.jobInfo || seekerData.companies?.[0]?.jobs?.[0]?.url || '',
               targetCompanies: seekerData.companies?.map((c: any) => c.name).filter(Boolean) || [],
