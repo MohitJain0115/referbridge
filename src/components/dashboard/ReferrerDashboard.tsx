@@ -48,7 +48,7 @@ export function ReferrerDashboard() {
                 .filter(doc => doc.id !== currentUser.uid) // Filter out the current user
                 .map(doc => {
                     const data = doc.data();
-                    const experienceYears = parseInt(data.experienceInRole, 10) || 0;
+                    const experienceYears = data.experienceYears || 0;
 
                     return {
                         id: doc.id,

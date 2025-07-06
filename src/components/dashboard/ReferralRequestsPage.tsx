@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -66,7 +67,7 @@ export function ReferralRequestsPage() {
           }
           
           const seekerData = seekerDoc.data();
-          const experienceYears = parseInt(seekerData.experienceInRole, 10) || 0;
+          const experienceYears = seekerData.experienceYears || 0;
 
           return {
               id: seekerDoc.id, // This is the seeker's ID

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -141,7 +142,8 @@ export default function SeekerProfilePage() {
   // Form fields states
   const [name, setName] = useState("");
   const [currentRole, setCurrentRole] = useState("");
-  const [experienceInRole, setExperienceInRole] = useState("");
+  const [experienceYears, setExperienceYears] = useState<number | string>("");
+  const [experienceMonths, setExperienceMonths] = useState<number | string>("");
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
@@ -193,7 +195,8 @@ export default function SeekerProfilePage() {
             const data = profileDocSnap.data();
             setName(data.name || "");
             setCurrentRole(data.currentRole || "");
-            setExperienceInRole(data.experienceInRole || "");
+            setExperienceYears(data.experienceYears || "");
+            setExperienceMonths(data.experienceMonths || "");
             setTargetRole(data.targetRole || "");
             setExpectedSalary(data.expectedSalary || "");
             setIsSalaryVisible(data.isSalaryVisible !== false);
@@ -399,7 +402,8 @@ export default function SeekerProfilePage() {
     const profileData = {
         name,
         currentRole,
-        experienceInRole,
+        experienceYears: Number(experienceYears) || 0,
+        experienceMonths: Number(experienceMonths) || 0,
         targetRole,
         expectedSalary: Number(expectedSalary) || 0,
         isSalaryVisible,
@@ -537,8 +541,37 @@ export default function SeekerProfilePage() {
               <div className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="current-experience">Experience in Current Role</Label>
-                      <Input id="current-experience" placeholder="e.g., 3 years" value={experienceInRole} onChange={(e) => setExperienceInRole(e.target.value)} />
+                        <Label>Experience in Current Role</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <Label htmlFor="experience-years" className="sr-only">Years of Experience</Label>
+                                <Input 
+                                    id="experience-years" 
+                                    type="number" 
+                                    placeholder="Years" 
+                                    value={experienceYears} 
+                                    onChange={(e) => setExperienceYears(e.target.value)}
+                                    min="0"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="experience-months" className="sr-only">Months of Experience</Label>
+                                <Input 
+                                    id="experience-months" 
+                                    type="number" 
+                                    placeholder="Months" 
+                                    value={experienceMonths} 
+                                    onChange={(e) => {
+                                        const months = e.target.value;
+                                        if (months === '' || (Number(months) >= 0 && Number(months) <= 11)) {
+                                            setExperienceMonths(months);
+                                        }
+                                    }}
+                                    max="11"
+                                    min="0"
+                                />
+                            </div>
+                        </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="target-role">Target Role</Label>
