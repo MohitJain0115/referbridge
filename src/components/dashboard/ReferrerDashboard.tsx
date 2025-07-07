@@ -7,9 +7,10 @@ import { CandidateGrid } from "./CandidateGrid";
 import type { Candidate } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firestore";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "firebase/auth";
+import { calculateTotalExperienceInYears } from "@/lib/utils";
 
 function CandidateGridSkeleton() {
   return (
@@ -20,31 +21,6 @@ function CandidateGridSkeleton() {
     </div>
   );
 }
-
-const calculateTotalExperience = (experiences: any[] | undefined): number => {
-    if (!experiences) return 0;
-
-    let totalMonths = 0;
-    const now = new Date();
-
-    experiences.forEach((exp: any) => {
-        const startDate = exp.from?.toDate ? exp.from.toDate() : null;
-        if (!startDate) return;
-
-        const endDate = exp.currentlyWorking ? now : (exp.to?.toDate ? exp.to.toDate() : null);
-        if (!endDate) return;
-
-        let months = (endDate.getFullYear() - startDate.getFullYear()) * 12;
-        months -= startDate.getMonth();
-        months += endDate.getMonth();
-        
-        if (months > 0) {
-            totalMonths += months;
-        }
-    });
-
-    return Math.floor(totalMonths / 12);
-};
 
 export function ReferrerDashboard() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -74,7 +50,7 @@ export function ReferrerDashboard() {
                 .filter(doc => doc.id !== currentUser.uid) 
                 .map(doc => {
                     const data = doc.data();
-                    const totalExperience = calculateTotalExperience(data.experiences);
+                    const totalExperience = calculateTotalExperienceInYears(data.experiences);
 
                     return {
                         id: doc.id,
@@ -84,7 +60,7 @@ export function ReferrerDashboard() {
                         targetRole: data.targetRole,
                         company: data.experiences?.[0]?.company || "", 
                         salary: data.expectedSalary || 0,
-                        isSalaryVisible: data.isSalaryVisible === false ? false : true,
+                        isSalaryVisible: data.isSalaryVisible !== false,
                         skills: data.skills || [],
                         location: data.location || "Remote",
                         experience: totalExperience,

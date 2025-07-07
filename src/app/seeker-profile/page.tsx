@@ -2,17 +2,17 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Eye, Sparkles, Building2, Calendar as CalendarIcon, Download, FileText, Loader2 } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Eye, Sparkles, Building2, Calendar as CalendarIcon, Download, FileText, Loader2, Info } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+import { cn, calculateTotalExperienceInYears } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -146,12 +146,10 @@ export default function SeekerProfilePage() {
   // Form fields states
   const [name, setName] = useState("");
   const [currentRole, setCurrentRole] = useState("");
-  const [experienceYears, setExperienceYears] = useState<number | string>("");
-  const [experienceMonths, setExperienceMonths] = useState<number | string>("");
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
-  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; experienceYears?: boolean; experienceMonths?: boolean; referrerCompany?: boolean; resume?: boolean; }>({});
+  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; referrerCompany?: boolean; resume?: boolean; }>({});
 
 
   // Resume state
@@ -174,6 +172,8 @@ export default function SeekerProfilePage() {
   const [referrerAbout, setReferrerAbout] = useState("");
   const [referrerSpecialties, setReferrerSpecialties] = useState("");
   
+  const totalExperience = useMemo(() => calculateTotalExperienceInYears(experiences), [experiences]);
+
   // Effect to handle auth state changes
   useEffect(() => {
     if (!firebaseReady) {
@@ -203,16 +203,13 @@ export default function SeekerProfilePage() {
             setName(data.name || "");
             setCurrentRole(data.currentRole || "");
             setTargetRole(data.targetRole || "");
-            setExperienceYears(data.experienceYears || "");
-            setExperienceMonths(data.experienceMonths || "");
-            setTargetRole(data.targetRole || "");
             setExpectedSalary(data.expectedSalary || "");
             setIsSalaryVisible(data.isSalaryVisible !== false);
             setAbout(data.about || "");
             setSkills(data.skills?.join(', ') || "");
             setCompanies(data.companies || []);
-            setExperiences(data.experiences?.map((exp: any) => ({ ...exp, from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
-            setEducations(data.educations?.map((edu: any) => ({ ...edu, from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
+            setExperiences(data.experiences?.map((exp: any) => ({ ...exp, id: exp.id || Date.now() + Math.random(), from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
+            setEducations(data.educations?.map((edu: any) => ({ ...edu, id: edu.id || Date.now() + Math.random(), from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
             setReferrerCompany(data.referrerCompany || "");
             setReferrerAbout(data.referrerAbout || "");
             setReferrerSpecialties(data.referrerSpecialties || "");
@@ -417,12 +414,6 @@ export default function SeekerProfilePage() {
     }
 
     if (profileView === 'seeker') {
-      if (experienceYears === '') {
-        validationErrors.experienceYears = true;
-      }
-      if (experienceMonths === '') {
-        validationErrors.experienceMonths = true;
-      }
       if (!resumeUrl) {
         validationErrors.resume = true;
       }
@@ -449,8 +440,6 @@ export default function SeekerProfilePage() {
       name,
       currentRole,
       targetRole,
-      experienceYears: Number(experienceYears) || 0,
-      experienceMonths: Number(experienceMonths) || 0,
       expectedSalary: Number(expectedSalary) || 0,
       isSalaryVisible,
       about,
@@ -587,40 +576,21 @@ export default function SeekerProfilePage() {
             <div className="space-y-6">
               <div className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                        <Label>Experience in Current Role<span className="text-destructive pl-1">*</span></Label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <Label htmlFor="experience-years" className="sr-only">Years of Experience</Label>
-                                <Input 
-                                    id="experience-years" 
-                                    type="number" 
-                                    placeholder="Years" 
-                                    value={experienceYears} 
-                                    onChange={(e) => setExperienceYears(e.target.value)}
-                                    min="0"
-                                    className={cn(errors.experienceYears && "border-destructive")}
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="experience-months" className="sr-only">Months of Experience</Label>
-                                <Input 
-                                    id="experience-months" 
-                                    type="number" 
-                                    placeholder="Months" 
-                                    value={experienceMonths} 
-                                    onChange={(e) => {
-                                        const months = e.target.value;
-                                        if (months === '' || (Number(months) >= 0 && Number(months) <= 11)) {
-                                            setExperienceMonths(months);
-                                        }
-                                    }}
-                                    max="11"
-                                    min="0"
-                                    className={cn(errors.experienceMonths && "border-destructive")}
-                                />
-                            </div>
-                        </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5">
+                        Total Calculated Experience
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger type="button"><Info className="h-3 w-3 text-muted-foreground"/></TooltipTrigger>
+                            <TooltipContent>
+                              <p>This is calculated automatically from your work history below.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </Label>
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm">
+                          {totalExperience > 0 ? `${totalExperience} ${totalExperience === 1 ? 'year' : 'years'}` : 'No experience added'}
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="target-role">Target Role</Label>
