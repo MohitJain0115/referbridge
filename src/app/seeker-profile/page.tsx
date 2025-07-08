@@ -46,7 +46,7 @@ type Experience = {
     role: string;
     company: string;
     from: Date | undefined;
-    to: Date | undefined;
+    to: Date | undefined | null;
     currentlyWorking: boolean;
     description: string;
 };
@@ -56,7 +56,7 @@ type Education = {
     institution: string;
     degree: string;
     from: Date | undefined;
-    to: Date | undefined;
+    to: Date | undefined | null;
     description: string;
 };
 
@@ -261,7 +261,7 @@ export default function SeekerProfilePage() {
         if (exp.id === id) {
             const updatedExp = { ...exp, [field]: value };
             if (field === 'currentlyWorking' && value === true) {
-                updatedExp.to = undefined;
+                updatedExp.to = null;
             }
             return updatedExp;
         }
