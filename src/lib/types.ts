@@ -33,6 +33,7 @@ export const ReferrerSchema = z.object({
   company: z.string().describe("The company the referrer works at."),
   location: z.string().describe("The referrer's location (e.g., 'San Francisco, CA')."),
   specialties: z.array(z.string()).describe("A list of 2-4 professional specialties."),
+  bio: z.string().optional().describe("A short bio from the referrer."),
 });
 export type Referrer = z.infer<typeof ReferrerSchema>;
 

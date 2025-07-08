@@ -7,11 +7,11 @@ import type { Referrer } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Briefcase, Sparkles, Send, Loader2 } from "lucide-react";
+import { Briefcase, Sparkles, Send, Loader2, Info } from "lucide-react";
 import { auth, db, firebaseReady } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 
@@ -21,7 +21,7 @@ type ReferrerCardProps = {
 
 export function ReferrerCard({ referrer }: ReferrerCardProps) {
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [jobInfo, setJobInfo] = useState("");
 
@@ -49,7 +49,7 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
           variant: "destructive",
         });
         setIsSending(false);
-        setIsDialogOpen(false);
+        setIsRequestDialogOpen(false);
         return;
       }
 
@@ -67,7 +67,7 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
         description: `Your profile and resume have been shared with ${referrer.name}. You can track the status in 'My Requests'.`,
       });
 
-      setIsDialogOpen(false);
+      setIsRequestDialogOpen(false);
       setJobInfo("");
     } catch (error: any) {
       console.error("Error sending referral request:", error);
@@ -117,38 +117,77 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
         )}
       </CardContent>
       <CardFooter>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full">
-                Request Referral
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-              <DialogHeader>
-                  <DialogTitle>Share your profile with {referrer.name}</DialogTitle>
-                  <DialogDescription>
-                      Your full profile and resume will be shared with {referrer.name} for their consideration. You can optionally add a job link or ID to increase your chances.
-                  </DialogDescription>
-              </DialogHeader>
-              <div className="py-2">
-                  <Label htmlFor="job-info">Job Link or ID (Optional)</Label>
-                  <Input
-                      id="job-info"
-                      placeholder="Paste job link or enter Job ID..."
-                      className="mt-2"
-                      value={jobInfo}
-                      onChange={(e) => setJobInfo(e.target.value)}
-                  />
-              </div>
-              <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsDialogOpen(false)} disabled={isSending}>Cancel</Button>
-                  <Button onClick={handleSendRequest} disabled={isSending}>
-                      {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                      {isSending ? 'Sending...' : 'Share Profile'}
+        <div className="flex gap-2 w-full">
+            {referrer.bio && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="secondary" className="flex-1">
+                    <Info className="mr-2 h-4 w-4" /> View Bio
                   </Button>
-              </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <div className="flex items-center gap-4">
+                      <Image
+                        src={referrer.avatar}
+                        alt={referrer.name}
+                        width={48}
+                        height={48}
+                        className="rounded-full border object-cover aspect-square"
+                      />
+                      <div>
+                        <DialogTitle>{referrer.name}</DialogTitle>
+                        <DialogDescription>{referrer.role} at {referrer.company}</DialogDescription>
+                      </div>
+                    </div>
+                  </DialogHeader>
+                  <div className="py-4 text-sm text-muted-foreground whitespace-pre-wrap border-t pt-4 mt-4">
+                    <h3 className="font-semibold text-foreground mb-2">About</h3>
+                    <p>{referrer.bio}</p>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button type="button" variant="outline">
+                        Close
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+            <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex-1">
+                    Request Referral
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                  <DialogHeader>
+                      <DialogTitle>Share your profile with {referrer.name}</DialogTitle>
+                      <DialogDescription>
+                          Your full profile and resume will be shared with {referrer.name} for their consideration. You can optionally add a job link or ID to increase your chances.
+                      </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-2">
+                      <Label htmlFor="job-info">Job Link or ID (Optional)</Label>
+                      <Input
+                          id="job-info"
+                          placeholder="Paste job link or enter Job ID..."
+                          className="mt-2"
+                          value={jobInfo}
+                          onChange={(e) => setJobInfo(e.target.value)}
+                      />
+                  </div>
+                  <DialogFooter>
+                      <Button variant="ghost" onClick={() => setIsRequestDialogOpen(false)} disabled={isSending}>Cancel</Button>
+                      <Button onClick={handleSendRequest} disabled={isSending}>
+                          {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                          {isSending ? 'Sending...' : 'Share Profile'}
+                      </Button>
+                  </DialogFooter>
+              </DialogContent>
+            </Dialog>
+        </div>
       </CardFooter>
     </Card>
   );

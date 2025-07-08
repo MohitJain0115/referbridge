@@ -64,6 +64,7 @@ export function SeekerDashboard() {
                     company: data.referrerCompany || "N/A",
                     location: data.location || "Remote",
                     specialties: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
+                    bio: data.referrerAbout || "",
                 } as Referrer;
             });
         
