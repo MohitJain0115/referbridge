@@ -114,7 +114,7 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
 
             toast({
               title: "Account Created!",
-              description: "A verification email has been sent. Please check your inbox and verify your email before logging in.",
+              description: "A verification email has been sent. Please check your inbox (and spam folder) and verify your email before logging in.",
             });
 
             router.push('/login');
