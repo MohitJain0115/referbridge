@@ -89,7 +89,7 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
           alt={referrer.name}
           width={80}
           height={80}
-          className="rounded-full border-2 border-primary/50"
+          className="rounded-full border-2 border-primary/50 object-cover aspect-square"
           data-ai-hint="person avatar"
         />
         <div className="pt-4">

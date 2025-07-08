@@ -195,7 +195,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               alt={candidate.name}
               width={64}
               height={64}
-              className="rounded-full border-2 border-primary/50"
+              className="rounded-full border-2 border-primary/50 object-cover aspect-square"
               data-ai-hint="person avatar"
             />
             <DropdownMenu>

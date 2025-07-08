@@ -356,7 +356,7 @@ export function ReferralStatusPage() {
                       alt={request.referrer.name}
                       width={40}
                       height={40}
-                      className="rounded-full"
+                      className="rounded-full object-cover aspect-square"
                       data-ai-hint="person avatar"
                     />
                     <div className="font-medium">{request.referrer.name}</div>
