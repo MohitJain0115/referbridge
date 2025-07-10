@@ -120,7 +120,7 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
                   A verification email has been sent. Please check your inbox and{" "}
                   <strong className="text-foreground">verify your email</strong> before logging in.
                   <br />
-                  <span className="text-xs text-muted-foreground/80">(Don't forget to check your spam folder!)</span>
+                  <strong className="text-muted-foreground">(Don't forget to check your spam folder!)</strong>
                 </span>
               ),
               duration: 10000,
