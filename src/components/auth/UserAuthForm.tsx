@@ -19,6 +19,7 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
   signOut,
+  fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import { auth, firebaseReady } from "@/lib/firebase";
 
@@ -55,6 +56,24 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
     defaultValues: mode === 'signup' ? { email: '', password: '', userType: 'seeker' } : { email: '', password: '' }
   });
 
+  const showVerificationToast = () => {
+    toast({
+      title: "Check your inbox!",
+      description: (
+        <span className="text-sm">
+          A verification email has been sent. Please check your inbox and{" "}
+          <strong className="text-foreground">verify your email</strong> before logging in.
+          <br />
+          <span className="text-muted-foreground">
+            (Don't forget to check your{" "}
+            <strong className="text-lg font-bold text-destructive">SPAM</strong> folder!)
+          </span>
+        </span>
+      ),
+      duration: 10000,
+    });
+  };
+
   async function onSubmit(data: FormData) {
     setIsLoading(true);
 
@@ -83,12 +102,9 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
                 });
                 router.push('/dashboard');
             } else {
+                await sendEmailVerification(user);
                 await signOut(auth);
-                toast({
-                    title: "Email Not Verified",
-                    description: "Please verify your email before logging in. Check your inbox.",
-                    variant: "destructive",
-                });
+                showVerificationToast();
             }
         } catch (error: any) {
             const errorCode = error.code;
@@ -112,31 +128,20 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
             const user = userCredential.user;
             await sendEmailVerification(user);
             await signOut(auth);
-
-            toast({
-              title: "Account Created!",
-              description: (
-                <span className="text-sm">
-                  A verification email has been sent. Please check your inbox and{" "}
-                  <strong className="text-foreground">verify your email</strong> before logging in.
-                  <br />
-                  <span className="text-muted-foreground">
-                    (Don't forget to check your{" "}
-                    <strong className="text-lg font-bold text-destructive">SPAM</strong> folder!)
-                  </span>
-                </span>
-              ),
-              duration: 10000,
-            });
-
+            showVerificationToast();
             router.push('/login');
             
         } catch (error: any) {
-             toast({
-                title: "Signup Failed",
-                description: error.message,
-                variant: "destructive",
-            });
+            if (error.code === 'auth/email-already-in-use') {
+              showVerificationToast();
+              router.push('/login');
+            } else {
+              toast({
+                  title: "Signup Failed",
+                  description: error.message,
+                  variant: "destructive",
+              });
+            }
         } finally {
             setIsLoading(false);
         }
