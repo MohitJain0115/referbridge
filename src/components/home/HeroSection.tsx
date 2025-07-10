@@ -24,12 +24,12 @@ export function HeroSection() {
         </div>
         <div className="flex items-center justify-center">
             <Image 
-                src="https://placehold.co/600x400.png"
+                src="https://storage.googleapis.com/idx-dev-01-public-images/5948332c-7b2a-4467-b52b-7f15e855734e.png"
                 width={600}
                 height={400}
-                alt="Illustration of people connecting for referrals"
-                className="rounded-lg shadow-2xl"
-                data-ai-hint="professional career"
+                alt="A person handing over a resume during a job interview."
+                className="rounded-lg shadow-2xl object-cover"
+                data-ai-hint="resume interview"
             />
         </div>
       </div>
