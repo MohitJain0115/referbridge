@@ -82,7 +82,7 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
   };
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col transition-all hover:shadow-lg hover:scale-105">
       <CardHeader className="items-center text-center">
         <Image
           src={referrer.avatar}

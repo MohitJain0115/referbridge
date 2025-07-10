@@ -175,7 +175,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     <>
       <Card 
         className={cn(
-          "flex flex-col transition-all relative cursor-pointer", 
+          "flex flex-col transition-all relative cursor-pointer hover:shadow-lg hover:scale-105", 
           isSelected && "border-primary ring-2 ring-primary"
         )}
         onClick={handleCardClick}
