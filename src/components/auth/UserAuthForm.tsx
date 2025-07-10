@@ -116,11 +116,14 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
             toast({
               title: "Account Created!",
               description: (
-                <span>
+                <span className="text-sm">
                   A verification email has been sent. Please check your inbox and{" "}
                   <strong className="text-foreground">verify your email</strong> before logging in.
                   <br />
-                  <strong className="text-muted-foreground">(Don't forget to check your spam folder!)</strong>
+                  <span className="text-muted-foreground">
+                    (Don't forget to check your{" "}
+                    <strong className="text-lg font-bold text-destructive">SPAM</strong> folder!)
+                  </span>
                 </span>
               ),
               duration: 10000,
