@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -114,7 +115,15 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
 
             toast({
               title: "Account Created!",
-              description: "A verification email has been sent. Please check your inbox (and spam folder) and verify your email before logging in.",
+              description: (
+                <span>
+                  A verification email has been sent. Please check your inbox and{" "}
+                  <strong className="text-foreground">verify your email</strong> before logging in.
+                  <br />
+                  <span className="text-xs text-muted-foreground/80">(Don't forget to check your spam folder!)</span>
+                </span>
+              ),
+              duration: 10000,
             });
 
             router.push('/login');
