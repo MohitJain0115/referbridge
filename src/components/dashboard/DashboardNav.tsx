@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Users, Settings, Inbox } from "lucide-react";
+import { Users, Settings, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -13,13 +13,13 @@ export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
 
   const seekerNav = [
     { name: "Find Referrers", href: "/dashboard?view=seeker", icon: Users, page: null },
-    { name: "My Requests", href: "/dashboard?view=seeker&page=requests", icon: Inbox, page: "requests" },
+    { name: "My Requests", href: "/dashboard?view=seeker&page=requests", icon: Mail, page: "requests" },
     { name: "Settings", href: "/dashboard?view=seeker&page=settings", icon: Settings, page: "settings" },
   ];
 
   const referrerNav = [
     { name: "Candidates", href: "/dashboard?view=referrer", icon: Users, page: null },
-    { name: "Referral Requests", href: "/dashboard?view=referrer&page=requests", icon: Inbox, page: "requests" },
+    { name: "Referral Requests", href: "/dashboard?view=referrer&page=requests", icon: Mail, page: "requests" },
     { name: "Settings", href: "/dashboard?view=referrer&page=settings", icon: Settings, page: "settings" },
   ];
 
