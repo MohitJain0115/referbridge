@@ -29,7 +29,7 @@ export function HeroSection() {
                 height={400}
                 alt="Illustration of people connecting for referrals"
                 className="rounded-lg shadow-2xl"
-                data-ai-hint="professional connection"
+                data-ai-hint="networking business"
             />
         </div>
       </div>

@@ -156,7 +156,7 @@ export default function ProfilePage() {
                                 width={128}
                                 height={128}
                                 className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
-                                data-ai-hint="person avatar"
+                                data-ai-hint="person"
                             />
                         )}
                         <CardTitle className="font-headline text-3xl mt-4">{profile.name}</CardTitle>
