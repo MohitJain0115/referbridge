@@ -9,9 +9,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail, RotateCcw } from "lucide-react";
+import { Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, firebaseReady, auth } from "@/lib/firebase";
@@ -307,7 +307,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         <CardContent className="flex-grow space-y-4">
           <div className="text-sm text-muted-foreground">
             {candidate.salary > 0 && 
-              <span>{candidate.salary.toLocaleString('en-US', { style: 'currency', currency: candidate.salaryCurrency || 'USD', minimumFractionDigits: 0 })} expected salary</span>
+              <span>{formatCurrency(candidate.salary, candidate.salaryCurrency)} expected salary</span>
             }
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -35,3 +35,21 @@ export const calculateTotalExperienceInYears = (experiences: any[] | undefined):
 
     return Math.floor(totalMonths / 12);
 };
+
+export const formatCurrency = (amount: number, currency: string = 'USD') => {
+    const symbols: { [key: string]: string } = {
+        USD: '$',
+        EUR: '€',
+        GBP: '£',
+        JPY: '¥',
+        INR: '₹',
+    };
+
+    const symbol = symbols[currency] || `${currency} `;
+    const formattedAmount = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(amount);
+
+    return `${symbol}${formattedAmount}`;
+};

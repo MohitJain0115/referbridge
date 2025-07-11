@@ -10,11 +10,12 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, GraduationCap, User, DollarSign, Building2, Link as LinkIcon, ArrowLeft, Sparkles } from 'lucide-react';
+import { Briefcase, GraduationCap, User, Building2, Link as LinkIcon, ArrowLeft, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from "date-fns";
 import type { Candidate } from '@/lib/types';
+import { formatCurrency } from '@/lib/utils';
 
 type ProfileData = {
     name: string;
@@ -171,7 +172,7 @@ export default function ProfilePage() {
                     <CardContent className="pt-6 space-y-8">
                         {profile.isSalaryVisible && profile.expectedSalary > 0 && (
                              <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
-                                <span>{profile.expectedSalary.toLocaleString('en-US', { style: 'currency', currency: profile.expectedSalaryCurrency, minimumFractionDigits: 0 })} expected salary</span>
+                                <span>{formatCurrency(profile.expectedSalary, profile.expectedSalaryCurrency)} expected salary</span>
                             </div>
                         )}
 
