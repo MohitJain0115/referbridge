@@ -174,7 +174,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: toastMessage,
       });
 
-      if (isFromRequestPage && newStatus === 'Referred') {
+      if (isFromRequestPage && (newStatus === 'Referred' || newStatus === null)) {
         onUpdateRequest?.(candidate.id);
       }
     } catch (error: any) {
@@ -307,7 +307,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         <CardContent className="flex-grow space-y-4">
           <div className="text-sm text-muted-foreground">
             {candidate.salary > 0 && 
-              <span>{formatCurrency(candidate.salary, candidate.salaryCurrency)} expected salary</span>
+              <span>{formatCurrency(candidate.salary, candidate.salaryCurrency || 'USD')} expected salary</span>
             }
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
