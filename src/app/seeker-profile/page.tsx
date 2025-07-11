@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Eye, Sparkles, Building2, Calendar as CalendarIcon, Download, FileText, Loader2, Info } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
-import { Switch } from "@/components/ui/switch";
 import { cn, calculateTotalExperienceInYears } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -148,7 +147,6 @@ export default function SeekerProfilePage() {
   const [currentRole, setCurrentRole] = useState("");
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
-  const [isSalaryVisible, setIsSalaryVisible] = useState(true);
   const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; referrerCompany?: boolean; }>({});
 
 
@@ -204,7 +202,6 @@ export default function SeekerProfilePage() {
             setCurrentRole(data.currentRole || "");
             setTargetRole(data.targetRole || "");
             setExpectedSalary(data.expectedSalary || "");
-            setIsSalaryVisible(data.isSalaryVisible !== false);
             setAbout(data.about || "");
             setSkills(data.skills?.join(', ') || "");
             setCompanies(data.companies || []);
@@ -465,7 +462,7 @@ export default function SeekerProfilePage() {
       currentRole,
       targetRole,
       expectedSalary: Number(expectedSalary) || 0,
-      isSalaryVisible,
+      isSalaryVisible: true, // Always true since toggle is removed
       about,
       skills: skills.split(',').map(s => s.trim()).filter(Boolean),
       companies,
@@ -626,31 +623,15 @@ export default function SeekerProfilePage() {
                       <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
                     </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                  <div className="space-y-2">
-                    <Label htmlFor="salary">Expected Salary (USD)</Label>
-                    <Input
-                      id="salary"
-                      type="number"
-                      placeholder="e.g., 150000"
-                      className={cn("transition-all", !isSalaryVisible && "blur-sm")}
-                      value={expectedSalary}
-                      onChange={(e) => setExpectedSalary(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Switch
-                      id="salary-visibility"
-                      checked={isSalaryVisible}
-                      onCheckedChange={setIsSalaryVisible}
-                    />
-                    <div className="grid gap-0.5">
-                      <Label htmlFor="salary-visibility" className="text-sm font-medium leading-none cursor-pointer">Show on Profile</Label>
-                      <p className="text-xs text-muted-foreground">
-                          Visible to referrers.
-                      </p>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="salary">Expected Salary (USD)</Label>
+                  <Input
+                    id="salary"
+                    type="number"
+                    placeholder="e.g., 150000"
+                    value={expectedSalary}
+                    onChange={(e) => setExpectedSalary(e.target.value)}
+                  />
                 </div>
               </div>
 
