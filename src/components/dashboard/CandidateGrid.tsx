@@ -491,6 +491,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
                 isSelected={selectedCandidates.includes(candidate.id)}
                 onSelect={toggleCandidateSelection}
                 onUpdateRequest={handleCandidateUpdate}
+                isFromRequestPage={showCancelAction}
               />
             ))
         ) : (

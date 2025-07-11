@@ -26,9 +26,10 @@ type CandidateCardProps = {
   isSelected: boolean;
   onSelect: (candidateId: string) => void;
   onUpdateRequest?: (candidateId: string) => void;
+  isFromRequestPage?: boolean;
 };
 
-export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest }: CandidateCardProps) {
+export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest, isFromRequestPage = false }: CandidateCardProps) {
   const { toast } = useToast();
   const [currentStatus, setCurrentStatus] = useState<Candidate['status']>(candidate.status);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
@@ -125,7 +126,9 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: `The request for ${candidate.name} has been marked as not a fit.`,
       });
 
-      onUpdateRequest?.(candidate.id);
+      if (isFromRequestPage) {
+        onUpdateRequest?.(candidate.id);
+      }
       resetCancelDialog();
 
     } catch (error) {
@@ -171,7 +174,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: toastMessage,
       });
 
-      if (newStatus === 'Referred') {
+      if (isFromRequestPage && newStatus === 'Referred') {
         onUpdateRequest?.(candidate.id);
       }
     } catch (error: any) {
@@ -312,7 +315,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               <Briefcase className="h-4 w-4" />
               <span>{candidate.experience} {candidate.experience === 1 ? 'year' : 'years'} of experience</span>
           </div>
-          {candidate.jobPostUrl && (
+          {isFromRequestPage && candidate.jobPostUrl && (
             <div className="flex items-start gap-2 text-sm text-muted-foreground">
               <LinkIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <a href={candidate.jobPostUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate" onClick={(e) => e.stopPropagation()}>
