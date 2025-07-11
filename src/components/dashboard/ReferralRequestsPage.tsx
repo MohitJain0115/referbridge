@@ -84,7 +84,7 @@ export function ReferralRequestsPage() {
               location: seekerData.location || "Remote",
               experience: totalExperience,
               status: requestData.status, 
-              jobPostUrl: requestData.jobInfo || seekerData.companies?.[0]?.jobs?.[0]?.url || '',
+              jobPostUrl: requestData.jobInfo || '',
               targetCompanies: seekerData.companies?.map((c: any) => c.name).filter(Boolean) || [],
           } as Candidate;
         });

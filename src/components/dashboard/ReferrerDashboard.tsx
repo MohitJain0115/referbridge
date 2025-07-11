@@ -64,7 +64,7 @@ export function ReferrerDashboard() {
                         location: data.location || "Remote",
                         experience: totalExperience,
                         status: data.status || 'Pending',
-                        jobPostUrl: data.companies?.[0]?.jobs?.[0]?.url || '',
+                        jobPostUrl: "", // Do not show job post URL on the generic dashboard
                         targetCompanies: data.companies?.map((c: any) => c.name).filter(Boolean) || [],
                     } as Candidate
                 });
