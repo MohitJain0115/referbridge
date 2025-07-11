@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail } from "lucide-react";
+import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -136,28 +136,39 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     }
   };
 
-  const handleSetStatus = async (newStatus: Candidate['status']) => {
+  const handleSetStatus = async (newStatus: Candidate['status'] | null) => {
     if (!firebaseReady || !db) {
       toast({ title: "Database not available", variant: "destructive" });
       return;
     }
-    
+
     // For single-card "Not a fit", trigger the dialog instead of direct update
     if (newStatus === 'Not a Fit') {
         setIsCancelDialogOpen(true);
         return;
     }
+    
+    // The reference can be to a specific request or the general profile
+    const docRef = candidate.requestId
+      ? doc(db, "referral_requests", candidate.requestId)
+      : doc(db, "profiles", candidate.id);
 
     try {
-      const docRef = candidate.requestId
-        ? doc(db, "referral_requests", candidate.requestId)
-        : doc(db, "profiles", candidate.id);
-        
-      await updateDoc(docRef, { status: newStatus });
+      // If newStatus is null, we are resetting. We'll set it to 'Pending' internally.
+      // But we won't show the 'Pending' badge on the UI.
+      const statusToSave = newStatus === null ? 'Pending' : newStatus;
+      await updateDoc(docRef, { status: statusToSave });
+      
+      // We set the component's status state to the new status, or null if resetting
       setCurrentStatus(newStatus);
+      
+      const toastMessage = newStatus 
+        ? `${candidate.name}'s status set to ${newStatus}.`
+        : `Status for ${candidate.name} has been reset.`;
+
       toast({
         title: "Status Updated",
-        description: `${candidate.name}'s status set to ${newStatus}.`,
+        description: toastMessage,
       });
 
       if (newStatus === 'Referred') {
@@ -198,6 +209,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
   };
 
   const displayStatus = currentStatus === 'Cancelled' ? 'Not a Fit' : currentStatus;
+  const showStatusBadge = currentStatus && currentStatus !== 'Pending';
 
   return (
     <>
@@ -259,15 +271,26 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                   <XCircle className="mr-2 h-4 w-4" />
                   Not a Fit
                 </DropdownMenuItem>
+                {showStatusBadge && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => handleSetStatus(null)}>
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Reset Status
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
           <div className="flex items-center gap-2 pt-4">
             <CardTitle className="font-headline">{candidate.name}</CardTitle>
-            <Badge variant={getStatusBadgeVariant(currentStatus)} className="capitalize">
-              {React.createElement(statusIcons[currentStatus], { className: "mr-1 h-3 w-3" })}
-              {displayStatus}
-            </Badge>
+            {showStatusBadge && displayStatus && (
+              <Badge variant={getStatusBadgeVariant(displayStatus)} className="capitalize">
+                {React.createElement(statusIcons[displayStatus], { className: "mr-1 h-3 w-3" })}
+                {displayStatus}
+              </Badge>
+            )}
           </div>
           <CardDescription>
             {candidate.currentRole}
