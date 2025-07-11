@@ -37,19 +37,10 @@ export const calculateTotalExperienceInYears = (experiences: any[] | undefined):
 };
 
 export const formatCurrency = (amount: number, currency: string = 'USD') => {
-    const symbols: { [key: string]: string } = {
-        USD: '$',
-        EUR: '€',
-        GBP: '£',
-        JPY: '¥',
-        INR: '₹',
-    };
-
-    const symbol = symbols[currency] || `${currency} `;
     const formattedAmount = new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
     }).format(amount);
 
-    return `${symbol}${formattedAmount}`;
+    return `${formattedAmount} ${currency}`;
 };
