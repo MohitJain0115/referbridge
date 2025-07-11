@@ -69,6 +69,12 @@ export function ReferrerDashboard() {
                     } as Candidate
                 });
             
+            // Randomize the order of candidates
+            for (let i = fetchedCandidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [fetchedCandidates[i], fetchedCandidates[j]] = [fetchedCandidates[j], fetchedCandidates[i]];
+            }
+            
             setCandidates(fetchedCandidates);
         } catch (error) {
             console.error("Failed to fetch candidates:", error);
