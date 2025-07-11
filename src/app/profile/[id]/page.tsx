@@ -171,7 +171,6 @@ export default function ProfilePage() {
                     <CardContent className="pt-6 space-y-8">
                         {profile.isSalaryVisible && profile.expectedSalary > 0 && (
                              <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
-                                <DollarSign className="h-5 w-5" />
                                 <span>{profile.expectedSalary.toLocaleString('en-US', { style: 'currency', currency: profile.expectedSalaryCurrency, minimumFractionDigits: 0 })} expected salary</span>
                             </div>
                         )}
