@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -11,8 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linkedin, Eye, Sparkles, Building2, Calendar as CalendarIcon, Download, FileText, Loader2, Info } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
-import { cn, calculateTotalExperienceInYears } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { cn, calculateTotalExperienceInYears, formatCurrency } from "@/lib/utils";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
