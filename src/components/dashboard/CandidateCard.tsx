@@ -9,16 +9,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon } from "lucide-react";
+import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db, firebaseReady } from "@/lib/firebase";
+import { db, firebaseReady, auth } from "@/lib/firebase";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { saveAs } from "file-saver";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -52,11 +53,14 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
       const resumeDocRef = doc(db, "resumes", candidate.id);
       const resumeDoc = await getDoc(resumeDocRef);
       if (resumeDoc.exists() && resumeDoc.data().fileUrl) {
-        window.open(resumeDoc.data().fileUrl, '_blank');
+        const resumeData = resumeDoc.data();
         toast({
           title: "Download Started",
-          description: `Opening ${candidate.name}'s resume.`
+          description: `Downloading ${candidate.name}'s resume.`
         });
+        const response = await fetch(resumeData.fileUrl);
+        const blob = await response.blob();
+        saveAs(blob, resumeData.fileName || `${candidate.name.replace(/ /g, '_')}_resume.pdf`);
       } else {
         toast({ title: "No Resume Found", description: `${candidate.name} has not uploaded a resume.`, variant: "destructive" });
       }
@@ -65,6 +69,30 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
       toast({ title: "Error", description: "Could not fetch the resume.", variant: "destructive" });
     }
   };
+
+  const handleShareToMail = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!firebaseReady || !db || !auth.currentUser?.email) {
+      toast({ title: "Cannot share", description: "You must be logged in to share.", variant: "destructive" });
+      return;
+    }
+    try {
+      const resumeDocRef = doc(db, "resumes", candidate.id);
+      const resumeDoc = await getDoc(resumeDocRef);
+      if (resumeDoc.exists() && resumeDoc.data().fileUrl) {
+        const resumeUrl = resumeDoc.data().fileUrl;
+        const subject = `Resume for ${candidate.name}`;
+        const body = `Hi,\n\nHere is the resume for ${candidate.name}:\n${resumeUrl}\n\nSent from ReferBridge`;
+        window.location.href = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      } else {
+        toast({ title: "No Resume Found", description: `${candidate.name} has not uploaded a resume.`, variant: "destructive" });
+      }
+    } catch (error) {
+      console.error("Error fetching resume:", error);
+      toast({ title: "Error", description: "Could not fetch the resume for sharing.", variant: "destructive" });
+    }
+  };
+
 
   const resetCancelDialog = () => {
     setIsCancelDialogOpen(false);
@@ -212,6 +240,10 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                 <DropdownMenuItem onSelect={handleDownloadResume}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Resume
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleShareToMail}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Share to Mail
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Set Status</DropdownMenuLabel>
