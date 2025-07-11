@@ -21,7 +21,7 @@ import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, storage, firebaseReady } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -404,15 +404,15 @@ export default function SeekerProfilePage() {
       toast({ title: "Error", description: "You must be logged in to save.", variant: "destructive" });
       return;
     }
-  
+
     const validationErrors: typeof errors = {};
     if (!name.trim()) validationErrors.name = true;
     if (!currentRole.trim()) validationErrors.currentRole = true;
-  
+
     if (profileView === 'referrer' && !referrerCompany.trim()) {
       validationErrors.referrerCompany = true;
     }
-  
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       toast({
@@ -422,10 +422,23 @@ export default function SeekerProfilePage() {
       });
       return;
     }
-  
+
     setErrors({});
     setIsSaving(true);
-  
+    
+    // Convert dates to Firestore Timestamps before saving
+    const experiencesForFirestore = experiences.map(exp => ({
+        ...exp,
+        from: exp.from ? Timestamp.fromDate(exp.from) : undefined,
+        to: exp.to ? Timestamp.fromDate(exp.to) : null
+    }));
+
+    const educationsForFirestore = educations.map(edu => ({
+        ...edu,
+        from: edu.from ? Timestamp.fromDate(edu.from) : undefined,
+        to: edu.to ? Timestamp.fromDate(edu.to) : null
+    }));
+
     const profileData = {
       name,
       currentRole,
@@ -435,15 +448,15 @@ export default function SeekerProfilePage() {
       about,
       skills: skills.split(',').map(s => s.trim()).filter(Boolean),
       companies,
-      experiences,
-      educations,
+      experiences: experiencesForFirestore,
+      educations: educationsForFirestore,
       referrerCompany,
       referrerAbout,
       referrerSpecialties,
       profilePic,
       updatedAt: new Date(),
     };
-  
+
     try {
       await setDoc(doc(db, "profiles", currentUser.uid), profileData, { merge: true });
       toast({
