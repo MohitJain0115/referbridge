@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -10,8 +11,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Menu, UserCircle, LogOut, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { signOut, onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
+import { auth, db, firebaseReady } from "@/lib/firebase";
+import { collection, query, where, getDocs, onSnapshot } from "firebase/firestore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +36,38 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { toast } = useToast();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [referralRequestCount, setReferralRequestCount] = useState(0);
+
+  useEffect(() => {
+    if (!firebaseReady) return;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+  
+  useEffect(() => {
+    if (!currentUser || !db) {
+      setReferralRequestCount(0);
+      return;
+    }
+
+    const requestsQuery = query(
+      collection(db, "referral_requests"), 
+      where("referrerId", "==", currentUser.uid),
+      where("status", "==", "Pending")
+    );
+    
+    const unsubscribe = onSnapshot(requestsQuery, (snapshot) => {
+      setReferralRequestCount(snapshot.size);
+    }, (error) => {
+      console.error("Error fetching referral request count:", error);
+      setReferralRequestCount(0);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
 
   useEffect(() => {
     const hasSeenProfilePrompt = localStorage.getItem('hasSeenProfilePrompt');
@@ -103,7 +137,7 @@ export default function DashboardLayout({
               <Logo />
             </div>
             <div className="flex-1">
-                <DashboardNav onNavigate={() => setIsSheetOpen(false)} />
+                <DashboardNav referralRequestCount={referralRequestCount} onNavigate={() => setIsSheetOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
