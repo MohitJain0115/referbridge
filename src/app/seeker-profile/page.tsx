@@ -149,7 +149,7 @@ export default function SeekerProfilePage() {
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
   const [isSalaryVisible, setIsSalaryVisible] = useState(true);
-  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; referrerCompany?: boolean; resume?: boolean; }>({});
+  const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; referrerCompany?: boolean; }>({});
 
 
   // Resume state
@@ -406,28 +406,18 @@ export default function SeekerProfilePage() {
     }
   
     const validationErrors: typeof errors = {};
-    if (!name.trim()) {
-      validationErrors.name = true;
-    }
-    if (!currentRole.trim()) {
-      validationErrors.currentRole = true;
-    }
-
-    if (profileView === 'seeker') {
-      if (!resumeUrl) {
-        validationErrors.resume = true;
-      }
-    } else if (profileView === 'referrer') {
-      if (!referrerCompany.trim()) {
-        validationErrors.referrerCompany = true;
-      }
+    if (!name.trim()) validationErrors.name = true;
+    if (!currentRole.trim()) validationErrors.currentRole = true;
+  
+    if (profileView === 'referrer' && !referrerCompany.trim()) {
+      validationErrors.referrerCompany = true;
     }
   
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in all fields marked with an asterisk (*), and make sure to upload a resume.",
+        description: "Please fill in all fields marked with an asterisk (*).",
         variant: "destructive",
       });
       return;
@@ -885,7 +875,7 @@ export default function SeekerProfilePage() {
 
               <div className="space-y-2">
                 <Label>Resume<span className="text-destructive pl-1">*</span></Label>
-                  <Card className={cn("p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center", errors.resume && "border-destructive")}>
+                  <Card className={cn("p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center")}>
                     {isUploadingResume ? (
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     ) : resumeUrl ? (
