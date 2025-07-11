@@ -282,7 +282,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
           {candidate.isSalaryVisible && candidate.salary > 0 && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <DollarSign className="h-4 w-4" />
-              <span>{candidate.salary.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })} expected salary</span>
+              <span>{candidate.salary.toLocaleString('en-US', { style: 'currency', currency: candidate.salaryCurrency || 'USD', minimumFractionDigits: 0 })} expected salary</span>
             </div>
           )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

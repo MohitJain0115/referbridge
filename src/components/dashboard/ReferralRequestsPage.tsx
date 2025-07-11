@@ -79,6 +79,7 @@ export function ReferralRequestsPage() {
               targetRole: seekerData.targetRole,
               company: seekerData.experiences?.[0]?.company || "",
               salary: seekerData.expectedSalary || 0,
+              salaryCurrency: seekerData.expectedSalaryCurrency || 'USD',
               isSalaryVisible: seekerData.isSalaryVisible !== false,
               skills: seekerData.skills || [],
               location: seekerData.location || "Remote",

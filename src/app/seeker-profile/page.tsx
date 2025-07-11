@@ -26,6 +26,7 @@ import { auth, db, storage, firebaseReady } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const dynamic = 'force-dynamic';
 
@@ -147,6 +148,7 @@ export default function SeekerProfilePage() {
   const [currentRole, setCurrentRole] = useState("");
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
+  const [expectedSalaryCurrency, setExpectedSalaryCurrency] = useState("USD");
   const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; referrerCompany?: boolean; }>({});
 
 
@@ -202,6 +204,7 @@ export default function SeekerProfilePage() {
             setCurrentRole(data.currentRole || "");
             setTargetRole(data.targetRole || "");
             setExpectedSalary(data.expectedSalary || "");
+            setExpectedSalaryCurrency(data.expectedSalaryCurrency || "USD");
             setAbout(data.about || "");
             setSkills(data.skills?.join(', ') || "");
             setCompanies(data.companies || []);
@@ -405,7 +408,6 @@ export default function SeekerProfilePage() {
     const validationErrors: typeof errors = {};
     if (!name.trim()) validationErrors.name = true;
     if (!currentRole.trim()) validationErrors.currentRole = true;
-
     if (profileView === 'referrer' && !referrerCompany.trim()) {
       validationErrors.referrerCompany = true;
     }
@@ -462,7 +464,8 @@ export default function SeekerProfilePage() {
       currentRole,
       targetRole,
       expectedSalary: Number(expectedSalary) || 0,
-      isSalaryVisible: true, // Always true since toggle is removed
+      expectedSalaryCurrency,
+      isSalaryVisible: true,
       about,
       skills: skills.split(',').map(s => s.trim()).filter(Boolean),
       companies,
@@ -624,14 +627,29 @@ export default function SeekerProfilePage() {
                     </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="salary">Expected Salary (USD)</Label>
-                  <Input
-                    id="salary"
-                    type="number"
-                    placeholder="e.g., 150000"
-                    value={expectedSalary}
-                    onChange={(e) => setExpectedSalary(e.target.value)}
-                  />
+                  <Label htmlFor="salary">Expected Salary</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="salary"
+                      type="number"
+                      placeholder="e.g., 150000"
+                      value={expectedSalary}
+                      onChange={(e) => setExpectedSalary(e.target.value)}
+                      className="w-full"
+                    />
+                     <Select value={expectedSalaryCurrency} onValueChange={setExpectedSalaryCurrency}>
+                        <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="Currency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="EUR">EUR</SelectItem>
+                            <SelectItem value="GBP">GBP</SelectItem>
+                            <SelectItem value="JPY">JPY</SelectItem>
+                            <SelectItem value="INR">INR</SelectItem>
+                        </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 

@@ -59,6 +59,7 @@ export function ReferrerDashboard() {
                         targetRole: data.targetRole,
                         company: data.experiences?.[0]?.company || "", 
                         salary: data.expectedSalary || 0,
+                        salaryCurrency: data.expectedSalaryCurrency || 'USD',
                         isSalaryVisible: data.isSalaryVisible !== false,
                         skills: data.skills || [],
                         location: data.location || "Remote",
