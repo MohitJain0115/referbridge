@@ -1,7 +1,9 @@
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getAnalytics, isSupported, type Analytics } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -16,6 +18,7 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
+let analytics: Analytics | null = null;
 let firebaseReady = false;
 
 // Check that all required environment variables are present
@@ -32,6 +35,15 @@ if (
       auth = getAuth(app);
       db = getFirestore(app);
       storage = getStorage(app);
+      
+      if (typeof window !== 'undefined') {
+        isSupported().then(supported => {
+          if (supported) {
+            analytics = getAnalytics(app);
+          }
+        });
+      }
+
       firebaseReady = true;
     } catch (e) {
       console.error("Firebase initialization error:", e);
@@ -39,6 +51,7 @@ if (
       auth = null!;
       db = null!;
       storage = null!;
+      analytics = null;
       firebaseReady = false;
     }
 } else {
@@ -46,4 +59,4 @@ if (
 }
 
 
-export { auth, app, db, storage, firebaseReady };
+export { auth, app, db, storage, analytics, firebaseReady };
