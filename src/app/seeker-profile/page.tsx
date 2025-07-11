@@ -426,6 +426,27 @@ export default function SeekerProfilePage() {
     setErrors({});
     setIsSaving(true);
     
+    // Auto-populate referrer fields if saving the seeker view
+    let updatedReferrerCompany = referrerCompany;
+    let updatedReferrerAbout = referrerAbout;
+    let updatedReferrerSpecialties = referrerSpecialties;
+
+    if (profileView === 'seeker') {
+      const mostRecentExperience = [...experiences].sort((a, b) => {
+        const aDate = a.currentlyWorking ? new Date() : a.to;
+        const bDate = b.currentlyWorking ? new Date() : b.to;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return bDate.getTime() - aDate.getTime();
+      })[0];
+      
+      if (mostRecentExperience) {
+        updatedReferrerCompany = mostRecentExperience.company;
+        updatedReferrerAbout = `As a ${mostRecentExperience.role} at ${mostRecentExperience.company}, I'm happy to refer strong candidates in my field.`;
+      }
+      updatedReferrerSpecialties = skills;
+    }
+
     // Convert dates to Firestore Timestamps before saving
     const experiencesForFirestore = experiences.map(exp => ({
         ...exp,
@@ -450,9 +471,9 @@ export default function SeekerProfilePage() {
       companies,
       experiences: experiencesForFirestore,
       educations: educationsForFirestore,
-      referrerCompany,
-      referrerAbout,
-      referrerSpecialties,
+      referrerCompany: updatedReferrerCompany,
+      referrerAbout: updatedReferrerAbout,
+      referrerSpecialties: updatedReferrerSpecialties,
       profilePic,
       updatedAt: new Date(),
     };
@@ -463,6 +484,11 @@ export default function SeekerProfilePage() {
         title: "Profile Saved!",
         description: `Your ${profileView} profile has been successfully updated.`,
       });
+       if (profileView === 'seeker') {
+        setReferrerCompany(updatedReferrerCompany);
+        setReferrerAbout(updatedReferrerAbout);
+        setReferrerSpecialties(updatedReferrerSpecialties);
+      }
     } catch (error: any) {
       console.error("Error saving profile:", error);
       if (error.code === 'permission-denied') {

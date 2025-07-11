@@ -1,9 +1,11 @@
+
 "use client";
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Users, Settings, Mail } from "lucide-react";
+import { Users, Settings, Mail, ArrowRightLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -11,24 +13,27 @@ export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
   const view = searchParams.get('view') || 'seeker';
   const currentPage = searchParams.get('page');
 
-  const seekerNav = [
-    { name: "Find Referrers", href: "/dashboard?view=seeker", icon: Users, page: null },
-    { name: "My Requests", href: "/dashboard?view=seeker&page=requests", icon: Mail, page: "requests" },
-    { name: "Settings", href: "/dashboard?view=seeker&page=settings", icon: Settings, page: "settings" },
+  const navItems = [
+    { name: "Find Referrers", href: "/dashboard?view=seeker", icon: Users, page: null, view: 'seeker' },
+    { name: "My Requests", href: "/dashboard?view=seeker&page=requests", icon: Mail, page: "requests", view: 'seeker' },
+    { name: "---", href: "---", icon: null, page: null, view: null },
+    { name: "Candidates", href: "/dashboard?view=referrer", icon: Users, page: null, view: 'referrer' },
+    { name: "Referral Requests", href: "/dashboard?view=referrer&page=requests", icon: ArrowRightLeft, page: "requests", view: 'referrer' },
+    { name: "---", href: "---", icon: null, page: null, view: null },
+    { name: "Settings", href: `/dashboard?view=${view}&page=settings`, icon: Settings, page: "settings", view: 'any' },
   ];
 
-  const referrerNav = [
-    { name: "Candidates", href: "/dashboard?view=referrer", icon: Users, page: null },
-    { name: "Referral Requests", href: "/dashboard?view=referrer&page=requests", icon: Mail, page: "requests" },
-    { name: "Settings", href: "/dashboard?view=referrer&page=settings", icon: Settings, page: "settings" },
-  ];
-
-  const navItems = view === 'seeker' ? seekerNav : referrerNav;
 
   return (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-      {navItems.map((item) => {
-        const isActive = (pathname === '/dashboard' && item.page === currentPage);
+      {navItems.map((item, index) => {
+        if (item.name === "---") {
+          return <Separator key={index} className="my-2" />;
+        }
+        
+        const isPageActive = item.page === currentPage;
+        const isViewActive = item.view === view;
+        const isActive = (item.view === 'any' ? isPageActive : isPageActive && isViewActive);
 
         return (
           <Link

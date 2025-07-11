@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle, Send, Loader2 } from "lucide-react";
+import { DollarSign, Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -257,6 +257,14 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               <Briefcase className="h-4 w-4" />
               <span>{candidate.experience} {candidate.experience === 1 ? 'year' : 'years'} of experience</span>
           </div>
+          {candidate.jobPostUrl && (
+            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+              <LinkIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <a href={candidate.jobPostUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate" onClick={(e) => e.stopPropagation()}>
+                {candidate.jobPostUrl}
+              </a>
+            </div>
+          )}
           {candidate.skills && candidate.skills.length > 0 && (
             <div className="space-y-2">
                 <h4 className="text-sm font-medium">Top Skills</h4>
