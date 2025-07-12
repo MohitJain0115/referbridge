@@ -13,10 +13,10 @@ export const calculateTotalExperienceInYears = (experiences: any[] | undefined):
 
     experiences.forEach((exp: any) => {
         // Handle both client-side Date objects and Firestore Timestamps
-        const startDate = exp.from?.toDate ? exp.from.toDate() : (exp.from instanceof Date ? exp.from : null);
+        const startDate = exp?.from?.toDate ? exp.from.toDate() : (exp?.from instanceof Date ? exp.from : null);
         if (!startDate) return;
 
-        const endDate = exp.currentlyWorking ? now : (exp.to?.toDate ? exp.to.toDate() : (exp.to instanceof Date ? exp.to : null));
+        const endDate = exp.currentlyWorking ? now : (exp?.to?.toDate ? exp.to.toDate() : (exp?.to instanceof Date ? exp.to : null));
         if (!endDate || startDate > endDate) return;
 
         let yearDiff = endDate.getFullYear() - startDate.getFullYear();
