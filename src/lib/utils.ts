@@ -12,18 +12,25 @@ export const calculateTotalExperienceInYears = (experiences: any[] | undefined):
     const now = new Date();
 
     experiences.forEach((exp: any) => {
-        // Handle both client-side Date objects and Firestore Timestamps
         const startDate = exp?.from?.toDate ? exp.from.toDate() : (exp?.from instanceof Date ? exp.from : null);
         if (!startDate) return;
 
-        const endDate = exp.currentlyWorking ? now : (exp?.to?.toDate ? exp.to.toDate() : (exp?.to instanceof Date ? exp.to : null));
+        // Handle 'to' date which can be a Timestamp, a Date, null (for current jobs), or undefined (for new entries)
+        let endDate;
+        if (exp.currentlyWorking) {
+            endDate = now;
+        } else if (exp.to) { // Check if 'to' has a value
+             endDate = exp.to?.toDate ? exp.to.toDate() : (exp.to instanceof Date ? exp.to : null);
+        } else {
+            endDate = null; // 'to' is null or undefined
+        }
+        
         if (!endDate || startDate > endDate) return;
 
         let yearDiff = endDate.getFullYear() - startDate.getFullYear();
         let monthDiff = endDate.getMonth() - startDate.getMonth();
         let dayDiff = endDate.getDate() - startDate.getDate();
 
-        // If dayDiff is negative, it means we haven't completed the last month.
         if (dayDiff < 0) {
             monthDiff--;
         }
