@@ -12,20 +12,22 @@ export const calculateTotalExperienceInYears = (experiences: any[] | undefined):
     const now = new Date();
 
     experiences.forEach((exp: any) => {
-        const startDate = exp?.from?.toDate ? exp.from.toDate() : (exp?.from instanceof Date ? exp.from : null);
-        if (!startDate) return;
+        // Robustly get the start date, whether it's a Timestamp or a Date
+        const startDate = exp?.from ? (exp.from.toDate ? exp.from.toDate() : new Date(exp.from)) : null;
+        if (!startDate || isNaN(startDate.getTime())) return;
 
-        // Handle 'to' date which can be a Timestamp, a Date, null (for current jobs), or undefined (for new entries)
+
+        // Robustly get the end date
         let endDate;
         if (exp.currentlyWorking) {
             endDate = now;
-        } else if (exp.to) { // Check if 'to' has a value
-             endDate = exp.to?.toDate ? exp.to.toDate() : (exp.to instanceof Date ? exp.to : null);
+        } else if (exp.to) {
+            endDate = exp.to.toDate ? exp.to.toDate() : new Date(exp.to);
         } else {
-            endDate = null; // 'to' is null or undefined
+            endDate = null;
         }
-        
-        if (!endDate || startDate > endDate) return;
+
+        if (!endDate || isNaN(endDate.getTime()) || startDate > endDate) return;
 
         let yearDiff = endDate.getFullYear() - startDate.getFullYear();
         let monthDiff = endDate.getMonth() - startDate.getMonth();
