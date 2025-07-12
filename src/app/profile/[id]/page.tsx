@@ -15,7 +15,26 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from "date-fns";
 import type { Candidate } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, calculateTotalExperienceInYears } from '@/lib/utils';
+
+type Experience = {
+    id: number;
+    role: string;
+    company: string;
+    from: Date | undefined;
+    to: Date | undefined | null;
+    currentlyWorking: boolean;
+    description: string;
+};
+
+type Education = {
+    id: number;
+    institution: string;
+    degree: string;
+    from: Date | undefined;
+    to: Date | undefined | null;
+    description: string;
+};
 
 type ProfileData = {
     name: string;
@@ -23,8 +42,8 @@ type ProfileData = {
     currentRole: string;
     targetRole: string;
     about: string;
-    experiences: any[];
-    educations: any[];
+    experiences: Experience[];
+    educations: Education[];
     companies: any[];
     expectedSalary: number;
     expectedSalaryCurrency: string;
@@ -204,7 +223,7 @@ export default function ProfilePage() {
                                             <p className="font-semibold text-lg">{exp.role}</p>
                                             <p className="text-muted-foreground">{exp.company}</p>
                                             <p className="text-sm text-muted-foreground">
-                                                {exp.from ? format(exp.from, 'MMM yyyy') : ''} - {exp.currentlyWorking ? 'Present' : exp.to ? format(exp.to, 'MMM yyyy') : ''}
+                                                {exp.from ? format(exp.from, 'MMM yyyy') : ''} - {exp.currentlyWorking ? 'Present' : exp.to ? format(exp.to, 'MMM yyyy') : 'N/A'}
                                             </p>
                                             <p className="mt-2 text-foreground/80 whitespace-pre-wrap">{exp.description}</p>
                                         </div>
@@ -223,7 +242,7 @@ export default function ProfilePage() {
                                             <p className="font-semibold text-lg">{edu.degree}</p>
                                             <p className="text-muted-foreground">{edu.institution}</p>
                                             <p className="text-sm text-muted-foreground">
-                                                {edu.from ? format(edu.from, 'MMM yyyy') : ''} - {edu.to ? format(edu.to, 'MMM yyyy') : ''}
+                                                {edu.from ? format(edu.from, 'MMM yyyy') : ''} - {edu.to ? format(edu.to, 'MMM yyyy') : 'N/A'}
                                             </p>
                                             <p className="mt-2 text-foreground/80 whitespace-pre-wrap">{edu.description}</p>
                                         </div>
