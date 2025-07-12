@@ -11,7 +11,7 @@ import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Linke
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn, calculateTotalExperienceInYears, formatCurrency } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -603,27 +603,25 @@ export default function SeekerProfilePage() {
           {profileView === 'seeker' ? (
             <div className="space-y-6">
               <div className="space-y-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5">
-                        Total Calculated Experience
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger type="button"><Info className="h-3 w-3 text-muted-foreground"/></TooltipTrigger>
-                            <TooltipContent>
-                              <p>This is calculated automatically from your work history below.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </Label>
-                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm">
-                          {totalExperience > 0 ? `${totalExperience} ${totalExperience === 1 ? 'year' : 'years'}` : 'No experience added'}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="target-role">Target Role</Label>
-                      <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
-                    </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    Total Calculated Experience
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger type="button"><Info className="h-3 w-3 text-muted-foreground"/></TooltipTrigger>
+                        <TooltipContent>
+                          <p>This is calculated automatically from your work history below.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Label>
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm">
+                      {totalExperience > 0 ? `${totalExperience} ${totalExperience === 1 ? 'year' : 'years'}` : 'No experience added'}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="target-role">Target Role</Label>
+                  <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="salary">Expected Salary</Label>
