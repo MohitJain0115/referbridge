@@ -2,49 +2,33 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if a user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of a document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Profiles:
-    // - Authenticated users can read all profiles (for dashboards).
-    // - A user can only create, update, or delete their own profile.
+    // Allow logged-in users to read/write their own profile.
+    // Allow any logged-in user to read any profile (for dashboards).
     match /profiles/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId;
     }
 
-    // Resumes:
-    // - A user can only read or write their own resume document.
+    // Allow any logged-in user to read resume documents.
+    // This is needed for referrers to get the download URL.
+    // Only the user themselves can create or update their own resume document.
     match /resumes/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId;
     }
 
-    // Referral Requests:
-    // - A seeker can create a request for themselves.
-    // - A seeker can read or delete their own requests.
-    // - A referrer can read or update requests made to them.
+    // Seeker can create requests.
+    // Seeker and Referrer involved can read/update the request.
     match /referral_requests/{requestId} {
-      allow read, delete: if isAuthenticated() && isOwner(resource.data.seekerId);
-      allow create: if isAuthenticated() && isOwner(request.resource.data.seekerId);
-      allow update: if isAuthenticated() && isOwner(resource.data.referrerId);
+      allow read, update: if request.auth.uid == resource.data.seekerId || request.auth.uid == resource.data.referrerId;
+      allow create: if request.auth.uid == request.resource.data.seekerId;
+      allow delete: if request.auth.uid == resource.data.seekerId;
     }
 
-    // Suggestions:
-    // - An authenticated user can create a suggestion.
-    // - The userId field in the suggestion must match the user's ID.
+    // Allow any authenticated user to create a suggestion.
     match /suggestions/{suggestionId} {
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
-      // Reads are typically done by developers/admins with full access,
-      // so no general read rule is needed for users.
-      allow read, update, delete: if false;
+      allow read: if false; // No one needs to read suggestions from the client
+      allow write: if request.auth != null;
     }
   }
 }
