@@ -342,15 +342,15 @@ export default function SeekerProfilePage() {
     setIsUploadingResume(true);
     try {
         const fileRef = storageRef(storage, `resumes/${currentUser.uid}/${file.name}`);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
+        const uploadResult = await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(uploadResult.ref);
 
         await setDoc(doc(db, "resumes", currentUser.uid), {
             userId: currentUser.uid,
             fileName: file.name,
             fileUrl: url,
             uploadedAt: new Date(),
-        });
+        }, { merge: true });
 
         setResumeUrl(url);
         setResumeName(file.name);
