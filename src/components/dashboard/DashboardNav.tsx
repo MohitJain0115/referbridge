@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Users, Settings, Mail, ArrowRightLeft } from "lucide-react";
+import { Users, Settings, Mail, ArrowRightLeft, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -21,6 +21,7 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
   ];
 
   const settingsItem = { name: "Settings", href: `/dashboard?view=${view}&page=settings`, icon: Settings, page: "settings", view: 'any', show: true };
+  const suggestionsItem = { name: "Suggestions", href: `/dashboard?view=${view}&page=suggestions`, icon: MessageSquare, page: "suggestions", view: 'any', show: true };
 
   const isSeeker = view === 'seeker';
 
@@ -74,6 +75,18 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
       })}
 
       <p className="px-3 py-2 mt-4 text-xs font-semibold text-muted-foreground">Account</p>
+       <Link
+            key={suggestionsItem.name}
+            href={suggestionsItem.href}
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+              suggestionsItem.page === currentPage && "bg-muted text-primary"
+            )}
+          >
+            <suggestionsItem.icon className="h-4 w-4" />
+            {suggestionsItem.name}
+          </Link>
        <Link
             key={settingsItem.name}
             href={settingsItem.href}
