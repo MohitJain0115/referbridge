@@ -174,15 +174,13 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
         });
         try {
             const zip = new JSZip();
-            const filePromises = resumeLinks.map(async (link) => {
+            const fetchPromises = resumeLinks.map(async (link) => {
                 try {
                     const response = await fetch(link.url);
                     if (!response.ok) {
                         throw new Error(`Failed to fetch ${link.url}: ${response.statusText}`);
                     }
-                    const blob = await response.blob();
-                    const sanitizedCandidateName = link.name.replace(/[^a-z0-9]/gi, '_');
-                    zip.file(`${sanitizedCandidateName}_${link.fileName}`, blob);
+                    return { blob: await response.blob(), link };
                 } catch (error) {
                     console.error(`Could not add resume for ${link.name} to zip:`, error);
                     toast({
@@ -190,10 +188,19 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
                         description: `Could not fetch resume for ${link.name}.`,
                         variant: "destructive"
                     });
+                    return null;
                 }
             });
 
-            await Promise.all(filePromises);
+            const results = await Promise.all(fetchPromises);
+
+            results.forEach(result => {
+                if(result) {
+                    const { blob, link } = result;
+                    const sanitizedCandidateName = link.name.replace(/[^a-z0-9]/gi, '_');
+                    zip.file(`${sanitizedCandidateName}_${link.fileName}`, blob);
+                }
+            });
             
             const zipBlob = await zip.generateAsync({ type: "blob" });
             saveAs(zipBlob, "ReferBridge_Resumes.zip");

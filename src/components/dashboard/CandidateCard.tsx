@@ -19,7 +19,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { saveAs } from "file-saver";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -59,9 +58,9 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
           title: "Download Started",
           description: `Downloading ${candidate.name}'s resume.`
         });
-        const response = await fetch(resumeData.fileUrl);
-        const blob = await response.blob();
-        saveAs(blob, resumeData.fileName || `${candidate.name.replace(/ /g, '_')}_resume.pdf`);
+        // Open the URL in a new tab, letting the browser handle the download.
+        // This is more robust than using fetch() and avoids CORS issues.
+        window.open(resumeData.fileUrl, '_blank');
       } else {
         toast({ title: "No Resume Found", description: `${candidate.name} has not uploaded a resume.`, variant: "destructive" });
       }
