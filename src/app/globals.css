@@ -64,6 +64,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -71,6 +72,10 @@
 
 @layer components {
   .app-header {
-    @apply bg-white p-4 border-b border-border shadow-sm sticky top-0 z-50;
+    background-color: #ffffff;
+    padding: 12px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
   }
 }
