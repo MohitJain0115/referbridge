@@ -40,11 +40,12 @@ const loginSchema = z.object({
 type UserAuthFormProps = {
   mode: "login" | "signup";
   className?: string;
+  onForgotPassword?: () => void;
 };
 
 type FormData = z.infer<typeof signupSchema> | z.infer<typeof loginSchema>;
 
-export function UserAuthForm({ mode, className }: UserAuthFormProps) {
+export function UserAuthForm({ mode, className, onForgotPassword }: UserAuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
@@ -170,7 +171,19 @@ export function UserAuthForm({ mode, className }: UserAuthFormProps) {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                 <div className="flex items-center justify-between">
+                    <FormLabel>Password</FormLabel>
+                    {mode === 'login' && (
+                        <button
+                            type="button"
+                            onClick={onForgotPassword}
+                            className="text-sm font-medium text-primary hover:underline focus:outline-none"
+                            disabled={isLoading}
+                        >
+                            Forgot Password?
+                        </button>
+                    )}
+                </div>
                 <FormControl>
                   <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                 </FormControl>
