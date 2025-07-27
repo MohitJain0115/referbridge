@@ -56,6 +56,7 @@ export function ReferralRequestsPage() {
 
         const candidatePromises = requestSnapshots.docs.map(async (requestDoc) => {
           const requestData = requestDoc.data();
+          if (!requestData.seekerId) return null;
           
           const seekerDocRef = doc(db, "profiles", requestData.seekerId);
           const seekerDoc = await getDoc(seekerDocRef);
@@ -67,11 +68,10 @@ export function ReferralRequestsPage() {
           
           const seekerData = seekerDoc.data();
 
-          // Correctly parse experiences before calculating total experience
           const experiencesWithDates = seekerData.experiences?.map((exp: any) => ({
               ...exp,
-              from: exp.from?.toDate ? exp.from.toDate() : (exp.from ? new Date(exp.from) : undefined),
-              to: exp.to?.toDate ? exp.to.toDate() : (exp.to ? new Date(exp.to) : undefined),
+              from: exp.from?.toDate ? exp.from.toDate() : undefined,
+              to: exp.to?.toDate ? exp.to.toDate() : undefined,
           })) || [];
 
           const totalExperience = calculateTotalExperienceInYears(experiencesWithDates);
@@ -82,7 +82,7 @@ export function ReferralRequestsPage() {
               name: seekerData.name || "Unnamed Candidate",
               avatar: seekerData.profilePic || "https://placehold.co/100x100.png",
               currentRole: seekerData.currentRole || "N/A",
-              targetRole: seekerData.targetRole,
+              targetRole: seekerData.targetRole || "",
               company: seekerData.experiences?.[0]?.company || "",
               salary: seekerData.expectedSalary || 0,
               salaryCurrency: seekerData.expectedSalaryCurrency || 'USD',
@@ -90,7 +90,7 @@ export function ReferralRequestsPage() {
               skills: seekerData.skills || [],
               location: seekerData.location || "Remote",
               experience: totalExperience,
-              status: requestData.status, 
+              status: requestData.status || 'Pending',
               jobPostUrl: requestData.jobInfo || '',
               targetCompanies: seekerData.companies?.map((c: any) => c.name).filter(Boolean) || [],
           } as Candidate;
