@@ -26,10 +26,6 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased")}>
-        <div className="app-header">
-          {/* Using a placeholder for the logo as logo.png doesn't exist. */}
-          <Image src="https://placehold.co/150x30.png" width={120} height={30} alt="ReferBridge" data-ai-hint="logo" />
-        </div>
         <Suspense>
           <FirebaseAnalytics />
         </Suspense>
