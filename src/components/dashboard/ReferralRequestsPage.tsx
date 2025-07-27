@@ -88,7 +88,7 @@ export function ReferralRequestsPage() {
           } as Candidate;
         });
         
-        const candidates = (await Promise.all(candidatePromises)).filter(Boolean) as Candidate[];
+        const candidates = (await Promise.all(candidatePromises)).filter(c => c !== null) as Candidate[];
         setRequestedCandidates(candidates);
 
       } catch (error: any) {
