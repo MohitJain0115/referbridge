@@ -707,21 +707,33 @@ export default function SeekerProfilePage() {
                                         <PopoverTrigger asChild>
                                             <Button id={`exp-from-${exp.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !exp.from && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {exp.from ? format(exp.from, "MMM yyyy") : <span>Pick a date</span>}
+                                                {exp.from ? format(exp.from, "MMM yyyy") : <span>Pick a month</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
                                             <Calendar 
-                                                mode="single" 
+                                                mode="single"
+                                                defaultMonth={exp.from}
                                                 selected={exp.from} 
                                                 onSelect={(date) => {
                                                     handleExperienceChange(exp.id, 'from', date);
+                                                    setOpenPopoverId(null);
+                                                }}
+                                                onMonthChange={(month) => {
+                                                    handleExperienceChange(exp.id, 'from', month);
                                                     setOpenPopoverId(null);
                                                 }}
                                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
+                                                classNames={{
+                                                    day: "hidden",
+                                                    month: "flex flex-col space-y-4",
+                                                    caption_start: "flex",
+                                                    caption_between: "flex",
+                                                    caption_end: "flex",
+                                                }}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -732,21 +744,33 @@ export default function SeekerProfilePage() {
                                         <PopoverTrigger asChild>
                                             <Button id={`exp-to-${exp.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !exp.to && "text-muted-foreground")} disabled={exp.currentlyWorking}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {exp.currentlyWorking ? 'Present' : exp.to ? format(exp.to, "MMM yyyy") : <span>Pick a date</span>}
+                                                {exp.currentlyWorking ? 'Present' : exp.to ? format(exp.to, "MMM yyyy") : <span>Pick a month</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
                                             <Calendar 
                                                 mode="single" 
-                                                selected={exp.to} 
+                                                defaultMonth={exp.to || undefined}
+                                                selected={exp.to || undefined} 
                                                 onSelect={(date) => {
                                                     handleExperienceChange(exp.id, 'to', date);
+                                                    setOpenPopoverId(null);
+                                                }}
+                                                onMonthChange={(month) => {
+                                                    handleExperienceChange(exp.id, 'to', month);
                                                     setOpenPopoverId(null);
                                                 }}
                                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
+                                                classNames={{
+                                                    day: "hidden",
+                                                    month: "flex flex-col space-y-4",
+                                                    caption_start: "flex",
+                                                    caption_between: "flex",
+                                                    caption_end: "flex",
+                                                }}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -800,21 +824,33 @@ export default function SeekerProfilePage() {
                                         <PopoverTrigger asChild>
                                             <Button id={`edu-from-${edu.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !edu.from && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {edu.from ? format(edu.from, "MMM yyyy") : <span>Pick a date</span>}
+                                                {edu.from ? format(edu.from, "MMM yyyy") : <span>Pick a month</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
                                             <Calendar 
                                                 mode="single" 
+                                                defaultMonth={edu.from}
                                                 selected={edu.from} 
                                                 onSelect={(date) => {
                                                     handleEducationChange(edu.id, 'from', date);
+                                                    setOpenPopoverId(null);
+                                                }}
+                                                onMonthChange={(month) => {
+                                                    handleEducationChange(edu.id, 'from', month);
                                                     setOpenPopoverId(null);
                                                 }}
                                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
+                                                classNames={{
+                                                    day: "hidden",
+                                                    month: "flex flex-col space-y-4",
+                                                    caption_start: "flex",
+                                                    caption_between: "flex",
+                                                    caption_end: "flex",
+                                                }}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -825,21 +861,33 @@ export default function SeekerProfilePage() {
                                         <PopoverTrigger asChild>
                                             <Button id={`edu-to-${edu.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !edu.to && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {edu.to ? format(edu.to, "MMM yyyy") : <span>Pick a date</span>}
+                                                {edu.to ? format(edu.to, "MMM yyyy") : <span>Pick a month</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
                                             <Calendar 
                                                 mode="single" 
-                                                selected={edu.to} 
+                                                defaultMonth={edu.to || undefined}
+                                                selected={edu.to || undefined} 
                                                 onSelect={(date) => {
                                                     handleEducationChange(edu.id, 'to', date);
+                                                    setOpenPopoverId(null);
+                                                }}
+                                                onMonthChange={(month) => {
+                                                    handleEducationChange(edu.id, 'to', month);
                                                     setOpenPopoverId(null);
                                                 }}
                                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
+                                                classNames={{
+                                                    day: "hidden",
+                                                    month: "flex flex-col space-y-4",
+                                                    caption_start: "flex",
+                                                    caption_between: "flex",
+                                                    caption_end: "flex",
+                                                }}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -1025,3 +1073,4 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
+
