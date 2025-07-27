@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, getMonth, getYear } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -127,10 +127,15 @@ function PageSkeleton() {
 export default function SeekerProfilePage() {
   const { toast } = useToast();
   const router = useRouter();
+  
+  // Date selection helpers
   const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 70 }, (_, i) => currentYear - i);
+  const months = Array.from({ length: 12 }, (_, i) => ({
+    value: i,
+    label: format(new Date(0, i), 'MMMM'),
+  }));
 
-  // State for which calendar popover is open
-  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   // Auth and loading states
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -256,7 +261,7 @@ export default function SeekerProfilePage() {
 
   const addExperience = () => setExperiences([...experiences, {id: Date.now(), role: '', company: '', from: undefined, to: undefined, currentlyWorking: false, description: ''}]);
   const removeExperience = (id: number) => setExperiences(experiences.filter(e => e.id !== id));
-  const handleExperienceChange = (id: number, field: keyof Omit<Experience, 'id'>, value: string | boolean | Date | undefined) => {
+  const handleExperienceChange = (id: number, field: keyof Omit<Experience, 'id'>, value: string | boolean) => {
     setExperiences(experiences.map(exp => {
         if (exp.id === id) {
             const updatedExp = { ...exp, [field]: value };
@@ -269,11 +274,44 @@ export default function SeekerProfilePage() {
     }));
   };
 
+  const handleExperienceDateChange = (id: number, field: 'from' | 'to', part: 'month' | 'year', value: string) => {
+    setExperiences(experiences.map(exp => {
+      if (exp.id === id) {
+        const currentDate = exp[field] || new Date();
+        const newDate = new Date(currentDate);
+        if (part === 'month') {
+          newDate.setMonth(parseInt(value, 10));
+        } else {
+          newDate.setFullYear(parseInt(value, 10));
+        }
+        return { ...exp, [field]: newDate };
+      }
+      return exp;
+    }));
+  };
+  
   const addEducation = () => setEducations([...educations, {id: Date.now(), institution: '', degree: '', from: undefined, to: undefined, description: ''}]);
   const removeEducation = (id: number) => setEducations(educations.filter(e => e.id !== id));
-  const handleEducationChange = (id: number, field: keyof Omit<Education, 'id'>, value: string | Date | undefined) => {
+  const handleEducationChange = (id: number, field: keyof Omit<Education, 'id'>, value: string) => {
     setEducations(educations.map(edu => edu.id === id ? { ...edu, [field]: value } : edu));
   };
+  
+  const handleEducationDateChange = (id: number, field: 'from' | 'to', part: 'month' | 'year', value: string) => {
+    setEducations(educations.map(edu => {
+      if (edu.id === id) {
+        const currentDate = edu[field] || new Date();
+        const newDate = new Date(currentDate);
+        if (part === 'month') {
+          newDate.setMonth(parseInt(value, 10));
+        } else {
+          newDate.setFullYear(parseInt(value, 10));
+        }
+        return { ...edu, [field]: newDate };
+      }
+      return edu;
+    }));
+  };
+
 
   const handleProfilePicChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!currentUser || !storage) {
@@ -700,59 +738,40 @@ export default function SeekerProfilePage() {
                                     <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)} />
                                 </div>
                             </div>
-
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor={`exp-from-${exp.id}`}>From</Label>
-                                    <Popover open={openPopoverId === `exp-from-${exp.id}`} onOpenChange={(open) => setOpenPopoverId(open ? `exp-from-${exp.id}` : null)}>
-                                        <PopoverTrigger asChild>
-                                            <Button id={`exp-from-${exp.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !exp.from && "text-muted-foreground")}>
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {exp.from ? format(exp.from, "MMM yyyy") : <span>Pick a month</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar 
-                                                mode="single"
-                                                defaultMonth={exp.from}
-                                                selected={exp.from} 
-                                                onSelect={(date) => {
-                                                    handleExperienceChange(exp.id, 'from', date);
-                                                    setOpenPopoverId(null);
-                                                }}
-                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                                captionLayout="dropdown-buttons"
-                                                fromYear={currentYear - 70}
-                                                toYear={currentYear}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Label>From</Label>
+                                    <div className="flex gap-2">
+                                        <Select value={exp.from ? getMonth(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'month', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                            <SelectContent>
+                                                {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={exp.from ? getYear(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'year', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                            <SelectContent>
+                                                {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor={`exp-to-${exp.id}`}>To</Label>
-                                    <Popover open={openPopoverId === `exp-to-${exp.id}`} onOpenChange={(open) => setOpenPopoverId(open ? `exp-to-${exp.id}` : null)}>
-                                        <PopoverTrigger asChild>
-                                            <Button id={`exp-to-${exp.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !exp.to && "text-muted-foreground")} disabled={exp.currentlyWorking}>
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {exp.currentlyWorking ? 'Present' : exp.to ? format(exp.to, "MMM yyyy") : <span>Pick a month</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar 
-                                                mode="single" 
-                                                defaultMonth={exp.to || undefined}
-                                                selected={exp.to || undefined} 
-                                                onSelect={(date) => {
-                                                    handleExperienceChange(exp.id, 'to', date);
-                                                    setOpenPopoverId(null);
-                                                }}
-                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                                captionLayout="dropdown-buttons"
-                                                fromYear={currentYear - 70}
-                                                toYear={currentYear}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Label>To</Label>
+                                    <div className="flex gap-2">
+                                        <Select disabled={exp.currentlyWorking} value={exp.to ? getMonth(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'month', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                            <SelectContent>
+                                                {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select disabled={exp.currentlyWorking} value={exp.to ? getYear(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'year', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                            <SelectContent>
+                                                {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2 mb-4">
@@ -796,62 +815,43 @@ export default function SeekerProfilePage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor={`edu-from-${edu.id}`}>From</Label>
-                                    <Popover open={openPopoverId === `edu-from-${edu.id}`} onOpenChange={(open) => setOpenPopoverId(open ? `edu-from-${edu.id}` : null)}>
-                                        <PopoverTrigger asChild>
-                                            <Button id={`edu-from-${edu.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !edu.from && "text-muted-foreground")}>
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {edu.from ? format(edu.from, "MMM yyyy") : <span>Pick a month</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar 
-                                                mode="single" 
-                                                defaultMonth={edu.from}
-                                                selected={edu.from} 
-                                                onSelect={(date) => {
-                                                    handleEducationChange(edu.id, 'from', date);
-                                                    setOpenPopoverId(null);
-                                                }}
-                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                                captionLayout="dropdown-buttons"
-                                                fromYear={currentYear - 70}
-                                                toYear={currentYear}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Label>From</Label>
+                                    <div className="flex gap-2">
+                                        <Select value={edu.from ? getMonth(edu.from).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'from', 'month', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                            <SelectContent>
+                                                {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={edu.from ? getYear(edu.from).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'from', 'year', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                            <SelectContent>
+                                                {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor={`edu-to-${edu.id}`}>To</Label>
-                                    <Popover open={openPopoverId === `edu-to-${edu.id}`} onOpenChange={(open) => setOpenPopoverId(open ? `edu-to-${edu.id}` : null)}>
-                                        <PopoverTrigger asChild>
-                                            <Button id={`edu-to-${edu.id}`} variant="outline" className={cn("w-full justify-start text-left font-normal", !edu.to && "text-muted-foreground")}>
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {edu.to ? format(edu.to, "MMM yyyy") : <span>Pick a month</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar 
-                                                mode="single" 
-                                                defaultMonth={edu.to || undefined}
-                                                selected={edu.to || undefined} 
-                                                onSelect={(date) => {
-                                                    handleEducationChange(edu.id, 'to', date);
-                                                    setOpenPopoverId(null);
-                                                }}
-                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                                captionLayout="dropdown-buttons"
-                                                fromYear={currentYear - 70}
-                                                toYear={currentYear}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Label>To</Label>
+                                    <div className="flex gap-2">
+                                        <Select value={edu.to ? getMonth(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'month', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                            <SelectContent>
+                                                {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={edu.to ? getYear(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'year', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                            <SelectContent>
+                                                {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div className="space-y-2">
+                            <div className="space-y-2 mt-4">
                                 <Label htmlFor={`edu-desc-${edu.id}`}>Description / Notes</Label>
                                 <Textarea id={`edu-desc-${edu.id}`} placeholder="Describe any relevant coursework, activities, or honors..." value={edu.description} onChange={(e) => handleEducationChange(edu.id, 'description', e.target.value)} className="min-h-[80px]" />
                             </div>
@@ -1030,5 +1030,6 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
+
 
 
