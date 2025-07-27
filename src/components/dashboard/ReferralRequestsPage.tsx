@@ -50,31 +50,30 @@ export function ReferralRequestsPage() {
       try {
         const requestsQuery = query(
           collection(db, "referral_requests"), 
-          where("referrerId", "==", currentUser.uid),
-          where("status", "==", "Pending")
+          where("referrerId", "==", currentUser.uid)
         );
         const requestSnapshots = await getDocs(requestsQuery);
 
-        if (requestSnapshots.empty) {
-            setRequestedCandidates([]);
-            setIsLoading(false);
-            return;
-        }
+        const pendingCandidates = [];
 
-        const candidatePromises = requestSnapshots.docs.map(async (requestDoc) => {
+        for (const requestDoc of requestSnapshots.docs) {
           const requestData = requestDoc.data();
+          if (requestData.status !== "Pending") {
+            continue;
+          }
+
           const seekerDocRef = doc(db, "profiles", requestData.seekerId);
           const seekerDoc = await getDoc(seekerDocRef);
 
           if (!seekerDoc.exists()) {
             console.warn(`Seeker profile not found for ID: ${requestData.seekerId}`);
-            return null;
+            continue;
           }
           
           const seekerData = seekerDoc.data();
           const totalExperience = calculateTotalExperienceInYears(seekerData.experiences);
 
-          return {
+          pendingCandidates.push({
               id: seekerDoc.id, 
               requestId: requestDoc.id, 
               name: seekerData.name || "Unnamed Candidate",
@@ -91,28 +90,18 @@ export function ReferralRequestsPage() {
               status: requestData.status, 
               jobPostUrl: requestData.jobInfo || '',
               targetCompanies: seekerData.companies?.map((c: any) => c.name).filter(Boolean) || [],
-          } as Candidate;
-        });
+          } as Candidate);
+        }
 
-        const results = (await Promise.all(candidatePromises)).filter(Boolean) as Candidate[];
-        setRequestedCandidates(results);
+        setRequestedCandidates(pendingCandidates);
 
       } catch (error: any) {
         console.error("Failed to fetch requested candidates:", error);
-        if (error.code === 'failed-precondition') {
-          toast({
-              title: "Missing Index",
-              description: "This query requires a Firestore index. Please check the browser console for a link to create it.",
-              variant: "destructive",
-              duration: 10000,
-          });
-        } else {
-          toast({
-              title: "Error fetching requests",
-              description: "Could not load referral requests. Please try again later.",
-              variant: "destructive",
-          });
-        }
+        toast({
+            title: "Error fetching requests",
+            description: "Could not load referral requests. Please try again later.",
+            variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
