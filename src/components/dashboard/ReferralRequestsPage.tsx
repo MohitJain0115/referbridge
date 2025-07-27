@@ -68,12 +68,15 @@ export function ReferralRequestsPage() {
           
           const seekerData = seekerDoc.data();
 
-          const experiencesWithDates = seekerData.experiences?.map((exp: any) => ({
-              ...exp,
-              from: exp.from?.toDate ? exp.from.toDate() : undefined,
-              to: exp.to?.toDate ? exp.to.toDate() : undefined,
-          })) || [];
-
+          // Safely handle experiences array before mapping
+          const experiencesWithDates = seekerData.experiences
+            ? seekerData.experiences.map((exp: any) => ({
+                ...exp,
+                from: exp.from?.toDate ? exp.from.toDate() : undefined,
+                to: exp.to?.toDate ? exp.to.toDate() : undefined,
+              }))
+            : [];
+          
           const totalExperience = calculateTotalExperienceInYears(experiencesWithDates);
 
           return {
