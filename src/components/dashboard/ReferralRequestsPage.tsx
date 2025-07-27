@@ -54,26 +54,21 @@ export function ReferralRequestsPage() {
         );
         const requestSnapshots = await getDocs(requestsQuery);
 
-        const pendingCandidates = [];
-
-        for (const requestDoc of requestSnapshots.docs) {
+        const candidatePromises = requestSnapshots.docs.map(async (requestDoc) => {
           const requestData = requestDoc.data();
-          if (requestData.status !== "Pending") {
-            continue;
-          }
-
+          
           const seekerDocRef = doc(db, "profiles", requestData.seekerId);
           const seekerDoc = await getDoc(seekerDocRef);
 
           if (!seekerDoc.exists()) {
             console.warn(`Seeker profile not found for ID: ${requestData.seekerId}`);
-            continue;
+            return null;
           }
           
           const seekerData = seekerDoc.data();
           const totalExperience = calculateTotalExperienceInYears(seekerData.experiences);
 
-          pendingCandidates.push({
+          return {
               id: seekerDoc.id, 
               requestId: requestDoc.id, 
               name: seekerData.name || "Unnamed Candidate",
@@ -90,10 +85,11 @@ export function ReferralRequestsPage() {
               status: requestData.status, 
               jobPostUrl: requestData.jobInfo || '',
               targetCompanies: seekerData.companies?.map((c: any) => c.name).filter(Boolean) || [],
-          } as Candidate);
-        }
-
-        setRequestedCandidates(pendingCandidates);
+          } as Candidate;
+        });
+        
+        const candidates = (await Promise.all(candidatePromises)).filter(Boolean) as Candidate[];
+        setRequestedCandidates(candidates);
 
       } catch (error: any) {
         console.error("Failed to fetch requested candidates:", error);
