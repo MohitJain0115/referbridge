@@ -48,7 +48,11 @@ export function ReferralRequestsPage() {
       }
       setIsLoading(true);
       try {
-        const requestsQuery = query(collection(db, "referral_requests"), where("referrerId", "==", currentUser.uid));
+        const requestsQuery = query(
+          collection(db, "referral_requests"), 
+          where("referrerId", "==", currentUser.uid),
+          where("status", "==", "Pending")
+        );
         const requestSnapshots = await getDocs(requestsQuery);
 
         if (requestSnapshots.empty) {
@@ -95,6 +99,12 @@ export function ReferralRequestsPage() {
 
       } catch (error) {
         console.error("Failed to generate requested candidates:", error);
+        toast({
+            title: "Error fetching requests",
+            description: "Please check the developer console for a link to create the required Firestore index.",
+            variant: "destructive",
+            duration: 10000,
+        })
       } finally {
         setIsLoading(false);
       }
