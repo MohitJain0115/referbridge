@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -719,21 +720,10 @@ export default function SeekerProfilePage() {
                                                     handleExperienceChange(exp.id, 'from', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                onMonthChange={(month) => {
-                                                    handleExperienceChange(exp.id, 'from', month);
-                                                    setOpenPopoverId(null);
-                                                }}
                                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
-                                                classNames={{
-                                                    day: "hidden",
-                                                    month: "flex flex-col space-y-4",
-                                                    caption_start: "flex",
-                                                    caption_between: "flex",
-                                                    caption_end: "flex",
-                                                }}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -756,21 +746,10 @@ export default function SeekerProfilePage() {
                                                     handleExperienceChange(exp.id, 'to', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                onMonthChange={(month) => {
-                                                    handleExperienceChange(exp.id, 'to', month);
-                                                    setOpenPopoverId(null);
-                                                }}
                                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
-                                                classNames={{
-                                                    day: "hidden",
-                                                    month: "flex flex-col space-y-4",
-                                                    caption_start: "flex",
-                                                    caption_between: "flex",
-                                                    caption_end: "flex",
-                                                }}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -836,21 +815,10 @@ export default function SeekerProfilePage() {
                                                     handleEducationChange(edu.id, 'from', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                onMonthChange={(month) => {
-                                                    handleEducationChange(edu.id, 'from', month);
-                                                    setOpenPopoverId(null);
-                                                }}
                                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
-                                                classNames={{
-                                                    day: "hidden",
-                                                    month: "flex flex-col space-y-4",
-                                                    caption_start: "flex",
-                                                    caption_between: "flex",
-                                                    caption_end: "flex",
-                                                }}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -873,21 +841,10 @@ export default function SeekerProfilePage() {
                                                     handleEducationChange(edu.id, 'to', date);
                                                     setOpenPopoverId(null);
                                                 }}
-                                                onMonthChange={(month) => {
-                                                    handleEducationChange(edu.id, 'to', month);
-                                                    setOpenPopoverId(null);
-                                                }}
                                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={currentYear - 70}
                                                 toYear={currentYear}
-                                                classNames={{
-                                                    day: "hidden",
-                                                    month: "flex flex-col space-y-4",
-                                                    caption_start: "flex",
-                                                    caption_between: "flex",
-                                                    caption_end: "flex",
-                                                }}
                                             />
                                         </PopoverContent>
                                     </Popover>
@@ -1073,4 +1030,5 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
+
 
