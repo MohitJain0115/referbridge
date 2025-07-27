@@ -97,14 +97,22 @@ export function ReferralRequestsPage() {
         const results = (await Promise.all(candidatePromises)).filter(Boolean) as Candidate[];
         setRequestedCandidates(results);
 
-      } catch (error) {
-        console.error("Failed to generate requested candidates:", error);
-        toast({
-            title: "Error fetching requests",
-            description: "Please check the developer console for a link to create the required Firestore index.",
-            variant: "destructive",
-            duration: 10000,
-        })
+      } catch (error: any) {
+        console.error("Failed to fetch requested candidates:", error);
+        if (error.code === 'failed-precondition') {
+          toast({
+              title: "Missing Index",
+              description: "This query requires a Firestore index. Please check the browser console for a link to create it.",
+              variant: "destructive",
+              duration: 10000,
+          });
+        } else {
+          toast({
+              title: "Error fetching requests",
+              description: "Could not load referral requests. Please try again later.",
+              variant: "destructive",
+          });
+        }
       } finally {
         setIsLoading(false);
       }
