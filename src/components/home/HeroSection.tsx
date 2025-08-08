@@ -9,7 +9,7 @@ export function HeroSection() {
           Unlock Your Career Potential with a Referral
         </h1>
         <p className="text-lg text-muted-foreground max-w-xl">
-          ReferBridge connects ambitious job seekers with company insiders willing to give them a boost. Stop cold applying and start getting referred.
+          ReferBridge connects ambitious job seekers with company insiders willing to give them a boost. Stop cold application and start getting referred.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Button size="lg" asChild>
