@@ -206,6 +206,7 @@ export default function DashboardLayout({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
+            <Button variant="ghost" onClick={handleLogout}>Log Out</Button>
             <AlertDialogAction onClick={handleGoToProfile}>Set Up Profile</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
