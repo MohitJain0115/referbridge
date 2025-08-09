@@ -8,7 +8,7 @@ import type { Candidate } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, CheckCircle, XCircle, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail, RotateCcw, MoreVertical } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail, RotateCcw, MoreVertical, Info, Sparkles } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -177,7 +177,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: toastMessage,
       });
 
-      if (isFromRequestPage && (newStatus === 'Referred' || newStatus === null || newStatus === 'Not a Fit')) {
+      if (isFromRequestPage && (newStatus === 'Referred' || newStatus === 'Not a Fit')) {
         onUpdateRequest?.(candidate.id);
       }
     } catch (error: any) {
@@ -317,7 +317,10 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
           )}
           {candidate.skills && candidate.skills.length > 0 && (
             <div className="space-y-1">
-                <h4 className="font-medium text-muted-foreground">Top Skills</h4>
+                <h4 className="font-medium text-muted-foreground flex items-center gap-2 text-xs">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    Top Skills
+                </h4>
                 <div className="flex flex-wrap gap-1">
                     {candidate.skills.slice(0, 3).map(skill => (
                         <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
