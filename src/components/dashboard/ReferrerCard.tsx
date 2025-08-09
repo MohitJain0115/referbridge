@@ -109,9 +109,14 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
                     <span>Specializes in</span>
                 </h4>
                 <div className="flex flex-wrap gap-1">
-                    {referrer.specialties.map(specialty => (
+                    {referrer.specialties.slice(0, 3).map(specialty => (
                         <Badge key={specialty} variant="secondary" className="text-xs">{specialty}</Badge>
                     ))}
+                    {referrer.specialties.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                            +{referrer.specialties.length - 3} more
+                        </Badge>
+                    )}
                 </div>
             </div>
         )}
