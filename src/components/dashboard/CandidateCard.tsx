@@ -15,7 +15,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, firebaseReady, auth } from "@/lib/firebase";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,14 +38,15 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
   const [otherReasonText, setOtherReasonText] = useState("");
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target instanceof HTMLElement && e.target.closest('button, a, [role="menuitem"], [role="dialog"]')) {
+    // Stop propagation if the click is on an interactive element
+    if (e.target instanceof HTMLElement && e.target.closest('button, a, [role="menuitem"], [role="dialog"], [role="checkbox"]')) {
       return;
     }
     onSelect(candidate.id);
   };
 
-  const handleDownloadResume = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDownloadResume = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!firebaseReady || !db) {
       toast({ title: "Firebase not ready", variant: "destructive" });
       return;
@@ -60,7 +61,6 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
           description: `Downloading ${candidate.name}'s resume.`
         });
         
-        // Fetch the file and save it using file-saver
         const response = await fetch(resumeData.fileUrl);
         if (!response.ok) {
           throw new Error(`Failed to fetch file: ${response.statusText}`);
@@ -77,8 +77,8 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     }
   };
 
-  const handleShareToMail = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleShareToMail = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!firebaseReady || !db || !auth.currentUser?.email) {
       toast({ title: "Cannot share", description: "You must be logged in to share.", variant: "destructive" });
       return;
@@ -146,21 +146,15 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
   };
 
   const handleSetStatus = async (newStatus: Candidate['status'] | null) => {
-    // Only allow status updates from the request page.
-    if (!isFromRequestPage || !firebaseReady || !db) {
-      toast({ title: "Action not available here.", variant: "destructive" });
+    if (!candidate.requestId || !firebaseReady || !db) {
+      toast({
+          title: "Action Not Available",
+          description: "Status can only be changed on a specific referral request.",
+          variant: "destructive"
+      });
       return;
     }
     
-    if (!candidate.requestId) {
-        toast({
-            title: "Action Not Available",
-            description: "Status can only be changed on a specific referral request.",
-            variant: "destructive"
-        });
-        return;
-    }
-
     if (newStatus === 'Not a Fit') {
         setIsCancelDialogOpen(true);
         return;
@@ -183,7 +177,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: toastMessage,
       });
 
-      if (newStatus === 'Referred' || newStatus === null || newStatus === 'Not a Fit') {
+      if (isFromRequestPage && (newStatus === 'Referred' || newStatus === null || newStatus === 'Not a Fit')) {
         onUpdateRequest?.(candidate.id);
       }
     } catch (error: any) {
@@ -237,36 +231,41 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               id={`select-${candidate.id}`}
               aria-label={`Select ${candidate.name}`}
               checked={isSelected}
-              onCheckedChange={() => onSelect(candidate.id)} 
+              onCheckedChange={(checked) => {
+                onSelect(candidate.id);
+              }}
+              onClick={(e) => e.stopPropagation()}
           />
         </div>
-        <CardHeader className="p-4">
+        <CardHeader className="p-4 flex-shrink-0">
           <div className="flex items-start justify-between">
-            <Image
-              src={candidate.avatar}
-              alt={candidate.name}
-              width={48}
-              height={48}
-              className="rounded-full border-2 border-primary/50 object-cover aspect-square"
-              data-ai-hint="person avatar"
-            />
+            <div className="w-12 h-12 flex-shrink-0">
+              <Image
+                src={candidate.avatar}
+                alt={candidate.name}
+                width={48}
+                height={48}
+                className="rounded-full border-2 border-primary/50 object-cover aspect-square"
+                data-ai-hint="person avatar"
+              />
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-8 w-8 flex-shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                <DropdownMenuItem onSelect={handleDownloadResume}>
+                <DropdownMenuItem onSelect={() => handleDownloadResume()}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Resume
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={handleShareToMail}>
+                <DropdownMenuItem onSelect={() => handleShareToMail()}>
                   <Mail className="mr-2 h-4 w-4" />
                   Share to Mail
                 </DropdownMenuItem>
@@ -301,25 +300,25 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
             </DropdownMenu>
           </div>
           <div className="flex items-center gap-2 pt-2">
-            <CardTitle className="font-headline text-base">{candidate.name}</CardTitle>
+            <CardTitle className="font-headline text-base truncate">{candidate.name}</CardTitle>
             {showStatusBadge && displayStatus && (
-              <Badge variant={getStatusBadgeVariant(displayStatus)} className="capitalize text-xs">
+              <Badge variant={getStatusBadgeVariant(displayStatus)} className="capitalize text-xs flex-shrink-0">
                 {React.createElement(statusIcons[displayStatus], { className: "mr-1 h-3 w-3" })}
                 {displayStatus}
               </Badge>
             )}
           </div>
-          <CardDescription className="text-xs">
+          <CardDescription className="text-xs truncate">
             {candidate.currentRole}
             {candidate.targetRole && candidate.targetRole !== candidate.currentRole && (
-                <span className="block text-primary/90 font-medium text-xs mt-1">
+                <span className="block text-primary/90 font-medium text-xs mt-1 truncate">
                     Seeking: {candidate.targetRole}
                 </span>
             )}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-grow space-y-2 p-4 pt-0 text-xs">
-          <div className="text-muted-foreground">
+          <div className="text-muted-foreground truncate">
             {candidate.salary > 0 && 
               <span>{formatCurrency(candidate.salary, candidate.salaryCurrency || 'INR')} expected salary</span>
             }
@@ -338,7 +337,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
           )}
           {candidate.skills && candidate.skills.length > 0 && (
             <div className="space-y-1">
-                <h4 className="font-medium">Top Skills</h4>
+                <h4 className="font-medium text-muted-foreground">Top Skills</h4>
                 <div className="flex flex-wrap gap-1">
                     {candidate.skills.slice(0, 3).map(skill => (
                         <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
@@ -352,12 +351,39 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
             </div>
           )}
         </CardContent>
-        <CardFooter className="p-4 pt-0">
-          <Button className="w-full" size="sm" asChild>
-            <Link href={`/profile/${candidate.id}`} onClick={e => e.stopPropagation()}>
-              <Eye className="mr-2 h-4 w-4" /> View Profile
-            </Link>
-          </Button>
+        <CardFooter className="p-4 pt-0 flex-shrink-0">
+            <div className="flex gap-2 w-full">
+                <Button className="flex-1" size="sm" asChild>
+                  <Link href={`/profile/${candidate.id}`} onClick={e => e.stopPropagation()}>
+                    <Eye className="mr-2 h-4 w-4" /> View Profile
+                  </Link>
+                </Button>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="secondary" size="sm" className="flex-1" onClick={e => e.stopPropagation()}>
+                           <Download className="mr-2 h-4 w-4" /> Resume
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent onClick={(e) => e.stopPropagation()}>
+                        <DialogHeader>
+                            <DialogTitle>Resume Actions for {candidate.name}</DialogTitle>
+                            <DialogDescription>
+                                Choose how you would like to handle the resume.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+                            <Button variant="outline" onClick={() => handleDownloadResume()} className="flex-1">
+                                <Download className="mr-2 h-4 w-4" />
+                                Download to Device
+                            </Button>
+                            <Button onClick={() => handleShareToMail()} className="flex-1">
+                                <Mail className="mr-2 h-4 w-4" />
+                                Email Link to Myself
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
         </CardFooter>
       </Card>
 
