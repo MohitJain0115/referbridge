@@ -224,12 +224,12 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     <>
       <Card 
         className={cn(
-          "flex flex-col transition-all relative cursor-pointer hover:shadow-lg hover:scale-105", 
+          "flex flex-col transition-all relative cursor-pointer hover:shadow-lg", 
           isSelected && "border-primary ring-2 ring-primary"
         )}
         onClick={handleCardClick}
       >
-        <div className="absolute top-4 left-4 z-10">
+        <div className="absolute top-2 left-2 z-10">
           <Checkbox 
               id={`select-${candidate.id}`}
               aria-label={`Select ${candidate.name}`}
@@ -237,13 +237,13 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               onCheckedChange={() => onSelect(candidate.id)} 
           />
         </div>
-        <CardHeader>
+        <CardHeader className="p-4">
           <div className="flex items-start justify-between">
             <Image
               src={candidate.avatar}
               alt={candidate.name}
-              width={64}
-              height={64}
+              width={48}
+              height={48}
               className="rounded-full border-2 border-primary/50 object-cover aspect-square"
               data-ai-hint="person avatar"
             />
@@ -252,6 +252,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                 <Button 
                   variant="ghost" 
                   size="icon"
+                  className="h-8 w-8"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreVertical className="h-4 w-4" />
@@ -292,55 +293,55 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="flex items-center gap-2 pt-4">
-            <CardTitle className="font-headline">{candidate.name}</CardTitle>
+          <div className="flex items-center gap-2 pt-2">
+            <CardTitle className="font-headline text-lg">{candidate.name}</CardTitle>
             {showStatusBadge && displayStatus && (
-              <Badge variant={getStatusBadgeVariant(displayStatus)} className="capitalize">
+              <Badge variant={getStatusBadgeVariant(displayStatus)} className="capitalize text-xs">
                 {React.createElement(statusIcons[displayStatus], { className: "mr-1 h-3 w-3" })}
                 {displayStatus}
               </Badge>
             )}
           </div>
-          <CardDescription>
+          <CardDescription className="text-sm">
             {candidate.currentRole}
             {candidate.targetRole && candidate.targetRole !== candidate.currentRole && (
-                <span className="block text-primary/90 font-medium mt-1">
+                <span className="block text-primary/90 font-medium text-xs mt-1">
                     Seeking: {candidate.targetRole}
                 </span>
             )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-grow space-y-4">
-          <div className="text-sm text-muted-foreground">
+        <CardContent className="flex-grow space-y-3 p-4 pt-0">
+          <div className="text-xs text-muted-foreground">
             {candidate.salary > 0 && 
               <span>{formatCurrency(candidate.salary, candidate.salaryCurrency || 'USD')} expected salary</span>
             }
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Briefcase className="h-4 w-4" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Briefcase className="h-3 w-3" />
               <span>{candidate.experience} {candidate.experience === 1 ? 'year' : 'years'} of experience</span>
           </div>
           {isFromRequestPage && candidate.jobPostUrl && (
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <LinkIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <LinkIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
               <a href={candidate.jobPostUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate" onClick={(e) => e.stopPropagation()}>
                 {candidate.jobPostUrl}
               </a>
             </div>
           )}
           {candidate.skills && candidate.skills.length > 0 && (
-            <div className="space-y-2">
-                <h4 className="text-sm font-medium">Top Skills</h4>
-                <div className="flex flex-wrap gap-2">
+            <div className="space-y-1">
+                <h4 className="text-xs font-medium">Top Skills</h4>
+                <div className="flex flex-wrap gap-1">
                     {candidate.skills.slice(0,3).map(skill => (
-                        <Badge key={skill} variant="secondary">{skill}</Badge>
+                        <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
                     ))}
                 </div>
             </div>
           )}
         </CardContent>
-        <CardFooter>
-          <Button className="w-full" asChild>
+        <CardFooter className="p-4 pt-0">
+          <Button className="w-full" size="sm" asChild>
             <Link href={`/profile/${candidate.id}`} onClick={e => e.stopPropagation()}>
               <Eye className="mr-2 h-4 w-4" /> View Profile
             </Link>
@@ -402,5 +403,3 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     </>
   );
 }
-
-    

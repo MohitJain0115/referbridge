@@ -13,7 +13,7 @@ import type { User } from "firebase/auth";
 
 function ReferrerGridSkeleton() {
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {[...Array(8)].map((_, i) => (
         <Skeleton key={i} className="h-[350px] w-full" />
       ))}
@@ -132,7 +132,7 @@ export function SeekerDashboard() {
       {isLoading ? (
         <ReferrerGridSkeleton />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredReferrers.length > 0 ? (
               filteredReferrers.map(referrer => (
                 <ReferrerCard key={referrer.id} referrer={referrer} />

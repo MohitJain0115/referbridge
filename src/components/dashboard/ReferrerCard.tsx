@@ -82,46 +82,46 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
   };
 
   return (
-    <Card className="flex flex-col transition-all hover:shadow-lg hover:scale-105">
-      <CardHeader className="items-center text-center">
+    <Card className="flex flex-col transition-all hover:shadow-lg">
+      <CardHeader className="p-4 items-center text-center">
         <Image
           src={referrer.avatar}
           alt={referrer.name}
-          width={80}
-          height={80}
+          width={64}
+          height={64}
           className="rounded-full border-2 border-primary/50 object-cover aspect-square"
           data-ai-hint="person avatar"
         />
-        <div className="pt-4">
-            <CardTitle className="font-headline">{referrer.name}</CardTitle>
-            <CardDescription>{referrer.role}</CardDescription>
+        <div className="pt-2">
+            <CardTitle className="font-headline text-lg">{referrer.name}</CardTitle>
+            <CardDescription className="text-sm">{referrer.role}</CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow space-y-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Briefcase className="h-4 w-4" />
+      <CardContent className="flex-grow space-y-3 p-4 pt-0">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Briefcase className="h-3 w-3" />
           <span>Works at <span className="font-semibold text-foreground">{referrer.company}</span></span>
         </div>
         {referrer.specialties && referrer.specialties.length > 0 && (
-            <div className="space-y-2">
-                <h4 className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                    <Sparkles className="h-4 w-4 text-primary" />
+            <div className="space-y-1">
+                <h4 className="text-xs font-medium flex items-center gap-2 text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-primary" />
                     <span>Specializes in</span>
                 </h4>
                 <div className="flex flex-wrap gap-1">
                     {referrer.specialties.map(specialty => (
-                        <Badge key={specialty} variant="secondary">{specialty}</Badge>
+                        <Badge key={specialty} variant="secondary" className="text-xs">{specialty}</Badge>
                     ))}
                 </div>
             </div>
         )}
       </CardContent>
-      <CardFooter>
+      <CardFooter className="p-4 pt-0">
         <div className="flex gap-2 w-full">
             {referrer.bio && (
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="secondary" className="flex-1">
+                  <Button variant="secondary" size="sm" className="flex-1">
                     <Info className="mr-2 h-4 w-4" /> View Bio
                   </Button>
                 </DialogTrigger>
@@ -157,7 +157,7 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
             )}
             <Dialog open={isRequestDialogOpen} onOpenChange={setIsRequestDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="flex-1">
+                <Button size="sm" className="flex-1">
                     Request Referral
                 </Button>
               </DialogTrigger>
