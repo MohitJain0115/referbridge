@@ -663,25 +663,14 @@ export default function SeekerProfilePage() {
                   <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="salary">Expected Salary</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="salary"
-                      type="number"
-                      placeholder="e.g., 150000"
-                      value={expectedSalary}
-                      onChange={(e) => setExpectedSalary(e.target.value)}
-                      className="w-full"
-                    />
-                     <Select value={expectedSalaryCurrency} onValueChange={setExpectedSalaryCurrency}>
-                        <SelectTrigger className="w-[120px]">
-                            <SelectValue placeholder="Currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="INR">INR</SelectItem>
-                        </SelectContent>
-                    </Select>
-                  </div>
+                  <Label htmlFor="salary">Expected Salary (INR)</Label>
+                  <Input
+                    id="salary"
+                    type="number"
+                    placeholder="e.g., 150000"
+                    value={expectedSalary}
+                    onChange={(e) => setExpectedSalary(e.target.value)}
+                  />
                 </div>
               </div>
 
@@ -1026,7 +1015,3 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
-
-
-
-
