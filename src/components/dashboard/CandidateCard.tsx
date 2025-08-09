@@ -8,8 +8,7 @@ import type { Candidate } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Eye, CheckCircle, XCircle, MoreVertical, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail, RotateCcw } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -239,7 +238,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         </div>
         <CardHeader className="p-4 flex-shrink-0">
           <div className="flex items-start justify-between">
-            <div className="w-12 h-12 flex-shrink-0">
+            <div className="w-12 h-12 flex-shrink-0 mr-auto">
               <Image
                 src={candidate.avatar}
                 alt={candidate.name}
@@ -249,55 +248,6 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                 data-ai-hint="person avatar"
               />
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="h-8 w-8 flex-shrink-0"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                <DropdownMenuItem onSelect={() => handleDownloadResume()}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Resume
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleShareToMail()}>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Share to Mail
-                </DropdownMenuItem>
-                {isFromRequestPage && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Set Status</DropdownMenuLabel>
-                    <DropdownMenuItem onSelect={() => handleSetStatus('Viewed')}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Mark as Viewed
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => handleSetStatus('Referred')}>
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Mark as Referred
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => handleSetStatus('Not a Fit')}>
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Not a Fit
-                    </DropdownMenuItem>
-                    {showStatusBadge && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => handleSetStatus(null)}>
-                          <RotateCcw className="mr-2 h-4 w-4" />
-                          Reset Status
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
           <div className="flex items-center gap-2 pt-2">
             <CardTitle className="font-headline text-base truncate">{candidate.name}</CardTitle>
