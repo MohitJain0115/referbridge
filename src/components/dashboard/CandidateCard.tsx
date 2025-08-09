@@ -150,25 +150,29 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
       toast({ title: "Database not available", variant: "destructive" });
       return;
     }
+    
+    // Only allow status updates if there's a specific request ID.
+    // This prevents trying to write to another user's profile, which causes permission errors.
+    if (!candidate.requestId) {
+        toast({
+            title: "Action Not Available",
+            description: "Status can only be changed on a specific referral request.",
+            variant: "destructive"
+        });
+        return;
+    }
 
-    // For single-card "Not a fit", trigger the dialog instead of direct update
     if (newStatus === 'Not a Fit') {
         setIsCancelDialogOpen(true);
         return;
     }
     
-    // The reference can be to a specific request or the general profile
-    const docRef = candidate.requestId
-      ? doc(db, "referral_requests", candidate.requestId)
-      : doc(db, "profiles", candidate.id);
+    const requestRef = doc(db, "referral_requests", candidate.requestId);
 
     try {
-      // If newStatus is null, we are resetting. We'll set it to 'Pending' internally.
-      // But we won't show the 'Pending' badge on the UI.
       const statusToSave = newStatus === null ? 'Pending' : newStatus;
-      await updateDoc(docRef, { status: statusToSave });
+      await updateDoc(requestRef, { status: statusToSave });
       
-      // We set the component's status state to the new status, or null if resetting
       setCurrentStatus(newStatus);
       
       const toastMessage = newStatus 
@@ -224,7 +228,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     <>
       <Card 
         className={cn(
-          "flex flex-col transition-all relative cursor-pointer hover:shadow-lg", 
+          "flex flex-col transition-all relative cursor-pointer hover:shadow-lg h-full", 
           isSelected && "border-primary ring-2 ring-primary"
         )}
         onClick={handleCardClick}
@@ -269,19 +273,19 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Set Status</DropdownMenuLabel>
-                <DropdownMenuItem onSelect={() => handleSetStatus('Viewed')}>
+                <DropdownMenuItem onSelect={() => handleSetStatus('Viewed')} disabled={!candidate.requestId}>
                   <Eye className="mr-2 h-4 w-4" />
                   Mark as Viewed
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleSetStatus('Referred')}>
+                <DropdownMenuItem onSelect={() => handleSetStatus('Referred')} disabled={!candidate.requestId}>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Mark as Referred
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleSetStatus('Not a Fit')}>
+                <DropdownMenuItem onSelect={() => handleSetStatus('Not a Fit')} disabled={!candidate.requestId}>
                   <XCircle className="mr-2 h-4 w-4" />
                   Not a Fit
                 </DropdownMenuItem>
-                {showStatusBadge && (
+                {showStatusBadge && candidate.requestId && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => handleSetStatus(null)}>
@@ -294,7 +298,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
             </DropdownMenu>
           </div>
           <div className="flex items-center gap-2 pt-2">
-            <CardTitle className="font-headline text-lg">{candidate.name}</CardTitle>
+            <CardTitle className="font-headline text-base">{candidate.name}</CardTitle>
             {showStatusBadge && displayStatus && (
               <Badge variant={getStatusBadgeVariant(displayStatus)} className="capitalize text-xs">
                 {React.createElement(statusIcons[displayStatus], { className: "mr-1 h-3 w-3" })}
@@ -302,7 +306,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               </Badge>
             )}
           </div>
-          <CardDescription className="text-sm">
+          <CardDescription className="text-xs">
             {candidate.currentRole}
             {candidate.targetRole && candidate.targetRole !== candidate.currentRole && (
                 <span className="block text-primary/90 font-medium text-xs mt-1">
@@ -311,18 +315,18 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
             )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-grow space-y-3 p-4 pt-0">
-          <div className="text-xs text-muted-foreground">
+        <CardContent className="flex-grow space-y-2 p-4 pt-0 text-xs">
+          <div className="text-muted-foreground">
             {candidate.salary > 0 && 
-              <span>{formatCurrency(candidate.salary, candidate.salaryCurrency || 'USD')} expected salary</span>
+              <span>{formatCurrency(candidate.salary, candidate.salaryCurrency || 'INR')} expected salary</span>
             }
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground">
               <Briefcase className="h-3 w-3" />
               <span>{candidate.experience} {candidate.experience === 1 ? 'year' : 'years'} of experience</span>
           </div>
           {isFromRequestPage && candidate.jobPostUrl && (
-            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+            <div className="flex items-start gap-2 text-muted-foreground">
               <LinkIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
               <a href={candidate.jobPostUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate" onClick={(e) => e.stopPropagation()}>
                 {candidate.jobPostUrl}
@@ -331,7 +335,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
           )}
           {candidate.skills && candidate.skills.length > 0 && (
             <div className="space-y-1">
-                <h4 className="text-xs font-medium">Top Skills</h4>
+                <h4 className="font-medium">Top Skills</h4>
                 <div className="flex flex-wrap gap-1">
                     {candidate.skills.slice(0, 3).map(skill => (
                         <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
