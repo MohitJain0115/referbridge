@@ -153,7 +153,7 @@ export default function SeekerProfilePage() {
   const [currentRole, setCurrentRole] = useState("");
   const [targetRole, setTargetRole] = useState("");
   const [expectedSalary, setExpectedSalary] = useState<number | string>("");
-  const [expectedSalaryCurrency, setExpectedSalaryCurrency] = useState("USD");
+  const [expectedSalaryCurrency, setExpectedSalaryCurrency] = useState("INR");
   const [errors, setErrors] = useState<{ name?: boolean; currentRole?: boolean; referrerCompany?: boolean; }>({});
 
 
@@ -209,7 +209,7 @@ export default function SeekerProfilePage() {
             setCurrentRole(data.currentRole || "");
             setTargetRole(data.targetRole || "");
             setExpectedSalary(data.expectedSalary || "");
-            setExpectedSalaryCurrency(data.expectedSalaryCurrency || "USD");
+            setExpectedSalaryCurrency(data.expectedSalaryCurrency || "INR");
             setAbout(data.about || "");
             setSkills(data.skills?.join(', ') || "");
             setCompanies(data.companies || []);
@@ -678,10 +678,6 @@ export default function SeekerProfilePage() {
                             <SelectValue placeholder="Currency" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="USD">USD</SelectItem>
-                            <SelectItem value="EUR">EUR</SelectItem>
-                            <SelectItem value="GBP">GBP</SelectItem>
-                            <SelectItem value="JPY">JPY</SelectItem>
                             <SelectItem value="INR">INR</SelectItem>
                         </SelectContent>
                     </Select>
@@ -1030,6 +1026,7 @@ export default function SeekerProfilePage() {
     </div>
   );
 }
+
 
 
 
