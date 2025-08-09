@@ -13,7 +13,7 @@ import { Menu, UserCircle, LogOut, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { signOut, onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, query, where, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, query, where, getDocs, onSnapshot, doc, getDoc } from "firebase/firestore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,11 +37,16 @@ export default function DashboardLayout({
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [referralRequestCount, setReferralRequestCount] = useState(0);
+  const [isProfileCheckComplete, setIsProfileCheckComplete] = useState(false);
 
   useEffect(() => {
     if (!firebaseReady) return;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      if (!user) {
+        // If user logs out, reset the check
+        setIsProfileCheckComplete(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -69,14 +74,30 @@ export default function DashboardLayout({
   }, [currentUser]);
 
   useEffect(() => {
-    const hasSeenProfilePrompt = localStorage.getItem('hasSeenProfilePrompt');
-    if (!hasSeenProfilePrompt && pathname !== '/seeker-profile') {
-      setShowProfileDialog(true);
-    }
-  }, [pathname]);
+    const checkProfile = async () => {
+      if (!currentUser || !db || pathname === '/seeker-profile') {
+        setIsProfileCheckComplete(true);
+        return;
+      }
+
+      try {
+        const profileDocRef = doc(db, 'profiles', currentUser.uid);
+        const profileDoc = await getDoc(profileDocRef);
+        if (!profileDoc.exists()) {
+          setShowProfileDialog(true);
+        }
+      } catch (error) {
+        console.error("Error checking for profile:", error);
+        // Optionally handle this error, e.g., by showing a toast
+      } finally {
+        setIsProfileCheckComplete(true);
+      }
+    };
+
+    checkProfile();
+  }, [currentUser, pathname]);
 
   const handleGoToProfile = () => {
-    localStorage.setItem('hasSeenProfilePrompt', 'true');
     setShowProfileDialog(false);
     router.push('/seeker-profile');
   };
@@ -163,10 +184,10 @@ export default function DashboardLayout({
       </header>
       <main className="flex-1 bg-muted/40 p-4 md:p-10">
         <div className="mx-auto w-full max-w-7xl">
-          {children}
+          {isProfileCheckComplete && children}
         </div>
       </main>
-      <AlertDialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+      <AlertDialog open={showProfileDialog}>
         <AlertDialogContent onEscapeKeyDown={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
           <AlertDialogHeader>
             <AlertDialogTitle>Welcome to ReferBridge!</AlertDialogTitle>
