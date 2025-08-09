@@ -333,9 +333,14 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
             <div className="space-y-1">
                 <h4 className="text-xs font-medium">Top Skills</h4>
                 <div className="flex flex-wrap gap-1">
-                    {candidate.skills.slice(0,3).map(skill => (
+                    {candidate.skills.slice(0, 3).map(skill => (
                         <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
                     ))}
+                    {candidate.skills.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                            +{candidate.skills.length - 3} more
+                        </Badge>
+                    )}
                 </div>
             </div>
           )}
