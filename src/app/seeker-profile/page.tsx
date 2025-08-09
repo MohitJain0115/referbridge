@@ -306,7 +306,7 @@ export default function SeekerProfilePage() {
         } else {
           newDate.setFullYear(parseInt(value, 10));
         }
-        return { ...edu, [field]: newDate };
+        return { ...exp, [field]: newDate };
       }
       return edu;
     }));
@@ -670,6 +670,7 @@ export default function SeekerProfilePage() {
                     placeholder="e.g., 150000"
                     value={expectedSalary}
                     onChange={(e) => setExpectedSalary(e.target.value)}
+                    className="no-spinner"
                   />
                 </div>
               </div>
