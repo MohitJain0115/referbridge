@@ -146,13 +146,12 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
   };
 
   const handleSetStatus = async (newStatus: Candidate['status'] | null) => {
-    if (!firebaseReady || !db) {
-      toast({ title: "Database not available", variant: "destructive" });
+    // Only allow status updates from the request page.
+    if (!isFromRequestPage || !firebaseReady || !db) {
+      toast({ title: "Action not available here.", variant: "destructive" });
       return;
     }
     
-    // Only allow status updates if there's a specific request ID.
-    // This prevents trying to write to another user's profile, which causes permission errors.
     if (!candidate.requestId) {
         toast({
             title: "Action Not Available",
@@ -173,7 +172,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
       const statusToSave = newStatus === null ? 'Pending' : newStatus;
       await updateDoc(requestRef, { status: statusToSave });
       
-      setCurrentStatus(newStatus);
+      setCurrentStatus(statusToSave);
       
       const toastMessage = newStatus 
         ? `${candidate.name}'s status set to ${newStatus}.`
@@ -184,7 +183,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: toastMessage,
       });
 
-      if (isFromRequestPage && (newStatus === 'Referred' || newStatus === null)) {
+      if (newStatus === 'Referred' || newStatus === null || newStatus === 'Not a Fit') {
         onUpdateRequest?.(candidate.id);
       }
     } catch (error: any) {
@@ -271,27 +270,31 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                   <Mail className="mr-2 h-4 w-4" />
                   Share to Mail
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Set Status</DropdownMenuLabel>
-                <DropdownMenuItem onSelect={() => handleSetStatus('Viewed')} disabled={!candidate.requestId}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  Mark as Viewed
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleSetStatus('Referred')} disabled={!candidate.requestId}>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Mark as Referred
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleSetStatus('Not a Fit')} disabled={!candidate.requestId}>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Not a Fit
-                </DropdownMenuItem>
-                {showStatusBadge && candidate.requestId && (
+                {isFromRequestPage && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => handleSetStatus(null)}>
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Reset Status
+                    <DropdownMenuLabel>Set Status</DropdownMenuLabel>
+                    <DropdownMenuItem onSelect={() => handleSetStatus('Viewed')}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Mark as Viewed
                     </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleSetStatus('Referred')}>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Mark as Referred
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleSetStatus('Not a Fit')}>
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Not a Fit
+                    </DropdownMenuItem>
+                    {showStatusBadge && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => handleSetStatus(null)}>
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          Reset Status
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </>
                 )}
               </DropdownMenuContent>
