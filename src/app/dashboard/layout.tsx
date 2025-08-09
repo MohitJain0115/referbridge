@@ -41,16 +41,49 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!firebaseReady) return;
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (!user) {
-        // If user logs out, reset the check
-        setIsProfileCheckComplete(false);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        // This is the ideal place to check for the profile, as it runs once on auth state change.
+        await checkProfile(user);
+      } else {
+        setCurrentUser(null);
+        setIsProfileCheckComplete(false); // Reset check on logout
+        setShowProfileDialog(false); // Hide dialog on logout
       }
     });
     return () => unsubscribe();
   }, []);
   
+  const checkProfile = async (user: FirebaseUser) => {
+    if (!db) {
+        setIsProfileCheckComplete(true);
+        return;
+    }
+    // Don't show the dialog if the user is already on the profile page
+    if (pathname === '/seeker-profile') {
+        setIsProfileCheckComplete(true);
+        return;
+    }
+
+    try {
+        const profileDocRef = doc(db, 'profiles', user.uid);
+        const profileDoc = await getDoc(profileDocRef);
+        if (!profileDoc.exists()) {
+            setShowProfileDialog(true);
+        }
+    } catch (error) {
+        console.error("Error checking for profile:", error);
+        toast({
+            title: "Error",
+            description: "Could not check for user profile. Please try again.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsProfileCheckComplete(true);
+    }
+  };
+
   useEffect(() => {
     if (!currentUser || !db) {
       setReferralRequestCount(0);
@@ -73,29 +106,6 @@ export default function DashboardLayout({
     return () => unsubscribe();
   }, [currentUser]);
 
-  useEffect(() => {
-    const checkProfile = async () => {
-      if (!currentUser || !db || pathname === '/seeker-profile') {
-        setIsProfileCheckComplete(true);
-        return;
-      }
-
-      try {
-        const profileDocRef = doc(db, 'profiles', currentUser.uid);
-        const profileDoc = await getDoc(profileDocRef);
-        if (!profileDoc.exists()) {
-          setShowProfileDialog(true);
-        }
-      } catch (error) {
-        console.error("Error checking for profile:", error);
-        // Optionally handle this error, e.g., by showing a toast
-      } finally {
-        setIsProfileCheckComplete(true);
-      }
-    };
-
-    checkProfile();
-  }, [currentUser, pathname]);
 
   const handleGoToProfile = () => {
     setShowProfileDialog(false);
