@@ -50,7 +50,8 @@ export function ReferralRequestsPage() {
       try {
         const requestsQuery = query(
           collection(db, "referral_requests"), 
-          where("referrerId", "==", currentUser.uid)
+          where("referrerId", "==", currentUser.uid),
+          where("status", "in", ["Pending", "Viewed", "Resume Downloaded"])
         );
         const requestSnapshots = await getDocs(requestsQuery);
 
@@ -116,6 +117,11 @@ export function ReferralRequestsPage() {
     fetchData();
   }, [currentUser, toast]);
 
+  const handleCandidateUpdate = (candidateId: string) => {
+    setRequestedCandidates(prev => prev.filter(c => c.id !== candidateId));
+  };
+
+
   return (
     <div className="space-y-6">
       <div>
@@ -126,7 +132,7 @@ export function ReferralRequestsPage() {
           Candidates who have specifically requested a referral from you.
         </p>
       </div>
-      {isLoading ? <CandidateGridSkeleton /> : <CandidateGrid candidates={requestedCandidates} showCancelAction={true} />}
+      {isLoading ? <CandidateGridSkeleton /> : <CandidateGrid candidates={requestedCandidates} showCancelAction={true} onCandidateUpdate={handleCandidateUpdate} />}
     </div>
   );
 }
