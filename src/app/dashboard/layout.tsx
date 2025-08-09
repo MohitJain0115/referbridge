@@ -17,7 +17,6 @@ import { collection, query, where, getDocs, onSnapshot } from "firebase/firestor
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -80,11 +79,6 @@ export default function DashboardLayout({
     localStorage.setItem('hasSeenProfilePrompt', 'true');
     setShowProfileDialog(false);
     router.push('/seeker-profile');
-  };
-
-  const handleDismissDialog = () => {
-    localStorage.setItem('hasSeenProfilePrompt', 'true');
-    setShowProfileDialog(false);
   };
 
   const handleLogout = async () => {
@@ -173,15 +167,14 @@ export default function DashboardLayout({
         </div>
       </main>
       <AlertDialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent onEscapeKeyDown={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
           <AlertDialogHeader>
             <AlertDialogTitle>Welcome to ReferBridge!</AlertDialogTitle>
             <AlertDialogDescription>
-              Your profile is your ticket to getting noticed. Let's set it up to start connecting with referrers.
+              To get started, you must set up your profile. This is how you'll get noticed by potential referrers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDismissDialog}>Maybe Later</AlertDialogCancel>
             <AlertDialogAction onClick={handleGoToProfile}>Set Up Profile</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
