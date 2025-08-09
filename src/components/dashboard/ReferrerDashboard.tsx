@@ -6,7 +6,7 @@ import { CandidateGrid } from "./CandidateGrid";
 import type { Candidate } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "firebase/auth";
 import { calculateTotalExperienceInYears } from "@/lib/utils";
@@ -44,20 +44,24 @@ export function ReferrerDashboard() {
         }
         setIsLoading(true);
         try {
-            const querySnapshot = await getDocs(collection(db, "profiles"));
+            const profilesRef = collection(db, "profiles");
+            // Fetch all profiles that are not the current user.
+            const q = query(profilesRef, where("__name__", "!=", currentUser.uid));
+            const querySnapshot = await getDocs(q);
+
             const fetchedCandidates = querySnapshot.docs
-                .filter(doc => doc.id !== currentUser.uid) 
                 .map(doc => {
                     const data = doc.data();
-                    const totalExperience = calculateTotalExperienceInYears(data.experiences);
+                    const experiences = data.experiences || [];
+                    const totalExperience = calculateTotalExperienceInYears(experiences);
 
                     return {
                         id: doc.id,
                         name: data.name || "Unnamed Candidate",
                         avatar: data.profilePic || "https://placehold.co/100x100.png",
                         currentRole: data.currentRole || "N/A",
-                        targetRole: data.targetRole,
-                        company: data.experiences?.[0]?.company || "", 
+                        targetRole: data.targetRole || "",
+                        company: experiences.length > 0 ? experiences[0].company : "", 
                         salary: data.expectedSalary || 0,
                         salaryCurrency: data.expectedSalaryCurrency || 'USD',
                         isSalaryVisible: data.isSalaryVisible !== false,
