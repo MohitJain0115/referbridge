@@ -8,13 +8,14 @@ import type { Candidate } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, CheckCircle, XCircle, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail, RotateCcw } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Briefcase, Download, Circle, Send, Loader2, Link as LinkIcon, Mail, RotateCcw, MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, firebaseReady, auth } from "@/lib/firebase";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -236,6 +237,35 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
               onClick={(e) => e.stopPropagation()}
           />
         </div>
+        
+        {isFromRequestPage && (
+          <div className="absolute top-2 right-2 z-10">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={e => e.stopPropagation()}>
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">More options</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
+                <DropdownMenuItem onClick={() => handleSetStatus('Referred')}>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  <span>Mark as Referred</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSetStatus('Not a Fit')}>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  <span>Not a Fit</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleSetStatus(null)}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  <span>Reset Status</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+        
         <CardHeader className="p-4 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="w-12 h-12 flex-shrink-0 mr-auto">
