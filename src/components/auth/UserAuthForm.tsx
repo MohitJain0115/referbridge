@@ -126,15 +126,19 @@ export function UserAuthForm({ mode, className, onForgotPassword }: UserAuthForm
     } else { // signup mode
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, (data as z.infer<typeof signupSchema>).password);
-            const user = userCredential.user;
-            await sendEmailVerification(user);
-            await signOut(auth);
-            showVerificationToast();
-            router.push('/login');
+            toast({
+              title: "Signup Successful!",
+              description: "Redirecting you to the dashboard...",
+            });
+            router.push('/dashboard');
             
         } catch (error: any) {
             if (error.code === 'auth/email-already-in-use') {
-              showVerificationToast();
+              toast({
+                title: "Account Exists",
+                description: "An account with this email already exists. Please log in.",
+                variant: "destructive"
+              });
               router.push('/login');
             } else {
               toast({
