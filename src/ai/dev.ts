@@ -3,3 +3,4 @@
 import './flows/candidates-flow';
 import './flows/referrers-flow';
 import './flows/tracked-requests-flow';
+import './flows/leaderboard-flow';

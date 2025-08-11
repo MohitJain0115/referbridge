@@ -53,7 +53,7 @@ export default function DashboardLayout({
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [router, pathname, toast]);
   
   const checkProfile = async (user: FirebaseUser) => {
     if (!db) {

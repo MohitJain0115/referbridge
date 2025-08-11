@@ -7,6 +7,7 @@ import { SettingsPage } from '@/components/dashboard/SettingsPage';
 import { SuggestionsPage } from '@/components/dashboard/SuggestionsPage';
 import { ReferralRequestsPage } from '@/components/dashboard/ReferralRequestsPage';
 import { ReferralStatusPage } from '@/components/dashboard/ReferralStatusPage';
+import { LeaderboardPage } from '@/components/dashboard/LeaderboardPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,8 @@ export default function DashboardPage({
     content = <SettingsPage />;
   } else if (page === 'suggestions') {
     content = <SuggestionsPage />;
+  } else if (page === 'leaderboard') {
+    content = <LeaderboardPage />;
   } else if (page === 'requests') {
     if (view === 'referrer') {
       content = <ReferralRequestsPage />;

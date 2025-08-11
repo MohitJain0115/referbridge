@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Users, Settings, Mail, ArrowRightLeft, MessageSquare } from "lucide-react";
+import { Users, Settings, Mail, ArrowRightLeft, MessageSquare, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,19 +20,15 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
     { name: "Referral Requests", href: "/dashboard?view=referrer&page=requests", icon: ArrowRightLeft, page: "requests", view: 'referrer', count: referralRequestCount, show: true },
   ];
 
+  const leaderboardItem = { name: "Leaderboard", href: `/dashboard?view=${view}&page=leaderboard`, icon: Flame, page: "leaderboard", view: 'any', show: true };
   const settingsItem = { name: "Settings", href: `/dashboard?view=${view}&page=settings`, icon: Settings, page: "settings", view: 'any', show: true };
   const suggestionsItem = { name: "Suggestions", href: `/dashboard?view=${view}&page=suggestions`, icon: MessageSquare, page: "suggestions", view: 'any', show: true };
 
-  const isSeeker = view === 'seeker';
 
   return (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
       <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">Job Seeker</p>
       {navItems.filter(item => item.view === 'seeker').map((item, index) => {
-        const isPageActive = item.page === currentPage;
-        const isViewActive = item.view === view;
-        const isActive = isPageActive && isViewActive && !item.page?.includes('requests');
-
         return (
            <Link
             key={item.name}
@@ -73,6 +69,20 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
           </Link>
         )
       })}
+
+      <p className="px-3 py-2 mt-4 text-xs font-semibold text-muted-foreground">General</p>
+      <Link
+        key={leaderboardItem.name}
+        href={leaderboardItem.href}
+        onClick={onNavigate}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+          leaderboardItem.page === currentPage && "bg-muted text-primary"
+        )}
+      >
+        <leaderboardItem.icon className="h-4 w-4" />
+        {leaderboardItem.name}
+      </Link>
 
       <p className="px-3 py-2 mt-4 text-xs font-semibold text-muted-foreground">Account</p>
        <Link

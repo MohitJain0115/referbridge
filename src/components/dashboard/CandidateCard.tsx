@@ -20,6 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { saveAs } from 'file-saver';
+import { awardPointsForReferral } from "@/ai/flows/leaderboard-flow";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -146,7 +147,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
   };
 
   const handleSetStatus = async (newStatus: Candidate['status'] | null) => {
-    if (!candidate.requestId || !firebaseReady || !db) {
+    if (!candidate.requestId || !firebaseReady || !db || !auth.currentUser) {
       toast({
           title: "Action Not Available",
           description: "Status can only be changed on a specific referral request.",
@@ -165,6 +166,11 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     try {
       const statusToSave = newStatus === null ? 'Pending' : newStatus;
       await updateDoc(requestRef, { status: statusToSave });
+
+      if (statusToSave === 'Referred') {
+          await awardPointsForReferral({ referrerId: auth.currentUser.uid });
+          toast({ title: "Points Awarded!", description: "You've earned 10 points for a successful referral." });
+      }
       
       setCurrentStatus(statusToSave);
       
