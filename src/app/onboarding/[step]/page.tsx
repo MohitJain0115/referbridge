@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -412,7 +413,7 @@ export default function OnboardingStepPage() {
         )}
         {currentStep === 3 && (
             <>
-                <CardTitle className="font-headline text-2xl">Target Role & Salary (Optional)</CardTitle>
+                <CardTitle className="font-headline text-2xl">Target Role & Salary</CardTitle>
                 <CardDescription>Let referrers know what your career and salary expectations are.</CardDescription>
             </>
         )}
