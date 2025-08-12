@@ -415,7 +415,7 @@ export default function OnboardingStepPage() {
         {currentStep === 2 && (
             <>
                 <CardTitle className="font-headline text-2xl">Upload Your Profile Picture</CardTitle>
-                <CardDescription>A good photo increases your chances of getting noticed.</CardDescription>
+                <CardDescription>A professional headshot helps referrers put a face to a name.</CardDescription>
             </>
         )}
         {currentStep === 3 && (
