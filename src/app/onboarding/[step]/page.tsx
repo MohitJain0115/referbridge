@@ -412,8 +412,8 @@ export default function OnboardingStepPage() {
         )}
         {currentStep === 3 && (
             <>
-                <CardTitle className="font-headline text-2xl">Expected Salary (Optional)</CardTitle>
-                <CardDescription>Let referrers know what your salary expectations are.</CardDescription>
+                <CardTitle className="font-headline text-2xl">Target Role & Salary (Optional)</CardTitle>
+                <CardDescription>Let referrers know what your career and salary expectations are.</CardDescription>
             </>
         )}
         {currentStep === 4 && (
@@ -458,10 +458,6 @@ export default function OnboardingStepPage() {
                     <Label htmlFor="current-role">Current Role<span className="text-destructive pl-1">*</span></Label>
                     <Input id="current-role" placeholder="e.g., Product Manager" value={currentRole} onChange={(e) => setCurrentRole(e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="target-role">Target Role</Label>
-                    <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
-                </div>
             </div>
         )}
         {currentStep === 2 && (
@@ -489,7 +485,11 @@ export default function OnboardingStepPage() {
             </div>
         )}
         {currentStep === 3 && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                  <Label htmlFor="target-role">Target Role</Label>
+                  <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="salary" className="flex items-center gap-2 font-medium">
                   <DollarSign className="h-4 w-4 text-primary" /> Expected Annual Salary
