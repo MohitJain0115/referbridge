@@ -14,15 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { signOut, onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, firebaseReady } from "@/lib/firebase";
 import { collection, query, where, getDocs, onSnapshot, doc, getDoc } from "firebase/firestore";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 
 export default function DashboardLayout({
@@ -32,57 +23,22 @@ export default function DashboardLayout({
 }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const router = useRouter();
-  const pathname = usePathname();
   const { toast } = useToast();
-  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [referralRequestCount, setReferralRequestCount] = useState(0);
-  const [isProfileCheckComplete, setIsProfileCheckComplete] = useState(false);
 
   useEffect(() => {
     if (!firebaseReady) return;
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
-        // This is the ideal place to check for the profile, as it runs once on auth state change.
-        await checkProfile(user);
       } else {
         setCurrentUser(null);
-        setIsProfileCheckComplete(false); // Reset check on logout
-        setShowProfileDialog(false); // Hide dialog on logout
+        router.push("/login");
       }
     });
     return () => unsubscribe();
-  }, [router, pathname, toast]);
-  
-  const checkProfile = async (user: FirebaseUser) => {
-    if (!db) {
-        setIsProfileCheckComplete(true);
-        return;
-    }
-    // Don't show the dialog if the user is already on the profile page
-    if (pathname === '/seeker-profile') {
-        setIsProfileCheckComplete(true);
-        return;
-    }
-
-    try {
-        const profileDocRef = doc(db, 'profiles', user.uid);
-        const profileDoc = await getDoc(profileDocRef);
-        if (!profileDoc.exists()) {
-            setShowProfileDialog(true);
-        }
-    } catch (error) {
-        console.error("Error checking for profile:", error);
-        toast({
-            title: "Error",
-            description: "Could not check for user profile. Please try again.",
-            variant: "destructive"
-        });
-    } finally {
-        setIsProfileCheckComplete(true);
-    }
-  };
+  }, [router, toast]);
 
   useEffect(() => {
     if (!currentUser || !db) {
@@ -106,11 +62,6 @@ export default function DashboardLayout({
     return () => unsubscribe();
   }, [currentUser]);
 
-
-  const handleGoToProfile = () => {
-    setShowProfileDialog(false);
-    router.push('/seeker-profile');
-  };
 
   const handleLogout = async () => {
     if (!auth) {
@@ -194,23 +145,9 @@ export default function DashboardLayout({
       </header>
       <main className="flex-1 bg-muted/40 p-4 md:p-10">
         <div className="mx-auto w-full max-w-7xl">
-          {isProfileCheckComplete && children}
+          {children}
         </div>
       </main>
-      <AlertDialog open={showProfileDialog}>
-        <AlertDialogContent onEscapeKeyDown={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Welcome to ReferBridge!</AlertDialogTitle>
-            <AlertDialogDescription>
-              To get started, you must set up your profile. This is how you'll get noticed by potential referrers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button variant="ghost" onClick={handleLogout}>Log Out</Button>
-            <AlertDialogAction onClick={handleGoToProfile}>Set Up Profile</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

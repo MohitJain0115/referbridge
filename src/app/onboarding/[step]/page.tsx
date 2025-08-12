@@ -1,0 +1,543 @@
+
+"use client";
+
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useParams, useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Sparkles, Building2, Download, FileText, Loader2, Info, ArrowLeft, ArrowRight } from "lucide-react";
+import Image from 'next/image';
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { format, getMonth, getYear } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
+import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
+import { auth, db, storage, firebaseReady } from "@/lib/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
+
+type Job = {
+  id: number;
+  url: string;
+};
+
+type Company = {
+  id: number;
+  name: string;
+  jobs: Job[];
+};
+
+type Experience = {
+    id: number;
+    role: string;
+    company: string;
+    from: Date | undefined;
+    to: Date | undefined | null;
+    currentlyWorking: boolean;
+    description: string;
+};
+
+type Education = {
+    id: number;
+    institution: string;
+    degree: string;
+    from: Date | undefined;
+    to: Date | undefined | null;
+    description: string;
+};
+
+const TOTAL_STEPS = 5;
+
+export default function OnboardingStepPage() {
+  const router = useRouter();
+  const params = useParams();
+  const currentStep = parseInt(params.step as string, 10);
+
+  const { toast } = useToast();
+  
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 70 }, (_, i) => currentYear - i);
+  const months = Array.from({ length: 12 }, (_, i) => ({
+    value: i,
+    label: format(new Date(0, i), 'MMMM'),
+  }));
+
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Profile State
+  const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
+  const [name, setName] = useState("");
+  const [currentRole, setCurrentRole] = useState("");
+  const [targetRole, setTargetRole] = useState("");
+  const [about, setAbout] = useState("");
+  const [skills, setSkills] = useState("");
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [educations, setEducations] = useState<Education[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  const [resumeName, setResumeName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!firebaseReady) {
+        setIsLoading(false);
+        return;
+    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            setCurrentUser(user);
+        } else {
+            router.push("/login");
+        }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+    async function loadUserData() {
+      if (!currentUser || !db) return;
+      
+      try {
+        const profileDocRef = doc(db, "profiles", currentUser.uid);
+        const profileDocSnap = await getDoc(profileDocRef);
+        if (profileDocSnap.exists()) {
+            const data = profileDocSnap.data();
+            setName(data.name || "");
+            setCurrentRole(data.currentRole || "");
+            setTargetRole(data.targetRole || "");
+            setAbout(data.about || "");
+            setSkills(data.skills?.join(', ') || "");
+            setCompanies(data.companies || []);
+            setExperiences(data.experiences?.map((exp: any) => ({ ...exp, id: exp.id || Date.now() + Math.random(), from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
+            setEducations(data.educations?.map((edu: any) => ({ ...edu, id: edu.id || Date.now() + Math.random(), from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
+            setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
+        }
+
+        const resumeDocRef = doc(db, "resumes", currentUser.uid);
+        const resumeDocSnap = await getDoc(resumeDocRef);
+        if (resumeDocSnap.exists()) {
+            const resumeData = resumeDocSnap.data();
+            setResumeUrl(resumeData.fileUrl);
+            setResumeName(resumeData.fileName);
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    if (currentUser) {
+        loadUserData();
+    }
+  }, [currentUser]);
+
+  const handleSaveAndContinue = async () => {
+    if (!currentUser) return;
+    setIsSaving(true);
+    
+    const profileData = {
+      name,
+      currentRole,
+      targetRole,
+      about,
+      skills: skills.split(',').map(s => s.trim()).filter(Boolean),
+      experiences: experiences.map(exp => ({ ...exp, from: exp.from ? Timestamp.fromDate(exp.from) : undefined, to: exp.to ? Timestamp.fromDate(exp.to) : null })),
+      educations: educations.map(edu => ({ ...edu, from: edu.from ? Timestamp.fromDate(edu.from) : undefined, to: edu.to ? Timestamp.fromDate(edu.to) : null })),
+      companies,
+      profilePic,
+      updatedAt: new Date(),
+    };
+
+    try {
+      await setDoc(doc(db, "profiles", currentUser.uid), profileData, { merge: true });
+      if (currentStep < TOTAL_STEPS) {
+          router.push(`/onboarding/${currentStep + 1}`);
+      } else {
+          toast({ title: "Profile Complete!", description: "You can now explore the dashboard."});
+          router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast({ title: "Save Failed", description: "Could not save your progress.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  const handleBack = () => {
+    if (currentStep > 1) {
+        router.push(`/onboarding/${currentStep - 1}`);
+    }
+  };
+
+  const addExperience = () => setExperiences([...experiences, {id: Date.now(), role: '', company: '', from: undefined, to: undefined, currentlyWorking: false, description: ''}]);
+  const removeExperience = (id: number) => setExperiences(experiences.filter(e => e.id !== id));
+  const handleExperienceChange = (id: number, field: keyof Omit<Experience, 'id'>, value: string | boolean) => {
+    setExperiences(experiences.map(exp => {
+        if (exp.id === id) {
+            const updatedExp = { ...exp, [field]: value };
+            if (field === 'currentlyWorking' && value === true) {
+                updatedExp.to = null;
+            }
+            return updatedExp;
+        }
+        return exp;
+    }));
+  };
+
+  const handleExperienceDateChange = (id: number, field: 'from' | 'to', part: 'month' | 'year', value: string) => {
+    setExperiences(experiences.map(exp => {
+      if (exp.id === id) {
+        const currentDate = exp[field] || new Date();
+        const newDate = new Date(currentDate);
+        if (part === 'month') {
+          newDate.setMonth(parseInt(value, 10));
+        } else {
+          newDate.setFullYear(parseInt(value, 10));
+        }
+        return { ...exp, [field]: newDate };
+      }
+      return exp;
+    }));
+  };
+  
+  const addEducation = () => setEducations([...educations, {id: Date.now(), institution: '', degree: '', from: undefined, to: undefined, description: ''}]);
+  const removeEducation = (id: number) => setEducations(educations.filter(e => e.id !== id));
+  const handleEducationChange = (id: number, field: keyof Omit<Education, 'id'>, value: string) => {
+    setEducations(educations.map(edu => edu.id === id ? { ...edu, [field]: value } : edu));
+  };
+  
+  const handleEducationDateChange = (id: number, field: 'from' | 'to', part: 'month' | 'year', value: string) => {
+    setEducations(educations.map(edu => {
+      if (edu.id === id) {
+        const currentDate = edu[field] || new Date();
+        const newDate = new Date(currentDate);
+        if (part === 'month') {
+          newDate.setMonth(parseInt(value, 10));
+        } else {
+          newDate.setFullYear(parseInt(value, 10));
+        }
+        return { ...edu, [field]: newDate };
+      }
+      return edu;
+    }));
+  };
+  
+  const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
+  const removeCompany = (companyId: number) => setCompanies(companies.filter(c => c.id !== companyId));
+  const updateCompanyName = (companyId: number, name: string) => setCompanies(companies.map(c => c.id === companyId ? { ...c, name } : c));
+  const addJobLink = (companyId: number) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: [...c.jobs, { id: Date.now(), url: '' }] } : c));
+  const removeJobLink = (companyId: number, jobId: number) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: c.jobs.filter(j => j.id !== jobId) } : c));
+  const updateJobLink = (companyId: number, jobId: number, url: string) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: c.jobs.map(j => j.id === jobId ? { ...j, url } : j) } : c));
+  
+  if (isLoading) {
+      return <Skeleton className="w-full h-[400px]" />;
+  }
+  
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        {currentStep === 1 && (
+            <>
+                <CardTitle className="font-headline text-2xl">Welcome! Let's get started.</CardTitle>
+                <CardDescription>Tell us a bit about yourself.</CardDescription>
+            </>
+        )}
+        {currentStep === 2 && (
+            <>
+                <CardTitle className="font-headline text-2xl">Your Professional Summary</CardTitle>
+                <CardDescription>Highlight your key skills and write a brief bio.</CardDescription>
+            </>
+        )}
+        {currentStep === 3 && (
+            <>
+                <CardTitle className="font-headline text-2xl">Work Experience</CardTitle>
+                <CardDescription>Detail your professional journey so far.</CardDescription>
+            </>
+        )}
+        {currentStep === 4 && (
+            <>
+                <CardTitle className="font-headline text-2xl">Education</CardTitle>
+                <CardDescription>Add your educational background.</CardDescription>
+            </>
+        )}
+        {currentStep === 5 && (
+            <>
+                <CardTitle className="font-headline text-2xl">Final Details</CardTitle>
+                <CardDescription>Add your target companies and upload your resume.</CardDescription>
+            </>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {currentStep === 1 && (
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="name">Full Name<span className="text-destructive pl-1">*</span></Label>
+                    <Input id="name" placeholder="e.g., Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="current-role">Current Role<span className="text-destructive pl-1">*</span></Label>
+                    <Input id="current-role" placeholder="e.g., Product Manager" value={currentRole} onChange={(e) => setCurrentRole(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="target-role">Target Role</Label>
+                    <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
+                </div>
+            </div>
+        )}
+        {currentStep === 2 && (
+             <div className="space-y-6">
+                <div className="space-y-2">
+                <Label htmlFor="about" className="flex items-center gap-2 font-medium">
+                    <User className="h-4 w-4 text-primary" /> About Me
+                </Label>
+                <Textarea
+                    id="about"
+                    placeholder="A brief summary about your professional background, skills, and career aspirations."
+                    className="min-h-[100px]"
+                    value={about}
+                    onChange={(e) => setAbout(e.target.value)}
+                />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="skills" className="flex items-center gap-2 font-medium">
+                        <Sparkles className="h-4 w-4 text-primary" /> Top Skills
+                    </Label>
+                    <Input
+                        id="skills"
+                        placeholder="e.g., React, Node.js, TypeScript"
+                        value={skills}
+                        onChange={(e) => setSkills(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">Enter your key skills, separated by commas.</p>
+                </div>
+            </div>
+        )}
+        {currentStep === 3 && (
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 font-medium text-base">
+                  <Briefcase className="h-5 w-5 text-primary" /> Work Experience
+              </h3>
+              <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                  {experiences.map((exp) => (
+                      <Card key={exp.id} className="p-4 bg-muted/20 border-dashed">
+                          <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
+                              <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} aria-label="Remove Experience">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                              <div className="space-y-2">
+                                  <Label htmlFor={`exp-role-${exp.id}`}>Role</Label>
+                                  <Input id={`exp-role-${exp.id}`} placeholder="e.g., Product Manager" value={exp.role} onChange={(e) => handleExperienceChange(exp.id, 'role', e.target.value)} />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor={`exp-company-${exp.id}`}>Company</Label>
+                                  <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)} />
+                              </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                              <div className="space-y-2">
+                                  <Label>From</Label>
+                                  <div className="flex gap-2">
+                                      <Select value={exp.from ? getMonth(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'month', value)}>
+                                          <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                          <SelectContent>
+                                              {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                      <Select value={exp.from ? getYear(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'year', value)}>
+                                          <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                          <SelectContent>
+                                              {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                  </div>
+                              </div>
+                              <div className="space-y-2">
+                                  <Label>To</Label>
+                                  <div className="flex gap-2">
+                                      <Select disabled={exp.currentlyWorking} value={exp.to ? getMonth(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'month', value)}>
+                                          <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                          <SelectContent>
+                                              {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                      <Select disabled={exp.currentlyWorking} value={exp.to ? getYear(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'year', value)}>
+                                          <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                          <SelectContent>
+                                              {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                  </div>
+                              </div>
+                          </div>
+                          <div className="flex items-center space-x-2 mb-4">
+                              <Checkbox id={`exp-current-${exp.id}`} checked={exp.currentlyWorking} onCheckedChange={(checked) => handleExperienceChange(exp.id, 'currentlyWorking', !!checked)} />
+                              <Label htmlFor={`exp-current-${exp.id}`} className="font-normal cursor-pointer">I currently work here</Label>
+                          </div>
+
+                          <div className="space-y-2">
+                              <Label htmlFor={`exp-desc-${exp.id}`}>Description</Label>
+                              <Textarea id={`exp-desc-${exp.id}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)} className="min-h-[100px]" />
+                          </div>
+                      </Card>
+                  ))}
+              </div>
+              <Button variant="secondary" onClick={addExperience} className="w-full">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Work Experience
+              </Button>
+            </div>
+        )}
+        {currentStep === 4 && (
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 font-medium text-base">
+                  <GraduationCap className="h-5 w-5 text-primary" /> Education
+              </h3>
+              <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                  {educations.map((edu) => (
+                      <Card key={edu.id} className="p-4 bg-muted/20 border-dashed">
+                          <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
+                              <Button variant="ghost" size="icon" onClick={() => removeEducation(edu.id)} aria-label="Remove Education">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                              <div className="space-y-2">
+                                  <Label htmlFor={`edu-institution-${edu.id}`}>Institution</Label>
+                                  <Input id={`edu-institution-${edu.id}`} placeholder="e.g., Carnegie Mellon University" value={edu.institution} onChange={(e) => handleEducationChange(edu.id, 'institution', e.target.value)} />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor={`edu-degree-${edu.id}`}>Degree</Label>
+                                  <Input id={`edu-degree-${edu.id}`} placeholder="e.g., M.S. in HCI" value={edu.degree} onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)} />
+                              </div>
+                          </div>
+
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                              <div className="space-y-2">
+                                  <Label>From</Label>
+                                  <div className="flex gap-2">
+                                      <Select value={edu.from ? getMonth(edu.from).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'from', 'month', value)}>
+                                          <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                          <SelectContent>
+                                              {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                      <Select value={edu.from ? getYear(edu.from).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'from', 'year', value)}>
+                                          <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                          <SelectContent>
+                                              {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                  </div>
+                              </div>
+                              <div className="space-y-2">
+                                  <Label>To</Label>
+                                  <div className="flex gap-2">
+                                      <Select value={edu.to ? getMonth(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'month', value)}>
+                                          <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                          <SelectContent>
+                                              {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                      <Select value={edu.to ? getYear(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'year', value)}>
+                                          <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                          <SelectContent>
+                                              {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                  </div>
+                              </div>
+                          </div>
+                          <div className="space-y-2 mt-4">
+                              <Label htmlFor={`edu-desc-${edu.id}`}>Description / Notes</Label>
+                              <Textarea id={`edu-desc-${edu.id}`} placeholder="Describe any relevant coursework, activities, or honors..." value={edu.description} onChange={(e) => handleEducationChange(edu.id, 'description', e.target.value)} className="min-h-[80px]" />
+                          </div>
+                      </Card>
+                  ))}
+              </div>
+              <Button variant="secondary" onClick={addEducation} className="w-full">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Education
+              </Button>
+            </div>
+        )}
+        {currentStep === 5 && (
+            <div className="space-y-6">
+                 <div className="space-y-4">
+                    <div className="space-y-1">
+                        <h3 className="flex items-center gap-2 font-medium text-base">
+                            <Building2 className="h-5 w-5 text-primary" /> Target Companies & Job Links
+                        </h3>
+                        <p className="text-sm text-muted-foreground">Add companies you're interested in and links to specific job postings.</p>
+                    </div>
+                    <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        {companies.map((company) => (
+                        <Card key={company.id} className="p-4 bg-muted/20 border-dashed">
+                            <div className="flex items-center gap-2 mb-4">
+                            <Input
+                                placeholder="Company Name"
+                                value={company.name}
+                                onChange={(e) => updateCompanyName(company.id, e.target.value)}
+                                className="text-base font-semibold"
+                            />
+                            <Button variant="ghost" size="icon" onClick={() => removeCompany(company.id)} aria-label="Remove Company">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                            </div>
+                            <div className="space-y-2 pl-4 border-l-2 border-primary/50">
+                            <Label className="text-xs text-muted-foreground font-normal">Links to job postings</Label>
+                            {company.jobs.map((job) => (
+                                <div key={job.id} className="flex items-center gap-2">
+                                <Input
+                                    placeholder="https://..."
+                                    value={job.url}
+                                    onChange={(e) => updateJobLink(company.id, job.id, e.target.value)}
+                                />
+                                <Button variant="ghost" size="icon" onClick={() => removeJobLink(company.id, job.id)} aria-label="Remove Job Link">
+                                    <Trash2 className="h-4 w-4 text-destructive/70" />
+                                </Button>
+                                </div>
+                            ))}
+                            <Button variant="outline" size="sm" onClick={() => addJobLink(company.id)} className="mt-2">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Add Job Link
+                            </Button>
+                            </div>
+                        </Card>
+                        ))}
+                    </div>
+                    <Button variant="secondary" onClick={addCompany} className="w-full">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Another Company
+                    </Button>
+                </div>
+            </div>
+        )}
+      </CardContent>
+      <CardContent>
+        <div className="flex justify-between gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={handleBack} disabled={currentStep === 1}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+            </Button>
+            <Button onClick={handleSaveAndContinue} disabled={isSaving}>
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
+                {currentStep < TOTAL_STEPS && !isSaving && <ArrowRight className="ml-2 h-4 w-4" />}
+            </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

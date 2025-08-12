@@ -96,16 +96,12 @@ export function UserAuthForm({ mode, className, onForgotPassword }: UserAuthForm
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            if (user.emailVerified) {
+            if (user) {
                 toast({
                     title: "Login Successful",
                     description: "Redirecting to your dashboard...",
                 });
                 router.push('/dashboard');
-            } else {
-                await sendEmailVerification(user);
-                await signOut(auth);
-                showVerificationToast();
             }
         } catch (error: any) {
             const errorCode = error.code;
@@ -128,9 +124,9 @@ export function UserAuthForm({ mode, className, onForgotPassword }: UserAuthForm
             const userCredential = await createUserWithEmailAndPassword(auth, email, (data as z.infer<typeof signupSchema>).password);
             toast({
               title: "Signup Successful!",
-              description: "Redirecting you to the dashboard...",
+              description: "Let's set up your profile.",
             });
-            router.push('/dashboard');
+            router.push('/onboarding/1');
             
         } catch (error: any) {
             if (error.code === 'auth/email-already-in-use') {
