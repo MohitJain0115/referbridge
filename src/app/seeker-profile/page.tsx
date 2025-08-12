@@ -558,23 +558,8 @@ export default function SeekerProfilePage() {
               This information will be visible to potential {profileView === 'seeker' ? 'referrers' : 'job seekers'}. Make it count!
             </CardDescription>
           </div>
-          <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center justify-start pt-4">
             <ProfileViewToggle currentView={profileView} setView={setProfileView} />
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span tabIndex={0}>
-                    <Button variant="outline" size="sm" disabled>
-                      <Linkedin className="mr-2 h-4 w-4" />
-                      Import from LinkedIn
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Feature under development</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
