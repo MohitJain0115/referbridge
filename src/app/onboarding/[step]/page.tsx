@@ -390,6 +390,9 @@ export default function OnboardingStepPage() {
     }
   };
 
+  const shouldShowSkip = useMemo(() => {
+    return [3, 4, 7].includes(currentStep);
+  }, [currentStep]);
 
   if (isLoading) {
       return <Skeleton className="w-full h-[400px]" />;
@@ -802,7 +805,7 @@ export default function OnboardingStepPage() {
               Back
           </Button>
           <div className="flex items-center gap-2">
-              {currentStep > 2 && (
+              {shouldShowSkip && (
                 <Button variant="link" onClick={handleSkip}>
                   Skip for now
                 </Button>
