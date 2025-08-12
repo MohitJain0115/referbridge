@@ -408,7 +408,7 @@ export default function OnboardingStepPage() {
         {currentStep === 2 && (
             <>
                 <CardTitle className="font-headline text-2xl">Upload Your Profile Picture</CardTitle>
-                <CardDescription>A good photo increases your chances of getting noticed. This is optional.</CardDescription>
+                <CardDescription>A good photo increases your chances of getting noticed.</CardDescription>
             </>
         )}
         {currentStep === 3 && (
@@ -802,9 +802,11 @@ export default function OnboardingStepPage() {
               Back
           </Button>
           <div className="flex items-center gap-2">
-              <Button variant="link" onClick={handleSkip}>
-                Skip for now
-              </Button>
+              {currentStep > 2 && (
+                <Button variant="link" onClick={handleSkip}>
+                  Skip for now
+                </Button>
+              )}
               <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume}>
                   {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
