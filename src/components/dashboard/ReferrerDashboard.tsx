@@ -45,11 +45,12 @@ export function ReferrerDashboard() {
         setIsLoading(true);
         try {
             const profilesRef = collection(db, "profiles");
-            // Fetch all profiles that are not the current user.
-            const q = query(profilesRef, where("__name__", "!=", currentUser.uid));
+            // Fetch all profiles that are not the current user and have opted to be a referrer.
+            const q = query(profilesRef, where("referrerCompany", "!=", ""));
             const querySnapshot = await getDocs(q);
 
             const fetchedCandidates = querySnapshot.docs
+                .filter(doc => doc.id !== currentUser.uid) // Filter out the current user
                 .map(doc => {
                     const data = doc.data();
                     const experiences = data.experiences || [];
