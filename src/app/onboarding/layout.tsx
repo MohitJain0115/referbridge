@@ -14,7 +14,7 @@ export default function OnboardingLayout({
   const router = useRouter();
   const pathname = usePathname();
   const currentStep = parseInt(pathname.split("/").pop() || "1", 10);
-  const totalSteps = 6;
+  const totalSteps = 7;
 
   const handleSkip = () => {
     if (currentStep < totalSteps) {

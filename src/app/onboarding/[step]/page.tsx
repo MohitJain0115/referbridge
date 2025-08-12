@@ -54,7 +54,7 @@ type Education = {
     description: string;
 };
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 export default function OnboardingStepPage() {
   const router = useRouter();
@@ -76,6 +76,8 @@ export default function OnboardingStepPage() {
   
   // Profile State
   const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
+  const [isUploadingPic, setIsUploadingPic] = useState(false);
+  const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [currentRole, setCurrentRole] = useState("");
   const [targetRole, setTargetRole] = useState("");
@@ -143,6 +145,49 @@ export default function OnboardingStepPage() {
         loadUserData();
     }
   }, [currentUser]);
+
+  const handleProfilePicChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!currentUser || !storage) {
+        toast({ title: "Please log in", description: "You must be logged in to upload a photo.", variant: "destructive" });
+        return;
+    }
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+        setIsUploadingPic(true);
+        try {
+            const fileRef = storageRef(storage, `profile-pics/${currentUser.uid}/${file.name}`);
+            await uploadBytes(fileRef, file);
+            const url = await getDownloadURL(fileRef);
+            setProfilePic(url);
+            await setDoc(doc(db, "profiles", currentUser.uid), { profilePic: url }, { merge: true });
+            toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
+        } catch (error: any) {
+            console.error("Profile picture upload error:", error);
+            if (error.code === 'storage/unauthorized') {
+                toast({
+                    title: "Storage Access Denied",
+                    description: "Check Storage CORS and Security Rules.",
+                    variant: "destructive",
+                    duration: 10000
+                });
+            } else if (error.code === 'permission-denied') {
+                 toast({
+                    title: "Permission Denied",
+                    description: "Could not save photo URL. Check Firestore Security Rules.",
+                    variant: "destructive",
+                    duration: 10000,
+                });
+            } else {
+                toast({ title: "Upload Failed", description: "There was a problem uploading your photo.", variant: "destructive" });
+            }
+        } finally {
+            setIsUploadingPic(false);
+        }
+    } else {
+        toast({ title: "Invalid File Type", description: "Please select an image file.", variant: "destructive" });
+    }
+  };
+
 
   const handleSaveAndContinue = async () => {
     if (!currentUser) return;
@@ -261,29 +306,35 @@ export default function OnboardingStepPage() {
         )}
         {currentStep === 2 && (
             <>
+                <CardTitle className="font-headline text-2xl">Upload Your Profile Picture</CardTitle>
+                <CardDescription>A good photo increases your chances of getting noticed. This is optional.</CardDescription>
+            </>
+        )}
+        {currentStep === 3 && (
+            <>
                 <CardTitle className="font-headline text-2xl">Expected Salary (Optional)</CardTitle>
                 <CardDescription>Let referrers know what your salary expectations are.</CardDescription>
             </>
         )}
-        {currentStep === 3 && (
+        {currentStep === 4 && (
             <>
                 <CardTitle className="font-headline text-2xl">Your Professional Summary</CardTitle>
                 <CardDescription>Highlight your key skills and write a brief bio.</CardDescription>
             </>
         )}
-        {currentStep === 4 && (
+        {currentStep === 5 && (
             <>
                 <CardTitle className="font-headline text-2xl">Work Experience</CardTitle>
                 <CardDescription>Detail your professional journey so far.</CardDescription>
             </>
         )}
-        {currentStep === 5 && (
+        {currentStep === 6 && (
             <>
                 <CardTitle className="font-headline text-2xl">Education</CardTitle>
                 <CardDescription>Add your educational background.</CardDescription>
             </>
         )}
-        {currentStep === 6 && (
+        {currentStep === 7 && (
             <>
                 <CardTitle className="font-headline text-2xl">Final Details</CardTitle>
                 <CardDescription>Add your target companies and upload your resume.</CardDescription>
@@ -308,6 +359,30 @@ export default function OnboardingStepPage() {
             </div>
         )}
         {currentStep === 2 && (
+            <div className="flex flex-col items-center gap-4">
+                <Image
+                    src={profilePic}
+                    alt="Profile Picture"
+                    width={128}
+                    height={128}
+                    className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
+                    data-ai-hint="person avatar"
+                />
+                <input
+                    type="file"
+                    ref={profilePicInputRef}
+                    onChange={handleProfilePicChange}
+                    className="hidden"
+                    accept="image/*"
+                    disabled={isUploadingPic}
+                />
+                <Button variant="outline" onClick={() => profilePicInputRef.current?.click()} disabled={isUploadingPic}>
+                    {isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                    {isUploadingPic ? 'Uploading...' : 'Upload Photo'}
+                </Button>
+            </div>
+        )}
+        {currentStep === 3 && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="salary" className="flex items-center gap-2 font-medium">
@@ -338,7 +413,7 @@ export default function OnboardingStepPage() {
               </div>
             </div>
         )}
-        {currentStep === 3 && (
+        {currentStep === 4 && (
              <div className="space-y-6">
                 <div className="space-y-2">
                 <Label htmlFor="about" className="flex items-center gap-2 font-medium">
@@ -366,7 +441,7 @@ export default function OnboardingStepPage() {
                 </div>
             </div>
         )}
-        {currentStep === 4 && (
+        {currentStep === 5 && (
             <div className="space-y-4">
               <h3 className="flex items-center gap-2 font-medium text-base">
                   <Briefcase className="h-5 w-5 text-primary" /> Work Experience
@@ -443,7 +518,7 @@ export default function OnboardingStepPage() {
               </Button>
             </div>
         )}
-        {currentStep === 5 && (
+        {currentStep === 6 && (
             <div className="space-y-4">
               <h3 className="flex items-center gap-2 font-medium text-base">
                   <GraduationCap className="h-5 w-5 text-primary" /> Education
@@ -516,7 +591,7 @@ export default function OnboardingStepPage() {
               </Button>
             </div>
         )}
-        {currentStep === 6 && (
+        {currentStep === 7 && (
             <div className="space-y-6">
                  <div className="space-y-4">
                     <div className="space-y-1">
@@ -575,10 +650,10 @@ export default function OnboardingStepPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
             </Button>
-            <Button onClick={handleSaveAndContinue} disabled={isSaving}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic}>
+                {isSaving || isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
-                {currentStep < TOTAL_STEPS && !isSaving && <ArrowRight className="ml-2 h-4 w-4" />}
+                {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
         </div>
       </CardContent>
