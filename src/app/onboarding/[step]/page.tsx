@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Sparkles, Building2, Download, FileText, Loader2, Info, ArrowLeft, ArrowRight } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Sparkles, Building2, Download, FileText, Loader2, Info, ArrowLeft, ArrowRight, DollarSign } from "lucide-react";
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -54,7 +54,7 @@ type Education = {
     description: string;
 };
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 export default function OnboardingStepPage() {
   const router = useRouter();
@@ -79,6 +79,8 @@ export default function OnboardingStepPage() {
   const [name, setName] = useState("");
   const [currentRole, setCurrentRole] = useState("");
   const [targetRole, setTargetRole] = useState("");
+  const [expectedSalary, setExpectedSalary] = useState<number | string>("");
+  const [expectedSalaryCurrency, setExpectedSalaryCurrency] = useState("INR");
   const [about, setAbout] = useState("");
   const [skills, setSkills] = useState("");
   const [experiences, setExperiences] = useState<Experience[]>([]);
@@ -114,6 +116,8 @@ export default function OnboardingStepPage() {
             setName(data.name || "");
             setCurrentRole(data.currentRole || "");
             setTargetRole(data.targetRole || "");
+            setExpectedSalary(data.expectedSalary || "");
+            setExpectedSalaryCurrency(data.expectedSalaryCurrency || "INR");
             setAbout(data.about || "");
             setSkills(data.skills?.join(', ') || "");
             setCompanies(data.companies || []);
@@ -148,6 +152,9 @@ export default function OnboardingStepPage() {
       name,
       currentRole,
       targetRole,
+      expectedSalary: Number(expectedSalary) || 0,
+      expectedSalaryCurrency,
+      isSalaryVisible: true,
       about,
       skills: skills.split(',').map(s => s.trim()).filter(Boolean),
       experiences: experiences.map(exp => ({ ...exp, from: exp.from ? Timestamp.fromDate(exp.from) : undefined, to: exp.to ? Timestamp.fromDate(exp.to) : null })),
@@ -254,23 +261,29 @@ export default function OnboardingStepPage() {
         )}
         {currentStep === 2 && (
             <>
+                <CardTitle className="font-headline text-2xl">Expected Salary (Optional)</CardTitle>
+                <CardDescription>Let referrers know what your salary expectations are.</CardDescription>
+            </>
+        )}
+        {currentStep === 3 && (
+            <>
                 <CardTitle className="font-headline text-2xl">Your Professional Summary</CardTitle>
                 <CardDescription>Highlight your key skills and write a brief bio.</CardDescription>
             </>
         )}
-        {currentStep === 3 && (
+        {currentStep === 4 && (
             <>
                 <CardTitle className="font-headline text-2xl">Work Experience</CardTitle>
                 <CardDescription>Detail your professional journey so far.</CardDescription>
             </>
         )}
-        {currentStep === 4 && (
+        {currentStep === 5 && (
             <>
                 <CardTitle className="font-headline text-2xl">Education</CardTitle>
                 <CardDescription>Add your educational background.</CardDescription>
             </>
         )}
-        {currentStep === 5 && (
+        {currentStep === 6 && (
             <>
                 <CardTitle className="font-headline text-2xl">Final Details</CardTitle>
                 <CardDescription>Add your target companies and upload your resume.</CardDescription>
@@ -295,6 +308,37 @@ export default function OnboardingStepPage() {
             </div>
         )}
         {currentStep === 2 && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="salary" className="flex items-center gap-2 font-medium">
+                  <DollarSign className="h-4 w-4 text-primary" /> Expected Annual Salary
+                </Label>
+                <div className="flex gap-2">
+                    <Select value={expectedSalaryCurrency} onValueChange={setExpectedSalaryCurrency}>
+                        <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Currency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="INR">INR</SelectItem>
+                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="EUR">EUR</SelectItem>
+                            <SelectItem value="GBP">GBP</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Input
+                        id="salary"
+                        type="number"
+                        placeholder="e.g., 1500000"
+                        value={expectedSalary}
+                        onChange={(e) => setExpectedSalary(e.target.value)}
+                        className="no-spinner"
+                    />
+                </div>
+                <p className="text-xs text-muted-foreground">(This will be visible to anyone who sees your profile)</p>
+              </div>
+            </div>
+        )}
+        {currentStep === 3 && (
              <div className="space-y-6">
                 <div className="space-y-2">
                 <Label htmlFor="about" className="flex items-center gap-2 font-medium">
@@ -322,7 +366,7 @@ export default function OnboardingStepPage() {
                 </div>
             </div>
         )}
-        {currentStep === 3 && (
+        {currentStep === 4 && (
             <div className="space-y-4">
               <h3 className="flex items-center gap-2 font-medium text-base">
                   <Briefcase className="h-5 w-5 text-primary" /> Work Experience
@@ -399,7 +443,7 @@ export default function OnboardingStepPage() {
               </Button>
             </div>
         )}
-        {currentStep === 4 && (
+        {currentStep === 5 && (
             <div className="space-y-4">
               <h3 className="flex items-center gap-2 font-medium text-base">
                   <GraduationCap className="h-5 w-5 text-primary" /> Education
@@ -472,7 +516,7 @@ export default function OnboardingStepPage() {
               </Button>
             </div>
         )}
-        {currentStep === 5 && (
+        {currentStep === 6 && (
             <div className="space-y-6">
                  <div className="space-y-4">
                     <div className="space-y-1">
