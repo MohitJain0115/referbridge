@@ -1,3 +1,4 @@
+
 import { Suspense } from 'react';
 import { ReferrerDashboard } from '@/components/dashboard/ReferrerDashboard';
 import { SeekerDashboard } from '@/components/dashboard/SeekerDashboard';

@@ -20,7 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { saveAs } from 'file-saver';
-import { awardPointsForReferral } from "@/ai/flows/leaderboard-flow";
+// import { awardPointsForReferral } from "@/ai/flows/leaderboard-flow";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -168,8 +168,8 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
       await updateDoc(requestRef, { status: statusToSave });
 
       if (statusToSave === 'Referred') {
-          await awardPointsForReferral({ referrerId: auth.currentUser.uid });
-          toast({ title: "Points Awarded!", description: "You've earned 10 points for a successful referral." });
+          // await awardPointsForReferral({ referrerId: auth.currentUser.uid });
+          // toast({ title: "Points Awarded!", description: "You've earned 10 points for a successful referral." });
       }
       
       setCurrentStatus(statusToSave);
@@ -183,7 +183,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: toastMessage,
       });
 
-      if (isFromRequestPage && (newStatus === 'Referred' || newStatus === 'Not a Fit')) {
+      if (isFromRequestPage && (newStatus === 'Referred' || newStatus === 'Not a Fit' || statusToSave === 'Cancelled')) {
         onUpdateRequest?.(candidate.id);
       }
     } catch (error: any) {

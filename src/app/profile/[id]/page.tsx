@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { format } from "date-fns";
 import type { Candidate } from '@/lib/types';
 import { formatCurrency, calculateTotalExperienceInYears } from '@/lib/utils';
-import { awardPointsForView } from '@/ai/flows/leaderboard-flow';
+// import { awardPointsForView } from '@/ai/flows/leaderboard-flow';
 
 type Experience = {
     id: number;
@@ -116,8 +116,7 @@ export default function ProfilePage() {
                     
                     if (currentUser && currentUser.uid !== userId && data.status === 'Pending') {
                         await updateDoc(profileDocRef, { status: 'Viewed' });
-                        // Award points to referrer (current user) for viewing a profile
-                        awardPointsForView({ referrerId: currentUser.uid }).catch(console.error);
+                        // awardPointsForView({ referrerId: currentUser.uid }).catch(console.error);
                         data.status = 'Viewed'; 
                     }
                     
