@@ -17,7 +17,11 @@ export default function OnboardingLayout({
   const totalSteps = 5;
 
   const handleSkip = () => {
-    router.push("/dashboard");
+    if (currentStep < totalSteps) {
+      router.push(`/onboarding/${currentStep + 1}`);
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   return (
