@@ -395,6 +395,8 @@ export default function OnboardingStepPage() {
   }, [currentStep]);
 
   const isStep1Invalid = currentStep === 1 && (!name.trim() || !currentRole.trim());
+  const isStep2Invalid = currentStep === 2 && profilePic === "https://placehold.co/128x128.png";
+
 
   if (isLoading) {
       return <Skeleton className="w-full h-[400px]" />;
@@ -812,7 +814,7 @@ export default function OnboardingStepPage() {
                   Skip for now
                 </Button>
               )}
-              <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume || isStep1Invalid}>
+              <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume || isStep1Invalid || isStep2Invalid}>
                   {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
                   {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-4" />}
