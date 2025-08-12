@@ -394,6 +394,8 @@ export default function OnboardingStepPage() {
     return [3, 4, 7].includes(currentStep);
   }, [currentStep]);
 
+  const isStep1Invalid = currentStep === 1 && (!name.trim() || !currentRole.trim());
+
   if (isLoading) {
       return <Skeleton className="w-full h-[400px]" />;
   }
@@ -810,7 +812,7 @@ export default function OnboardingStepPage() {
                   Skip for now
                 </Button>
               )}
-              <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume}>
+              <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume || isStep1Invalid}>
                   {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
                   {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-4" />}
