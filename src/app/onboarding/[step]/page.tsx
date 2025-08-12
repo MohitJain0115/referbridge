@@ -54,7 +54,7 @@ type Education = {
     description: string;
 };
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 
 export default function OnboardingStepPage() {
   const router = useRouter();
@@ -88,8 +88,15 @@ export default function OnboardingStepPage() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [educations, setEducations] = useState<Education[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+
+  // Resume State
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [resumeName, setResumeName] = useState<string | null>(null);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
+  const [pendingResume, setPendingResume] = useState<File | null>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     if (!firebaseReady) {
@@ -291,11 +298,96 @@ export default function OnboardingStepPage() {
   const removeJobLink = (companyId: number, jobId: number) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: c.jobs.filter(j => j.id !== jobId) } : c));
   const updateJobLink = (companyId: number, jobId: number, url: string) => setCompanies(companies.map(c => c.id === companyId ? { ...c, jobs: c.jobs.map(j => j.id === jobId ? { ...j, url } : j) } : c));
   
+  // Resume handlers
+  const handleResumeFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({ title: "File Too Large", description: "Please select a file smaller than 5MB.", variant: "destructive" });
+      return;
+    }
+
+    if (resumeUrl) {
+      setPendingResume(file);
+      setShowOverwriteDialog(true);
+    } else {
+      uploadResume(file);
+    }
+    event.target.value = '';
+  };
+
+  const uploadResume = async (file: File) => {
+    if (!currentUser || !storage || !db) {
+        toast({ title: "Not Logged In", description: "You must be logged in to upload a resume.", variant: "destructive" });
+        return;
+    }
+    setIsUploadingResume(true);
+    try {
+        const fileRef = storageRef(storage, `resumes/${currentUser.uid}/${file.name}`);
+        const uploadResult = await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(uploadResult.ref);
+
+        await setDoc(doc(db, "resumes", currentUser.uid), {
+            userId: currentUser.uid,
+            fileName: file.name,
+            fileUrl: url,
+            uploadedAt: new Date(),
+        }, { merge: true });
+
+        setResumeUrl(url);
+        setResumeName(file.name);
+        toast({ title: "Success", description: "Your resume has been uploaded successfully." });
+    } catch (error: any) {
+        console.error("Resume upload error:", error);
+        if (error.code === 'storage/unauthorized') {
+          toast({
+            title: "Permission Denied",
+            description: "Check Storage CORS and Security Rules.",
+            variant: "destructive",
+            duration: 10000,
+          });
+        } else if (error.code === 'permission-denied') {
+             toast({
+                title: "Permission Denied",
+                description: "Could not save resume data. Check Firestore Security Rules.",
+                variant: "destructive",
+                duration: 10000,
+            });
+        } else {
+          toast({ title: "Upload Failed", description: "There was a problem uploading your resume.", variant: "destructive" });
+        }
+    } finally {
+        setIsUploadingResume(false);
+        setPendingResume(null);
+    }
+  };
+
+  const handleConfirmOverwrite = () => {
+    if (pendingResume) {
+        uploadResume(pendingResume);
+    }
+    setShowOverwriteDialog(false);
+  };
+
+  const handleCancelOverwrite = () => {
+    setShowOverwriteDialog(false);
+    setPendingResume(null);
+  };
+  
+  const handleDownloadResume = () => {
+    if (resumeUrl) {
+      window.open(resumeUrl, '_blank');
+    }
+  };
+
+
   if (isLoading) {
       return <Skeleton className="w-full h-[400px]" />;
   }
   
   return (
+    <>
     <Card className="w-full">
       <CardHeader>
         {currentStep === 1 && (
@@ -336,8 +428,14 @@ export default function OnboardingStepPage() {
         )}
         {currentStep === 7 && (
             <>
-                <CardTitle className="font-headline text-2xl">Final Details</CardTitle>
-                <CardDescription>Add your target companies and upload your resume.</CardDescription>
+                <CardTitle className="font-headline text-2xl">Target Companies</CardTitle>
+                <CardDescription>Add companies you're interested in and links to specific job postings.</CardDescription>
+            </>
+        )}
+        {currentStep === 8 && (
+            <>
+                <CardTitle className="font-headline text-2xl">Upload Your Resume</CardTitle>
+                <CardDescription>A resume is crucial for getting referrals. You can upload a PDF, DOC, or DOCX file (max 5MB).</CardDescription>
             </>
         )}
       </CardHeader>
@@ -643,6 +741,50 @@ export default function OnboardingStepPage() {
                 </div>
             </div>
         )}
+        {currentStep === 8 && (
+            <div className="space-y-2">
+              <Label>Resume<span className="text-destructive pl-1">*</span></Label>
+                <Card className={cn("p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center")}>
+                  {isUploadingResume ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  ) : resumeUrl ? (
+                    <div className="flex items-center justify-between gap-4 w-full">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                        <span className="font-medium text-sm truncate">{resumeName}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                          <Button variant="outline" size="sm" onClick={handleDownloadResume}>
+                              <Download className="mr-2 h-4 w-4" />
+                              Download
+                          </Button>
+                          <Button variant="secondary" size="sm" onClick={() => resumeInputRef.current?.click()}>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Replace
+                          </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <p className="mb-2 text-sm text-muted-foreground">No resume uploaded.</p>
+                      <Button variant="outline" onClick={() => resumeInputRef.current?.click()}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload Resume
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+                <input
+                  type="file"
+                  ref={resumeInputRef}
+                  onChange={handleResumeFileSelected}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx"
+                  disabled={isUploadingResume}
+                />
+                <p className="text-xs text-muted-foreground pl-1">Upload your resume (PDF, DOC, DOCX). Max 5MB.</p>
+            </div>
+        )}
       </CardContent>
       <CardContent>
         <div className="flex justify-between gap-2 pt-4 border-t">
@@ -650,13 +792,30 @@ export default function OnboardingStepPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
             </Button>
-            <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic}>
-                {isSaving || isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume}>
+                {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
-                {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && <ArrowRight className="ml-2 h-4 w-4" />}
+                {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
         </div>
       </CardContent>
     </Card>
+
+    <AlertDialog open={showOverwriteDialog} onOpenChange={setShowOverwriteDialog}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Replace existing resume?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    You have already uploaded a resume. Do you want to replace "{resumeName}" with "{pendingResume?.name}"?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleCancelOverwrite}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmOverwrite}>Replace</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+    </>
   );
 }
