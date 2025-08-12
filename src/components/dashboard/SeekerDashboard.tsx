@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -7,7 +8,7 @@ import { ReferrerFilters } from "./ReferrerFilters";
 import type { Referrer } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "firebase/auth";
 
@@ -48,12 +49,11 @@ export function SeekerDashboard() {
       setIsLoading(true);
       try {
         const profilesRef = collection(db, "profiles");
-        // We look for profiles where referrerCompany is explicitly set and not empty.
-        const q = query(profilesRef, where("referrerCompany", "!=", ""));
+        const q = query(profilesRef);
         const querySnapshot = await getDocs(q);
 
         const fetchedReferrers = querySnapshot.docs
-            .filter(doc => doc.id !== currentUser.uid) // Filter out the current user
+            .filter(doc => doc.id !== currentUser.uid)
             .map(doc => {
                 const data = doc.data();
                 return {

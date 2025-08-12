@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,7 +7,7 @@ import { CandidateGrid } from "./CandidateGrid";
 import type { Candidate } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "firebase/auth";
 import { calculateTotalExperienceInYears } from "@/lib/utils";
@@ -45,12 +46,11 @@ export function ReferrerDashboard() {
         setIsLoading(true);
         try {
             const profilesRef = collection(db, "profiles");
-            // Fetch all profiles that are not the current user and have opted to be a referrer.
-            const q = query(profilesRef, where("referrerCompany", "!=", ""));
+            const q = query(profilesRef);
             const querySnapshot = await getDocs(q);
 
             const fetchedCandidates = querySnapshot.docs
-                .filter(doc => doc.id !== currentUser.uid) // Filter out the current user
+                .filter(doc => doc.id !== currentUser.uid)
                 .map(doc => {
                     const data = doc.data();
                     const experiences = data.experiences || [];
@@ -70,12 +70,11 @@ export function ReferrerDashboard() {
                         location: data.location || "Remote",
                         experience: totalExperience,
                         status: data.status || 'Pending',
-                        jobPostUrl: "", // Do not show job post URL on the generic dashboard
+                        jobPostUrl: "",
                         targetCompanies: data.companies?.map((c: any) => c.name).filter(Boolean) || [],
                     } as Candidate
                 });
             
-            // Randomize the order of candidates
             for (let i = fetchedCandidates.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [fetchedCandidates[i], fetchedCandidates[j]] = [fetchedCandidates[j], fetchedCandidates[i]];
