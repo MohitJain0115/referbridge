@@ -238,6 +238,14 @@ export default function OnboardingStepPage() {
     }
   };
 
+  const handleSkip = () => {
+    if (currentStep < TOTAL_STEPS) {
+      router.push(`/onboarding/${currentStep + 1}`);
+    } else {
+      router.push("/dashboard");
+    }
+  };
+
   const addExperience = () => setExperiences([...experiences, {id: Date.now(), role: '', company: '', from: undefined, to: undefined, currentlyWorking: false, description: ''}]);
   const removeExperience = (id: number) => setExperiences(experiences.filter(e => e.id !== id));
   const handleExperienceChange = (id: number, field: keyof Omit<Experience, 'id'>, value: string | boolean) => {
@@ -787,16 +795,21 @@ export default function OnboardingStepPage() {
         )}
       </CardContent>
       <CardContent>
-        <div className="flex justify-between gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={handleBack} disabled={currentStep === 1}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-            </Button>
-            <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume}>
-                {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
-                {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-4" />}
-            </Button>
+        <div className="flex justify-between items-center gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={handleBack} disabled={currentStep === 1}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+          </Button>
+          <div className="flex items-center gap-2">
+              <Button variant="link" onClick={handleSkip}>
+                Skip for now
+              </Button>
+              <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume}>
+                  {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
+                  {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-4" />}
+              </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
