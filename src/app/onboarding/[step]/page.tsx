@@ -587,7 +587,16 @@ export default function OnboardingStepPage() {
               {!isFresher && (
                 <>
                   <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                      {experiences.map((exp) => (
+                      {experiences.map((exp) => {
+                          const fromYear = exp.from ? getYear(exp.from) : null;
+                          const fromMonth = exp.from ? getMonth(exp.from) : null;
+                          
+                          const availableToYears = fromYear ? years.filter(year => year >= fromYear) : years;
+                          const availableToMonths = (fromYear && fromMonth !== null && exp.to && getYear(exp.to) === fromYear) 
+                            ? months.filter(month => month.value >= fromMonth) 
+                            : months;
+                        
+                          return (
                           <Card key={exp.id} className="p-4 bg-muted/20 border-dashed">
                               <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
                                   <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} aria-label="Remove Experience">
@@ -628,13 +637,13 @@ export default function OnboardingStepPage() {
                                           <Select disabled={exp.currentlyWorking} value={exp.to ? getMonth(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'month', value)}>
                                               <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
                                               <SelectContent>
-                                                  {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                                  {availableToMonths.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
                                               </SelectContent>
                                           </Select>
                                           <Select disabled={exp.currentlyWorking} value={exp.to ? getYear(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'year', value)}>
                                               <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
                                               <SelectContent>
-                                                  {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                                  {availableToYears.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
                                               </SelectContent>
                                           </Select>
                                       </div>
@@ -650,7 +659,8 @@ export default function OnboardingStepPage() {
                                   <Textarea id={`exp-desc-${exp.id}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)} className="min-h-[100px]" />
                               </div>
                           </Card>
-                      ))}
+                          )
+                      })}
                   </div>
                   <Button variant="secondary" onClick={addExperience} className="w-full">
                     <PlusCircle className="mr-2 h-4 w-4" />
