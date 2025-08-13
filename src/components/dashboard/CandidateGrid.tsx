@@ -18,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { doc, getDoc, writeBatch } from "firebase/firestore";
 import { db, firebaseReady, auth } from "@/lib/firebase";
 import { Checkbox } from "@/components/ui/checkbox";
+import { sendEmailWithAttachment } from "@/ai/flows/email-flow";
 
 
 type CandidateGridProps = {
@@ -35,6 +36,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isEmailing, setIsEmailing] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
   const [otherReasonText, setOtherReasonText] = useState("");
@@ -163,11 +165,11 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
     if (resumeLinks.length === 0) {
       toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive" });
     } else if (resumeLinks.length === 1) {
-        window.open(resumeLinks[0].url, '_blank');
-        toast({
-          title: "Download Started",
-          description: `Opening ${resumeLinks[0].name}'s resume.`
-        });
+        const resumeData = resumeLinks[0];
+        toast({ title: "Download Started", description: `Downloading ${resumeData.name}'s resume.` });
+        const response = await fetch(resumeData.url);
+        const blob = await response.blob();
+        saveAs(blob, resumeData.fileName);
     } else {
         toast({
             title: "Preparing Download",
@@ -227,33 +229,33 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
 
   const handleBulkEmail = async () => {
     if (selectedCandidates.length === 0) return;
-    setIsActionLoading(true);
-
+    
     if (!auth.currentUser?.email) {
-      toast({
-        title: "Error",
-        description: "Could not find your email address. Please log in again.",
-        variant: "destructive",
-      });
-      setIsActionLoading(false);
+      toast({ title: "Error", description: "Could not find your email address. Please log in again.", variant: "destructive" });
       return;
     }
-
+    
+    setIsEmailing(true);
     const resumeLinks = await getResumeLinksForSelected();
 
     if (resumeLinks.length === 0) {
         toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive"});
     } else {
-        const subject = `Resumes for ${resumeLinks.length} selected candidate(s)`;
-        const body = `Hi,\n\nHere are the resume links for the candidates you selected:\n\n${resumeLinks.map(link => `${link.name}: ${link.url}`).join('\n')}\n\nSent from ReferBridge`;
-        window.location.href = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        toast({
-            title: "Opening Email Client",
-            description: `Preparing an email with ${resumeLinks.length} resume link(s).`
+        const { success, message } = await sendEmailWithAttachment({
+            to: auth.currentUser.email,
+            subject: `Resumes for ${resumeLinks.length} candidate(s)`,
+            body: `Hi,<br/><br/>Attached are the resumes for the ${resumeLinks.length} candidate(s) you selected from ReferBridge.`,
+            attachments: resumeLinks.map(r => ({ filename: r.fileName, url: r.url })),
         });
+
+        if (success) {
+            toast({ title: "Email Sent (Simulated)", description: `An email with ${resumeLinks.length} resume(s) has been sent to you.` });
+        } else {
+            toast({ title: "Email Failed", description: message, variant: "destructive" });
+        }
     }
 
-    setIsActionLoading(false);
+    setIsEmailing(false);
     setIsActionDialogOpen(false);
     setSelectedCandidates([]);
   };
@@ -423,13 +425,13 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-                <Button variant="outline" onClick={handleBulkDownload} className="flex-1" disabled={isActionLoading}>
+                <Button variant="outline" onClick={handleBulkDownload} className="flex-1" disabled={isActionLoading || isEmailing}>
                     {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                     Download to Device
                 </Button>
-                <Button onClick={handleBulkEmail} className="flex-1" disabled={isActionLoading}>
-                    {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                    Email Links to Myself
+                <Button onClick={handleBulkEmail} className="flex-1" disabled={isActionLoading || isEmailing}>
+                    {isEmailing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                    Email to Myself
                 </Button>
             </div>
         </DialogContent>
