@@ -418,7 +418,7 @@ export default function OnboardingStepPage() {
 
   const isStep6Invalid = useMemo(() => {
     if (currentStep !== 6) return false;
-    if (educations.length === 0) return false; // Allow skipping if no education is added.
+    if (educations.length === 0) return true;
     return educations.some(
       (edu) =>
         !edu.institution.trim() ||
