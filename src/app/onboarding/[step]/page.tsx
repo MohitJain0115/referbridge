@@ -89,6 +89,7 @@ export default function OnboardingStepPage() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [educations, setEducations] = useState<Education[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [isFresher, setIsFresher] = useState(false);
 
   // Resume State
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
@@ -131,7 +132,11 @@ export default function OnboardingStepPage() {
             setAbout(data.about || "");
             setSkills(data.skills?.join(', ') || "");
             setCompanies(data.companies || []);
-            setExperiences(data.experiences?.map((exp: any) => ({ ...exp, id: exp.id || Date.now() + Math.random(), from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
+            const loadedExperiences = data.experiences?.map((exp: any) => ({ ...exp, id: exp.id || Date.now() + Math.random(), from: exp.from?.toDate(), to: exp.to?.toDate() })) || [];
+            setExperiences(loadedExperiences);
+            if (loadedExperiences.length === 0) {
+              setIsFresher(data.isFresher === true);
+            }
             setEducations(data.educations?.map((edu: any) => ({ ...edu, id: edu.id || Date.now() + Math.random(), from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
             setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
         }
@@ -210,7 +215,8 @@ export default function OnboardingStepPage() {
       isSalaryVisible: true,
       about,
       skills: skills.split(',').map(s => s.trim()).filter(Boolean),
-      experiences: experiences.map(exp => ({ ...exp, from: exp.from ? Timestamp.fromDate(exp.from) : undefined, to: exp.to ? Timestamp.fromDate(exp.to) : null })),
+      experiences: isFresher ? [] : experiences.map(exp => ({ ...exp, from: exp.from ? Timestamp.fromDate(exp.from) : undefined, to: exp.to ? Timestamp.fromDate(exp.to) : null })),
+      isFresher: isFresher,
       educations: educations.map(edu => ({ ...edu, from: edu.from ? Timestamp.fromDate(edu.from) : undefined, to: edu.to ? Timestamp.fromDate(edu.to) : null })),
       companies,
       profilePic,
@@ -396,6 +402,12 @@ export default function OnboardingStepPage() {
 
   const isStep1Invalid = currentStep === 1 && (!name.trim() || !currentRole.trim());
   const isStep2Invalid = currentStep === 2 && profilePic === "https://placehold.co/128x128.png";
+  const isStep5Invalid = useMemo(() => {
+    if (currentStep !== 5) return false;
+    if (isFresher) return false;
+    if (experiences.length === 0) return true;
+    return experiences.some(exp => !exp.role.trim() || !exp.company.trim() || !exp.from);
+  }, [currentStep, experiences, isFresher]);
 
 
   if (isLoading) {
@@ -560,76 +572,85 @@ export default function OnboardingStepPage() {
               <h3 className="flex items-center gap-2 font-medium text-base">
                   <Briefcase className="h-5 w-5 text-primary" /> Work Experience
               </h3>
-              <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                  {experiences.map((exp) => (
-                      <Card key={exp.id} className="p-4 bg-muted/20 border-dashed">
-                          <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
-                              <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} aria-label="Remove Experience">
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                              <div className="space-y-2">
-                                  <Label htmlFor={`exp-role-${exp.id}`}>Role</Label>
-                                  <Input id={`exp-role-${exp.id}`} placeholder="e.g., Product Manager" value={exp.role} onChange={(e) => handleExperienceChange(exp.id, 'role', e.target.value)} />
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor={`exp-company-${exp.id}`}>Company</Label>
-                                  <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)} />
-                              </div>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-                              <div className="space-y-2">
-                                  <Label>From</Label>
-                                  <div className="flex gap-2">
-                                      <Select value={exp.from ? getMonth(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'month', value)}>
-                                          <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
-                                          <SelectContent>
-                                              {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
-                                          </SelectContent>
-                                      </Select>
-                                      <Select value={exp.from ? getYear(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'year', value)}>
-                                          <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
-                                          <SelectContent>
-                                              {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
-                                          </SelectContent>
-                                      </Select>
-                                  </div>
-                              </div>
-                              <div className="space-y-2">
-                                  <Label>To</Label>
-                                  <div className="flex gap-2">
-                                      <Select disabled={exp.currentlyWorking} value={exp.to ? getMonth(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'month', value)}>
-                                          <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
-                                          <SelectContent>
-                                              {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
-                                          </SelectContent>
-                                      </Select>
-                                      <Select disabled={exp.currentlyWorking} value={exp.to ? getYear(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'year', value)}>
-                                          <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
-                                          <SelectContent>
-                                              {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
-                                          </SelectContent>
-                                      </Select>
-                                  </div>
-                              </div>
-                          </div>
-                          <div className="flex items-center space-x-2 mb-4">
-                              <Checkbox id={`exp-current-${exp.id}`} checked={exp.currentlyWorking} onCheckedChange={(checked) => handleExperienceChange(exp.id, 'currentlyWorking', !!checked)} />
-                              <Label htmlFor={`exp-current-${exp.id}`} className="font-normal cursor-pointer">I currently work here</Label>
-                          </div>
-
-                          <div className="space-y-2">
-                              <Label htmlFor={`exp-desc-${exp.id}`}>Description</Label>
-                              <Textarea id={`exp-desc-${exp.id}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)} className="min-h-[100px]" />
-                          </div>
-                      </Card>
-                  ))}
+              <div className="flex items-center space-x-2">
+                <Checkbox id="fresher" checked={isFresher} onCheckedChange={(checked) => setIsFresher(!!checked)} />
+                <Label htmlFor="fresher" className="font-normal cursor-pointer">I am a fresher (no work experience)</Label>
               </div>
-              <Button variant="secondary" onClick={addExperience} className="w-full">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Work Experience
-              </Button>
+
+              {!isFresher && (
+                <>
+                  <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                      {experiences.map((exp) => (
+                          <Card key={exp.id} className="p-4 bg-muted/20 border-dashed">
+                              <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
+                                  <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} aria-label="Remove Experience">
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                  <div className="space-y-2">
+                                      <Label htmlFor={`exp-role-${exp.id}`}>Role<span className="text-destructive pl-1">*</span></Label>
+                                      <Input id={`exp-role-${exp.id}`} placeholder="e.g., Product Manager" value={exp.role} onChange={(e) => handleExperienceChange(exp.id, 'role', e.target.value)} />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor={`exp-company-${exp.id}`}>Company<span className="text-destructive pl-1">*</span></Label>
+                                      <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)} />
+                                  </div>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                  <div className="space-y-2">
+                                      <Label>From<span className="text-destructive pl-1">*</span></Label>
+                                      <div className="flex gap-2">
+                                          <Select value={exp.from ? getMonth(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'month', value)}>
+                                              <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                              <SelectContent>
+                                                  {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                              </SelectContent>
+                                          </Select>
+                                          <Select value={exp.from ? getYear(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'year', value)}>
+                                              <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                              <SelectContent>
+                                                  {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                              </SelectContent>
+                                          </Select>
+                                      </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label>To</Label>
+                                      <div className="flex gap-2">
+                                          <Select disabled={exp.currentlyWorking} value={exp.to ? getMonth(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'month', value)}>
+                                              <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                              <SelectContent>
+                                                  {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                              </SelectContent>
+                                          </Select>
+                                          <Select disabled={exp.currentlyWorking} value={exp.to ? getYear(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'year', value)}>
+                                              <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                              <SelectContent>
+                                                  {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                              </SelectContent>
+                                          </Select>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div className="flex items-center space-x-2 mb-4">
+                                  <Checkbox id={`exp-current-${exp.id}`} checked={exp.currentlyWorking} onCheckedChange={(checked) => handleExperienceChange(exp.id, 'currentlyWorking', !!checked)} />
+                                  <Label htmlFor={`exp-current-${exp.id}`} className="font-normal cursor-pointer">I currently work here</Label>
+                              </div>
+
+                              <div className="space-y-2">
+                                  <Label htmlFor={`exp-desc-${exp.id}`}>Description</Label>
+                                  <Textarea id={`exp-desc-${exp.id}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)} className="min-h-[100px]" />
+                              </div>
+                          </Card>
+                      ))}
+                  </div>
+                  <Button variant="secondary" onClick={addExperience} className="w-full">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Work Experience
+                  </Button>
+                </>
+              )}
             </div>
         )}
         {currentStep === 6 && (
@@ -814,7 +835,7 @@ export default function OnboardingStepPage() {
                   Skip for now
                 </Button>
               )}
-              <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume || isStep1Invalid || isStep2Invalid}>
+              <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume || isStep1Invalid || isStep2Invalid || isStep5Invalid}>
                   {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
                   {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-4" />}
