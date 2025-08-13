@@ -411,7 +411,8 @@ export default function OnboardingStepPage() {
         !exp.role.trim() ||
         !exp.company.trim() ||
         !exp.from ||
-        (!exp.to && !exp.currentlyWorking)
+        (!exp.to && !exp.currentlyWorking) ||
+        (exp.from && exp.to && exp.from > exp.to)
     );
   }, [currentStep, experiences, isFresher]);
 
