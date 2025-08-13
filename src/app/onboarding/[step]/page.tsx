@@ -416,6 +416,19 @@ export default function OnboardingStepPage() {
     );
   }, [currentStep, experiences, isFresher]);
 
+  const isStep6Invalid = useMemo(() => {
+    if (currentStep !== 6) return false;
+    if (educations.length === 0) return false; // Allow skipping if no education is added.
+    return educations.some(
+      (edu) =>
+        !edu.institution.trim() ||
+        !edu.degree.trim() ||
+        !edu.from ||
+        !edu.to ||
+        (edu.from && edu.to && edu.from > edu.to)
+    );
+  }, [currentStep, educations]);
+
 
   if (isLoading) {
       return <Skeleton className="w-full h-[400px]" />;
@@ -676,7 +689,16 @@ export default function OnboardingStepPage() {
                   <GraduationCap className="h-5 w-5 text-primary" /> Education
               </h3>
               <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                  {educations.map((edu) => (
+                  {educations.map((edu) => {
+                    const fromYear = edu.from ? getYear(edu.from) : null;
+                    const fromMonth = edu.from ? getMonth(edu.from) : null;
+                    
+                    const availableToYears = fromYear ? years.filter(year => year >= fromYear) : years;
+                    const availableToMonths = (fromYear && fromMonth !== null && edu.to && getYear(edu.to) === fromYear) 
+                      ? months.filter(month => month.value >= fromMonth) 
+                      : months;
+
+                    return (
                       <Card key={edu.id} className="p-4 bg-muted/20 border-dashed">
                           <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
                               <Button variant="ghost" size="icon" onClick={() => removeEducation(edu.id)} aria-label="Remove Education">
@@ -685,18 +707,18 @@ export default function OnboardingStepPage() {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                               <div className="space-y-2">
-                                  <Label htmlFor={`edu-institution-${edu.id}`}>Institution</Label>
+                                  <Label htmlFor={`edu-institution-${edu.id}`}>Institution<span className="text-destructive pl-1">*</span></Label>
                                   <Input id={`edu-institution-${edu.id}`} placeholder="e.g., Carnegie Mellon University" value={edu.institution} onChange={(e) => handleEducationChange(edu.id, 'institution', e.target.value)} />
                               </div>
                               <div className="space-y-2">
-                                  <Label htmlFor={`edu-degree-${edu.id}`}>Degree</Label>
+                                  <Label htmlFor={`edu-degree-${edu.id}`}>Degree<span className="text-destructive pl-1">*</span></Label>
                                   <Input id={`edu-degree-${edu.id}`} placeholder="e.g., M.S. in HCI" value={edu.degree} onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)} />
                               </div>
                           </div>
 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                               <div className="space-y-2">
-                                  <Label>From</Label>
+                                  <Label>From<span className="text-destructive pl-1">*</span></Label>
                                   <div className="flex gap-2">
                                       <Select value={edu.from ? getMonth(edu.from).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'from', 'month', value)}>
                                           <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
@@ -713,18 +735,18 @@ export default function OnboardingStepPage() {
                                   </div>
                               </div>
                               <div className="space-y-2">
-                                  <Label>To</Label>
+                                  <Label>To<span className="text-destructive pl-1">*</span></Label>
                                   <div className="flex gap-2">
                                       <Select value={edu.to ? getMonth(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'month', value)}>
                                           <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
                                           <SelectContent>
-                                              {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                            {availableToMonths.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
                                           </SelectContent>
                                       </Select>
                                       <Select value={edu.to ? getYear(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'year', value)}>
                                           <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
                                           <SelectContent>
-                                              {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                            {availableToYears.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
                                           </SelectContent>
                                       </Select>
                                   </div>
@@ -735,7 +757,8 @@ export default function OnboardingStepPage() {
                               <Textarea id={`edu-desc-${edu.id}`} placeholder="Describe any relevant coursework, activities, or honors..." value={edu.description} onChange={(e) => handleEducationChange(edu.id, 'description', e.target.value)} className="min-h-[80px]" />
                           </div>
                       </Card>
-                  ))}
+                    )
+                  })}
               </div>
               <Button variant="secondary" onClick={addEducation} className="w-full">
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -852,7 +875,7 @@ export default function OnboardingStepPage() {
                   Skip for now
                 </Button>
               )}
-              <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume || isStep1Invalid || isStep2Invalid || isStep5Invalid}>
+              <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume || isStep1Invalid || isStep2Invalid || isStep5Invalid || isStep6Invalid}>
                   {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
                   {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-4" />}
