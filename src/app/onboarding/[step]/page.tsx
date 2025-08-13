@@ -406,7 +406,13 @@ export default function OnboardingStepPage() {
     if (currentStep !== 5) return false;
     if (isFresher) return false;
     if (experiences.length === 0) return true;
-    return experiences.some(exp => !exp.role.trim() || !exp.company.trim() || !exp.from);
+    return experiences.some(
+      (exp) =>
+        !exp.role.trim() ||
+        !exp.company.trim() ||
+        !exp.from ||
+        (!exp.to && !exp.currentlyWorking)
+    );
   }, [currentStep, experiences, isFresher]);
 
 
@@ -616,7 +622,7 @@ export default function OnboardingStepPage() {
                                       </div>
                                   </div>
                                   <div className="space-y-2">
-                                      <Label>To</Label>
+                                      <Label>To<span className="text-destructive pl-1">*</span></Label>
                                       <div className="flex gap-2">
                                           <Select disabled={exp.currentlyWorking} value={exp.to ? getMonth(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'month', value)}>
                                               <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
