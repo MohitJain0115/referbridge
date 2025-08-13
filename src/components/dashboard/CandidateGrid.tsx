@@ -225,26 +225,20 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
     setSelectedCandidates([]);
   };
 
-  const handleBulkEmail = async () => {
-    if (selectedCandidates.length === 0) return;
-    
-    if (!auth.currentUser?.email) {
-      toast({ title: "Error", description: "Could not find your email address. Please log in again.", variant: "destructive" });
+  const handleBulkEmail = () => {
+    if (selectedCandidates.length === 0 || !auth.currentUser?.email) {
+      toast({ title: "Error", description: "Could not find your email address or no candidates selected.", variant: "destructive" });
       return;
     }
     
-    setIsEmailing(true);
-    const resumeLinks = await getResumeLinksForSelected();
+    const candidatesWithLinks = selectedCandidates
+      .map(id => initialCandidates.find(c => c.id === id))
+      .filter(Boolean) as Candidate[];
+    
+    const body = `Hi,\n\nPlease find the profiles for the ${candidatesWithLinks.length} candidate(s) you selected:\n\n${candidatesWithLinks.map(c => `${c.name}: ${window.location.origin}/profile/${c.id}`).join('\n')}\n\nSent from ReferBridge.`;
+    const mailtoLink = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(`Profiles for ${candidatesWithLinks.length} candidate(s)`)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
 
-    if (resumeLinks.length === 0) {
-        toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive"});
-    } else {
-        const body = `Hi,\n\nPlease find the resumes for the ${resumeLinks.length} candidate(s) you selected:\n\n${resumeLinks.map(r => `${r.name}: ${r.url}`).join('\n')}\n\nSent from ReferBridge.`;
-        const mailtoLink = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(`Resumes for ${resumeLinks.length} candidate(s)`)}&body=${encodeURIComponent(body)}`;
-        window.location.href = mailtoLink;
-    }
-
-    setIsEmailing(false);
     setIsActionDialogOpen(false);
     setSelectedCandidates([]);
   };

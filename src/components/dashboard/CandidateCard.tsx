@@ -79,29 +79,15 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     }
   };
 
-  const handleShareToMail = async (e?: React.MouseEvent) => {
+  const handleShareToMail = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!firebaseReady || !db || !auth.currentUser?.email) {
-        toast({ title: "Cannot share", description: "You must be logged in to share.", variant: "destructive" });
-        return;
+    if (!auth.currentUser?.email) {
+      toast({ title: "Cannot share", description: "You must be logged in to share.", variant: "destructive" });
+      return;
     }
-    setIsEmailing(true);
-    try {
-        const resumeDocRef = doc(db, "resumes", candidate.id);
-        const resumeDoc = await getDoc(resumeDocRef);
-        if (resumeDoc.exists() && resumeDoc.data().fileUrl) {
-            const resumeData = resumeDoc.data();
-            const mailtoLink = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(`Resume for ${candidate.name}`)}&body=${encodeURIComponent(`Hi,\n\nPlease find the resume for ${candidate.name} at this link: ${resumeData.fileUrl}\n\nSent from ReferBridge.`)}`;
-            window.location.href = mailtoLink;
-        } else {
-            toast({ title: "No Resume Found", description: `${candidate.name} has not uploaded a resume.`, variant: "destructive" });
-        }
-    } catch (error: any) {
-        console.error("Error creating email link:", error);
-        toast({ title: "Error", description: "Could not prepare the email link.", variant: "destructive" });
-    } finally {
-        setIsEmailing(false);
-    }
+
+    const mailtoLink = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(`Resume for ${candidate.name}`)}&body=${encodeURIComponent(`Hi,\n\nPlease find the resume for ${candidate.name} at this link: ${window.location.origin}/profile/${candidate.id}\n\nSent from ReferBridge.`)}`;
+    window.location.href = mailtoLink;
   };
 
 
@@ -364,7 +350,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                             </DialogDescription>
                         </DialogHeader>
                         <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-                            <Button variant="outline" onClick={() => handleDownloadResume()} className="flex-1">
+                            <Button variant="outline" onClick={handleDownloadResume} className="flex-1">
                                 <Download className="mr-2 h-4 w-4" />
                                 Download to Device
                             </Button>
