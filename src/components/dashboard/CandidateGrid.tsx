@@ -18,8 +18,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { doc, getDoc, writeBatch } from "firebase/firestore";
 import { db, firebaseReady, auth } from "@/lib/firebase";
 import { Checkbox } from "@/components/ui/checkbox";
-import { sendEmailWithAttachment } from "@/ai/flows/email-flow";
-
 
 type CandidateGridProps = {
     candidates: Candidate[];
@@ -241,18 +239,9 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
     if (resumeLinks.length === 0) {
         toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive"});
     } else {
-        const { success, message } = await sendEmailWithAttachment({
-            to: auth.currentUser.email,
-            subject: `Resumes for ${resumeLinks.length} candidate(s)`,
-            body: `Hi,<br/><br/>Attached are the resumes for the ${resumeLinks.length} candidate(s) you selected from ReferBridge.`,
-            attachments: resumeLinks.map(r => ({ filename: r.fileName, url: r.url })),
-        });
-
-        if (success) {
-            toast({ title: "Email Sent (Simulated)", description: `An email with ${resumeLinks.length} resume(s) has been sent to you.` });
-        } else {
-            toast({ title: "Email Failed", description: message, variant: "destructive" });
-        }
+        const body = `Hi,\n\nPlease find the resumes for the ${resumeLinks.length} candidate(s) you selected:\n\n${resumeLinks.map(r => `${r.name}: ${r.url}`).join('\n')}\n\nSent from ReferBridge.`;
+        const mailtoLink = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(`Resumes for ${resumeLinks.length} candidate(s)`)}&body=${encodeURIComponent(body)}`;
+        window.location.href = mailtoLink;
     }
 
     setIsEmailing(false);
@@ -431,7 +420,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
                 </Button>
                 <Button onClick={handleBulkEmail} className="flex-1" disabled={isActionLoading || isEmailing}>
                     {isEmailing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                    Email to Myself
+                    Email Links to Myself
                 </Button>
             </div>
         </DialogContent>

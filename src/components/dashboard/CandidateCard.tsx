@@ -20,7 +20,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { saveAs } from 'file-saver';
-import { sendEmailWithAttachment } from "@/ai/flows/email-flow";
 // import { awardPointsForReferral } from "@/ai/flows/leaderboard-flow";
 
 type CandidateCardProps = {
@@ -83,41 +82,25 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
   const handleShareToMail = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!firebaseReady || !db || !auth.currentUser?.email) {
-      toast({ title: "Cannot share", description: "You must be logged in to share.", variant: "destructive" });
-      return;
+        toast({ title: "Cannot share", description: "You must be logged in to share.", variant: "destructive" });
+        return;
     }
     setIsEmailing(true);
     try {
-      const resumeDocRef = doc(db, "resumes", candidate.id);
-      const resumeDoc = await getDoc(resumeDocRef);
-      if (resumeDoc.exists() && resumeDoc.data().fileUrl) {
-        const resumeData = resumeDoc.data();
-        const { success, message } = await sendEmailWithAttachment({
-          to: auth.currentUser.email,
-          subject: `Resume for ${candidate.name}`,
-          body: `Hi,<br/><br/>Attached is the resume for ${candidate.name}.<br/><br/>Sent from ReferBridge.`,
-          attachments: [{
-            filename: resumeData.fileName || `${candidate.name}_resume.pdf`,
-            url: resumeData.fileUrl,
-          }],
-        });
-
-        if (success) {
-          toast({
-            title: "Email Sent (Simulated)",
-            description: `An email with ${candidate.name}'s resume has been sent to you.`,
-          });
+        const resumeDocRef = doc(db, "resumes", candidate.id);
+        const resumeDoc = await getDoc(resumeDocRef);
+        if (resumeDoc.exists() && resumeDoc.data().fileUrl) {
+            const resumeData = resumeDoc.data();
+            const mailtoLink = `mailto:${auth.currentUser.email}?subject=${encodeURIComponent(`Resume for ${candidate.name}`)}&body=${encodeURIComponent(`Hi,\n\nPlease find the resume for ${candidate.name} at this link: ${resumeData.fileUrl}\n\nSent from ReferBridge.`)}`;
+            window.location.href = mailtoLink;
         } else {
-          throw new Error(message);
+            toast({ title: "No Resume Found", description: `${candidate.name} has not uploaded a resume.`, variant: "destructive" });
         }
-      } else {
-        toast({ title: "No Resume Found", description: `${candidate.name} has not uploaded a resume.`, variant: "destructive" });
-      }
     } catch (error: any) {
-      console.error("Error sending email:", error);
-      toast({ title: "Error", description: error.message || "Could not send the email.", variant: "destructive" });
+        console.error("Error creating email link:", error);
+        toast({ title: "Error", description: "Could not prepare the email link.", variant: "destructive" });
     } finally {
-      setIsEmailing(false);
+        setIsEmailing(false);
     }
   };
 
@@ -387,7 +370,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                             </Button>
                             <Button onClick={handleShareToMail} className="flex-1" disabled={isEmailing}>
                                 {isEmailing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                                Email to Myself
+                                Email Link to Myself
                             </Button>
                         </div>
                     </DialogContent>
