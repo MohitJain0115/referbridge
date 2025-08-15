@@ -1,11 +1,10 @@
 
 'use server';
 /**
- * @fileOverview A flow to handle leaderboard points and referral confirmations.
+ * @fileOverview A server action to handle leaderboard points and referral confirmations.
  *
  * - awardPointsForReferral - Confirms a referral and awards points to the referrer.
  */
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -15,27 +14,20 @@ const AwardPointsInputSchema = z.object({
   referrerId: z.string().describe('The ID of the referrer receiving points.'),
 });
 
-const AwardPointsOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-});
+type AwardPointsInput = z.infer<typeof AwardPointsInputSchema>;
 
-export async function awardPointsForReferral(
-  input: z.infer<typeof AwardPointsInputSchema>
-): Promise<z.infer<typeof AwardPointsOutputSchema>> {
-  return awardPointsFlow(input);
-}
-
-const awardPointsFlow = ai.defineFlow(
-  {
-    name: 'awardPointsFlow',
-    inputSchema: AwardPointsInputSchema,
-    outputSchema: AwardPointsOutputSchema,
-  },
-  async ({ requestId, referrerId }) => {
-    if (!db) {
-      throw new Error('Firestore database is not initialized.');
+export async function awardPointsForReferral(input: AwardPointsInput) {
+    const validatedInput = AwardPointsInputSchema.safeParse(input);
+    if (!validatedInput.success) {
+        return { success: false, message: 'Invalid input.' };
     }
+    
+    const { requestId, referrerId } = validatedInput.data;
+
+    if (!db) {
+      return { success: false, message: 'Firestore database is not initialized.' };
+    }
+    
     try {
       const requestRef = doc(db, 'referral_requests', requestId);
       const requestSnap = await getDoc(requestRef);
@@ -49,12 +41,10 @@ const awardPointsFlow = ai.defineFlow(
         return { success: false, message: `Request is not in a confirmable state. Current status: ${requestData?.status || 'N/A'}` };
       }
       
-      // Update the request status to Confirmed Referral
       await updateDoc(requestRef, {
         status: 'Confirmed Referral',
       });
 
-      // Award points to the referrer
       const referrerProfileRef = doc(db, 'profiles', referrerId);
       const referrerSnap = await getDoc(referrerProfileRef);
 
@@ -66,8 +56,7 @@ const awardPointsFlow = ai.defineFlow(
 
       return { success: true, message: 'Referral confirmed and points awarded.' };
     } catch (error) {
-      console.error('Error in awardPointsFlow:', error);
+      console.error('Error in awardPointsForReferral:', error);
       return { success: false, message: 'An error occurred while processing the request.' };
     }
-  }
-);
+}

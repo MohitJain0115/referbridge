@@ -49,7 +49,7 @@ import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, firebaseReady } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
-import { awardPointsForReferral } from "@/ai/flows/leaderboard-flow";
+import { awardPointsForReferral } from "@/actions/leaderboard";
 
 const CONFIRMATION_LIMIT = 5;
 
@@ -147,11 +147,11 @@ export function ReferralStatusPage() {
             });
             await fetchData(currentUser); // Refresh data
         } else {
-            throw new Error(result.message || "Failed to confirm referral via flow.");
+            throw new Error(result.message || "Failed to confirm referral via action.");
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error confirming referral:", error);
-        toast({ title: "Error", description: "Could not confirm the referral.", variant: "destructive" });
+        toast({ title: "Error", description: error.message || "Could not confirm the referral.", variant: "destructive" });
     } finally {
         setIsConfirming(null);
     }
@@ -190,7 +190,7 @@ export function ReferralStatusPage() {
 
   const totalRequests = requests.length;
   const viewedRequests = requests.filter(
-    (r) => r.status === "Viewed" || r.status === "Confirmed Referral"
+    (r) => r.status === "Viewed" || r.status === "Confirmed Referral" || r.status === "Referred - Awaiting Confirmation"
   ).length;
   const pendingRequests = requests.filter(
     (r) => r.status === "Pending"
@@ -280,10 +280,10 @@ export function ReferralStatusPage() {
               </CardContent>
           </Card>
           <Card
-            onClick={() => { setFilterStatus('Confirmed Referral'); setSelectedRequests([]); }}
+            onClick={() => { setFilterStatus('Referred - Awaiting Confirmation'); setSelectedRequests([]); }}
             className={cn(
               "cursor-pointer transition-all hover:border-primary",
-              filterStatus === 'Confirmed Referral' && "border-primary ring-2 ring-primary"
+              filterStatus === 'Referred - Awaiting Confirmation' && "border-primary ring-2 ring-primary"
             )}
           >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
