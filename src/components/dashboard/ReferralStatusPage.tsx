@@ -145,7 +145,6 @@ export function ReferralStatusPage() {
                 title: "Referral Confirmed!",
                 description: "Thank you for confirming. This helps us identify top referrers."
             });
-            await fetchData(currentUser); // Refresh data
         } else {
             throw new Error(result.message || "Failed to confirm referral via action.");
         }

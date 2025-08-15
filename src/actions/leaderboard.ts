@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { revalidatePath } from 'next/cache';
 
 const AwardPointsInputSchema = z.object({
   requestId: z.string().describe('The ID of the referral request to confirm.'),
@@ -56,6 +57,7 @@ export async function awardPointsForReferral(input: AwardPointsInput) {
         });
       }
 
+      revalidatePath('/dashboard');
       return { success: true, message: 'Referral confirmed and points awarded.' };
     } catch (error) {
       console.error('Error in awardPointsForReferral:', error);
