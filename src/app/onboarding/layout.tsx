@@ -15,7 +15,7 @@ export default function OnboardingLayout({
   const totalSteps = 8;
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-secondary p-4">
+    <div className="flex min-h-screen flex-col items-center bg-secondary p-4 px-6">
       <div className="absolute top-4 left-4">
         <Logo />
       </div>

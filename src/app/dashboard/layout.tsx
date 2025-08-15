@@ -117,7 +117,9 @@ export default function DashboardLayout({
             </div>
           </SheetContent>
         </Sheet>
+        
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
+            <Logo/>
             <div className="ml-auto flex-1 sm:flex-initial" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -143,7 +145,7 @@ export default function DashboardLayout({
             </DropdownMenu>
         </div>
       </header>
-      <main className="flex-1 bg-muted/40 p-4 md:p-10">
+      <main className="flex-1 bg-muted/40 p-4 md:p-10 px-6">
         <div className="mx-auto w-full max-w-7xl">
           {children}
         </div>

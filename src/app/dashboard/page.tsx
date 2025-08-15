@@ -16,16 +16,23 @@ function MainDashboard({ view }: { view: string }) {
   const isSeeker = view === 'seeker';
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-lg font-semibold md:text-2xl font-headline">{isSeeker ? 'Find a Referrer' : 'Candidate Dashboard'}</h1>
-          <p className="text-muted-foreground">{isSeeker ? 'Discover and connect with insiders at your target companies.' : 'Review and manage candidates seeking referrals.'}</p>
+          <h1 className="text-lg font-semibold md:text-2xl font-headline">
+            {isSeeker ? 'Find a Referrer' : 'Candidate Dashboard'}
+          </h1>
+          <p className="text-muted-foreground">
+            {isSeeker
+              ? 'Discover and connect with insiders at your target companies.'
+              : 'Review and manage candidates seeking referrals.'}
+          </p>
         </div>
         <DashboardToggle currentView={view} />
       </div>
       {isSeeker ? <SeekerDashboard /> : <ReferrerDashboard />}
     </>
   );
+  
 }
 
 export default function DashboardPage({
