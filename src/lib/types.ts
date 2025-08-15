@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 // From tracked-requests-flow.ts
-export const RequestStatusSchema = z.enum(['Pending', 'Viewed', 'Referred', 'Not a Fit', 'Resume Downloaded', 'Cancelled']);
+export const RequestStatusSchema = z.enum(['Pending', 'Viewed', 'Referred - Awaiting Confirmation', 'Confirmed Referral', 'Not a Fit', 'Resume Downloaded', 'Cancelled']);
 export type ReferralRequestStatus = z.infer<typeof RequestStatusSchema>;
 
 // From candidates-flow.ts

@@ -38,7 +38,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog";
-import { Info, Mail, Eye, Clock, XCircle, Trash2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info, Mail, Eye, Clock, XCircle, Trash2, CheckCircle, Bell, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -46,13 +47,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc, writeBatch } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
+
+const CONFIRMATION_LIMIT = 5;
 
 export function ReferralStatusPage() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [requests, setRequests] = useState<TrackedRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isConfirming, setIsConfirming] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<ReferralRequestStatus | 'all'>('all');
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
   const { toast } = useToast();
@@ -69,75 +73,106 @@ export function ReferralStatusPage() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!currentUser || !db) {
+  const fetchData = async (user: FirebaseUser) => {
+    if (!db) {
         setIsLoading(false);
         return;
-      }
-      setIsLoading(true);
-      try {
-        const requestsQuery = query(collection(db, "referral_requests"), where("seekerId", "==", currentUser.uid));
-        const requestSnapshots = await getDocs(requestsQuery);
-
-        const trackedRequestsPromises = requestSnapshots.docs.map(async (requestDoc) => {
-          const requestData = requestDoc.data();
-          const referrerDocRef = doc(db, "profiles", requestData.referrerId);
-          const referrerDoc = await getDoc(referrerDocRef);
-
-          if (!referrerDoc.exists()) {
-            console.warn(`Referrer profile not found for ID: ${requestData.referrerId}`);
-            return null;
-          }
-
-          const referrerData = referrerDoc.data();
-          
-          return {
-            id: requestDoc.id,
-            referrer: {
-              id: referrerDoc.id,
-              name: referrerData.name || "Unknown Referrer",
-              avatar: referrerData.profilePic || "https://placehold.co/100x100.png",
-              role: referrerData.currentRole || "N/A",
-              company: referrerData.referrerCompany || "N/A",
-              specialties: referrerData.referrerSpecialties?.split(',').map((s:string) => s.trim()).filter(Boolean) || [],
-            },
-            status: requestData.status,
-            cancellationReason: requestData.cancellationReason,
-            requestedAt: requestData.requestedAt?.toDate() || new Date(),
-          } as TrackedRequest;
-        });
-
-        const results = (await Promise.all(trackedRequestsPromises)).filter(Boolean) as TrackedRequest[];
-        // Sort by most recent
-        results.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
-        setRequests(results);
-
-      } catch (error) {
-        console.error("Failed to fetch tracked requests:", error);
-        toast({ title: "Error", description: "Could not fetch your referral requests.", variant: "destructive" });
-      } finally {
-        setIsLoading(false);
-      }
     }
+    setIsLoading(true);
+    try {
+      const requestsQuery = query(collection(db, "referral_requests"), where("seekerId", "==", user.uid));
+      const requestSnapshots = await getDocs(requestsQuery);
+
+      const trackedRequestsPromises = requestSnapshots.docs.map(async (requestDoc) => {
+        const requestData = requestDoc.data();
+        const referrerDocRef = doc(db, "profiles", requestData.referrerId);
+        const referrerDoc = await getDoc(referrerDocRef);
+
+        if (!referrerDoc.exists()) {
+          console.warn(`Referrer profile not found for ID: ${requestData.referrerId}`);
+          return null;
+        }
+
+        const referrerData = referrerDoc.data();
+        
+        return {
+          id: requestDoc.id,
+          referrer: {
+            id: referrerDoc.id,
+            name: referrerData.name || "Unknown Referrer",
+            avatar: referrerData.profilePic || "https://placehold.co/100x100.png",
+            role: referrerData.currentRole || "N/A",
+            company: referrerData.referrerCompany || "N/A",
+            specialties: referrerData.referrerSpecialties?.split(',').map((s:string) => s.trim()).filter(Boolean) || [],
+          },
+          status: requestData.status,
+          cancellationReason: requestData.cancellationReason,
+          requestedAt: requestData.requestedAt?.toDate() || new Date(),
+        } as TrackedRequest;
+      });
+
+      const results = (await Promise.all(trackedRequestsPromises)).filter(Boolean) as TrackedRequest[];
+      // Sort by most recent
+      results.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+      setRequests(results);
+
+    } catch (error) {
+      console.error("Failed to fetch tracked requests:", error);
+      toast({ title: "Error", description: "Could not fetch your referral requests.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
     if (currentUser) {
-      fetchData();
+      fetchData(currentUser);
     }
   }, [currentUser, toast]);
+
+  const handleConfirmReferral = async (requestId: string) => {
+    if (!db || !currentUser) return;
+    setIsConfirming(requestId);
+    try {
+        const requestRef = doc(db, "referral_requests", requestId);
+        await updateDoc(requestRef, {
+            status: 'Confirmed Referral'
+        });
+        toast({
+            title: "Referral Confirmed!",
+            description: "Thank you for confirming. This helps us identify top referrers."
+        });
+        await fetchData(currentUser); // Refresh data
+    } catch (error) {
+        toast({ title: "Error", description: "Could not confirm the referral.", variant: "destructive" });
+    } finally {
+        setIsConfirming(null);
+    }
+  }
   
   const getStatusBadgeVariant = (status: ReferralRequestStatus) => {
     switch (status) {
-      case "Viewed":
-      case "Referred":
+      case "Confirmed Referral":
         return "default";
-      case "Pending":
+      case "Referred - Awaiting Confirmation":
+      case "Viewed":
         return "secondary";
+      case "Pending":
+        return "outline";
       case "Cancelled":
         return "destructive";
       default:
         return "outline";
     }
   };
+
+  const pendingConfirmationsCount = useMemo(() => 
+    requests.filter(r => r.status === 'Referred - Awaiting Confirmation').length,
+    [requests]
+  );
+
+  const isConfirmationBlocked = pendingConfirmationsCount >= CONFIRMATION_LIMIT;
+
 
   const filteredRequests = useMemo(() => {
     if (filterStatus === 'all') {
@@ -148,7 +183,7 @@ export function ReferralStatusPage() {
 
   const totalRequests = requests.length;
   const viewedRequests = requests.filter(
-    (r) => r.status === "Viewed" || r.status === "Referred"
+    (r) => r.status === "Viewed" || r.status === "Confirmed Referral"
   ).length;
   const pendingRequests = requests.filter(
     (r) => r.status === "Pending"
@@ -238,10 +273,10 @@ export function ReferralStatusPage() {
               </CardContent>
           </Card>
           <Card
-            onClick={() => { setFilterStatus('Viewed'); setSelectedRequests([]); }}
+            onClick={() => { setFilterStatus('Confirmed Referral'); setSelectedRequests([]); }}
             className={cn(
               "cursor-pointer transition-all hover:border-primary",
-              filterStatus === 'Viewed' && "border-primary ring-2 ring-primary"
+              filterStatus === 'Confirmed Referral' && "border-primary ring-2 ring-primary"
             )}
           >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -283,6 +318,16 @@ export function ReferralStatusPage() {
               </CardContent>
           </Card>
       </div>
+
+      {isConfirmationBlocked && (
+         <Alert variant="destructive">
+            <Bell className="h-4 w-4" />
+            <AlertTitle>Action Required</AlertTitle>
+            <AlertDescription>
+                You have {pendingConfirmationsCount} pending referral confirmations. Please confirm them to see the status of your other applications.
+            </AlertDescription>
+        </Alert>
+      )}
       
       {selectedRequests.length > 0 && (
         <div className="flex items-center gap-4 p-2 rounded-lg bg-muted border">
@@ -365,10 +410,23 @@ export function ReferralStatusPage() {
                 <TableCell>{request.referrer.company}</TableCell>
                 <TableCell>{formatDistanceToNow(new Date(request.requestedAt), { addSuffix: true })}</TableCell>
                 <TableCell>
-                   <div className="flex items-center gap-2">
-                     <Badge variant={getStatusBadgeVariant(request.status)}>
-                       {request.status}
-                     </Badge>
+                   <div className={cn("flex items-center gap-2", isConfirmationBlocked && request.status !== 'Referred - Awaiting Confirmation' && "blur-sm pointer-events-none")}>
+                     {request.status === 'Referred - Awaiting Confirmation' ? (
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleConfirmReferral(request.id)}
+                            disabled={isConfirming === request.id}
+                        >
+                            {isConfirming === request.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
+                            Confirm Referral
+                        </Button>
+                     ) : (
+                        <Badge variant={getStatusBadgeVariant(request.status)}>
+                            {request.status}
+                        </Badge>
+                     )}
+                     
                      {request.status === 'Cancelled' && request.cancellationReason && (
                         <Dialog>
                            <DialogTrigger asChild>
@@ -406,5 +464,3 @@ export function ReferralStatusPage() {
     </div>
   );
 }
-
-  

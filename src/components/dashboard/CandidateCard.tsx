@@ -156,8 +156,8 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
       const statusToSave = newStatus === null ? 'Pending' : newStatus;
       await updateDoc(requestRef, { status: statusToSave });
 
-      if (statusToSave === 'Referred') {
-          // await awardPointsForReferral({ referrerId: auth.currentUser.uid });
+      if (statusToSave === 'Referred - Awaiting Confirmation') {
+          // Point awarding will be moved to after seeker confirms
           // toast({ title: "Points Awarded!", description: "You've earned 10 points for a successful referral." });
       }
       
@@ -172,7 +172,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: toastMessage,
       });
 
-      if (isFromRequestPage && (newStatus === 'Referred' || newStatus === 'Not a Fit' || statusToSave === 'Cancelled')) {
+      if (isFromRequestPage && (newStatus === 'Referred - Awaiting Confirmation' || newStatus === 'Not a Fit' || statusToSave === 'Cancelled')) {
         onUpdateRequest?.(candidate.id);
       }
     } catch (error: any) {
@@ -187,8 +187,9 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
   
   const getStatusBadgeVariant = (status: Candidate['status']) => {
     switch (status) {
-      case 'Referred':
+      case 'Confirmed Referral':
         return 'default';
+      case 'Referred - Awaiting Confirmation':
       case 'Viewed':
         return 'secondary';
       case 'Not a Fit':
@@ -203,7 +204,8 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
   const statusIcons: Record<Candidate['status'], React.ElementType> = {
     'Pending': Circle,
     'Viewed': Eye,
-    'Referred': CheckCircle,
+    'Referred - Awaiting Confirmation': CheckCircle,
+    'Confirmed Referral': CheckCircle,
     'Not a Fit': XCircle,
     'Cancelled': XCircle,
     'Resume Downloaded': Download,
@@ -243,7 +245,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
-                <DropdownMenuItem onClick={() => handleSetStatus('Referred')}>
+                <DropdownMenuItem onClick={() => handleSetStatus('Referred - Awaiting Confirmation')}>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   <span>Mark as Referred</span>
                 </DropdownMenuItem>
