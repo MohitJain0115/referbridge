@@ -49,7 +49,8 @@ export async function awardPointsForReferral(input: AwardPointsInput) {
       const referrerSnap = await getDoc(referrerProfileRef);
 
       if (referrerSnap.exists()) {
-        const currentPoints = referrerSnap.data().points || 0;
+        const referrerData = referrerSnap.data();
+        const currentPoints = referrerData?.points || 0;
         await updateDoc(referrerProfileRef, {
             points: currentPoints + 10,
         });
