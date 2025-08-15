@@ -40,8 +40,13 @@ const awardPointsFlow = ai.defineFlow(
       const requestRef = doc(db, 'referral_requests', requestId);
       const requestSnap = await getDoc(requestRef);
 
-      if (!requestSnap.exists() || requestSnap.data()?.status !== 'Referred - Awaiting Confirmation') {
-        return { success: false, message: 'Request not found or not in a confirmable state.' };
+      if (!requestSnap.exists()) {
+        return { success: false, message: 'Referral request not found.' };
+      }
+      
+      const requestData = requestSnap.data();
+      if (requestData?.status !== 'Referred - Awaiting Confirmation') {
+        return { success: false, message: `Request is not in a confirmable state. Current status: ${requestData?.status || 'N/A'}` };
       }
       
       // Update the request status to Confirmed Referral
@@ -51,9 +56,13 @@ const awardPointsFlow = ai.defineFlow(
 
       // Award points to the referrer
       const referrerProfileRef = doc(db, 'profiles', referrerId);
-      await updateDoc(referrerProfileRef, {
-        points: increment(10),
-      });
+      const referrerSnap = await getDoc(referrerProfileRef);
+
+      if (referrerSnap.exists()) {
+        await updateDoc(referrerProfileRef, {
+            points: increment(10),
+        });
+      }
 
       return { success: true, message: 'Referral confirmed and points awarded.' };
     } catch (error) {
