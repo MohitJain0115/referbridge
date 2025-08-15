@@ -6,7 +6,7 @@
  * - awardPointsForReferral - Confirms a referral and awards points to the referrer.
  */
 import { z } from 'zod';
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const AwardPointsInputSchema = z.object({
@@ -49,8 +49,9 @@ export async function awardPointsForReferral(input: AwardPointsInput) {
       const referrerSnap = await getDoc(referrerProfileRef);
 
       if (referrerSnap.exists()) {
+        const currentPoints = referrerSnap.data().points || 0;
         await updateDoc(referrerProfileRef, {
-            points: increment(10),
+            points: currentPoints + 10,
         });
       }
 
