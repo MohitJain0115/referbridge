@@ -22,6 +22,30 @@ function ReferrerGridSkeleton() {
   );
 }
 
+const normalizeCompanyName = (name: string): string => {
+  if (!name) return "";
+  const lowerName = name.toLowerCase();
+
+  const commonNames: { [key: string]: string[] } = {
+    'Deloitte': ['deloitte'],
+    'EY': ['ey', 'ernst & young'],
+    'PwC': ['pwc', 'pricewaterhousecoopers'],
+    'KPMG': ['kpmg'],
+    'Google': ['google', 'alphabet'],
+    'Amazon': ['amazon', 'aws'],
+    'Microsoft': ['microsoft'],
+    'Meta': ['meta', 'facebook'],
+  };
+
+  for (const standardName in commonNames) {
+    if (commonNames[standardName].some(variant => lowerName.includes(variant))) {
+      return standardName;
+    }
+  }
+  return name;
+};
+
+
 export function SeekerDashboard() {
   const [allReferrers, setAllReferrers] = useState<Referrer[]>([]);
   const [filteredReferrers, setFilteredReferrers] = useState<Referrer[]>([]);
@@ -85,8 +109,9 @@ export function SeekerDashboard() {
   }, [currentUser, toast]);
 
   const availableCompanies = useMemo(() => {
-    const companies = new Set(allReferrers.map(r => r.company));
-    return Array.from(companies).sort();
+    const normalizedCompanyNames = allReferrers.map(r => normalizeCompanyName(r.company)).filter(Boolean);
+    const uniqueCompanies = new Set(normalizedCompanyNames);
+    return Array.from(uniqueCompanies).sort();
   }, [allReferrers]);
 
   const isFiltered = useMemo(() => {
@@ -105,7 +130,7 @@ export function SeekerDashboard() {
     }
 
     if (company) {
-      referrers = referrers.filter(r => r.company.toLowerCase() === company.toLowerCase());
+      referrers = referrers.filter(r => normalizeCompanyName(r.company) === company);
     }
     
     setFilteredReferrers(referrers);
