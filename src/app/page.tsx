@@ -8,8 +8,10 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="flex-1 px-6">
-        <HeroSection />
+      <main className="flex-1">
+        <div className="px-6">
+          <HeroSection />
+        </div>
         <HowItWorks />
         <ValueProps />
       </main>
