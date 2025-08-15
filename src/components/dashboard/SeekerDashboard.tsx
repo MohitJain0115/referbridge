@@ -24,7 +24,22 @@ function ReferrerGridSkeleton() {
 
 const normalizeCompanyName = (name: string): string => {
   if (!name) return "";
-  const lowerName = name.toLowerCase();
+  let lowerName = name.toLowerCase().trim();
+  
+  // Remove common suffixes
+  const suffixes = [
+    ', inc.', ', inc', ' inc.', ' inc',
+    ', llc', ' llc',
+    ', ltd.', ', ltd', ' limited',
+    ' private limited', ' pvt ltd',
+    ' technologies', ' tech',
+    ' solutions', ' services'
+  ];
+  suffixes.forEach(suffix => {
+    if (lowerName.endsWith(suffix)) {
+      lowerName = lowerName.slice(0, -suffix.length);
+    }
+  });
 
   const commonNames: { [key: string]: string[] } = {
     'Deloitte': ['deloitte'],
@@ -35,6 +50,11 @@ const normalizeCompanyName = (name: string): string => {
     'Amazon': ['amazon', 'aws'],
     'Microsoft': ['microsoft'],
     'Meta': ['meta', 'facebook'],
+    'Hindustan Unilever': ['hindustan unilever'],
+    'ICICI Bank': ['icici bank', 'icici securities'],
+    'Infosys': ['infosys'],
+    'ITC': ['itc'],
+    'HCL Tech': ['hcl'],
   };
 
   for (const standardName in commonNames) {
@@ -42,7 +62,9 @@ const normalizeCompanyName = (name: string): string => {
       return standardName;
     }
   }
-  return name;
+  
+  // Return original name (title-cased) if no match
+  return name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 };
 
 
