@@ -49,6 +49,7 @@ import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, firebaseReady } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
+import { awardPointsForReferral } from "@/ai/flows/leaderboard-flow";
 
 const CONFIRMATION_LIMIT = 5;
 
@@ -130,20 +131,26 @@ export function ReferralStatusPage() {
     }
   }, [currentUser, toast]);
 
-  const handleConfirmReferral = async (requestId: string) => {
+  const handleConfirmReferral = async (request: TrackedRequest) => {
     if (!db || !currentUser) return;
-    setIsConfirming(requestId);
+    setIsConfirming(request.id);
     try {
-        const requestRef = doc(db, "referral_requests", requestId);
-        await updateDoc(requestRef, {
-            status: 'Confirmed Referral'
+        const result = await awardPointsForReferral({
+          requestId: request.id,
+          referrerId: request.referrer.id,
         });
-        toast({
-            title: "Referral Confirmed!",
-            description: "Thank you for confirming. This helps us identify top referrers."
-        });
-        await fetchData(currentUser); // Refresh data
+
+        if (result.success) {
+            toast({
+                title: "Referral Confirmed!",
+                description: "Thank you for confirming. This helps us identify top referrers."
+            });
+            await fetchData(currentUser); // Refresh data
+        } else {
+            throw new Error(result.message || "Failed to confirm referral via flow.");
+        }
     } catch (error) {
+        console.error("Error confirming referral:", error);
         toast({ title: "Error", description: "Could not confirm the referral.", variant: "destructive" });
     } finally {
         setIsConfirming(null);
@@ -415,7 +422,7 @@ export function ReferralStatusPage() {
                         <Button
                             size="sm"
                             variant="secondary"
-                            onClick={() => handleConfirmReferral(request.id)}
+                            onClick={() => handleConfirmReferral(request)}
                             disabled={isConfirming === request.id}
                         >
                             {isConfirming === request.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
