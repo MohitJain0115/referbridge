@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from 'next/link';
-import type { Candidate } from "@/lib/types";
+import type { Candidate, ReferralRequestStatus } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { saveAs } from 'file-saver';
 // import { awardPointsForReferral } from "@/ai/flows/leaderboard-flow";
+
+
+
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -135,7 +138,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     }
   };
 
-  const handleSetStatus = async (newStatus: Candidate['status'] | null) => {
+  const handleSetStatus = async (newStatus: ReferralRequestStatus | null) => {
     if (!candidate.requestId || !firebaseReady || !db || !auth.currentUser) {
       toast({
           title: "Action Not Available",
@@ -153,7 +156,8 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     const requestRef = doc(db, "referral_requests", candidate.requestId);
 
     try {
-      const statusToSave = newStatus === null ? 'Pending' : newStatus;
+      // const statusToSave = newStatus === null ? 'Pending' : newStatus;
+      const statusToSave: ReferralRequestStatus = newStatus === null ? 'Pending' : newStatus;
       await updateDoc(requestRef, { status: statusToSave });
 
       if (statusToSave === 'Referred - Awaiting Confirmation') {
@@ -172,7 +176,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: toastMessage,
       });
 
-      if (isFromRequestPage && (newStatus === 'Referred - Awaiting Confirmation' || newStatus === 'Not a Fit' || statusToSave === 'Cancelled')) {
+      if (isFromRequestPage && (newStatus === 'Referred - Awaiting Confirmation' || statusToSave === 'Cancelled')) {
         onUpdateRequest?.(candidate.id);
       }
     } catch (error: any) {
@@ -209,6 +213,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     'Not a Fit': XCircle,
     'Cancelled': XCircle,
     'Resume Downloaded': Download,
+    __default: Info,
   };
 
   const displayStatus = currentStatus === 'Cancelled' ? 'Not a Fit' : currentStatus;
@@ -216,6 +221,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
 
   return (
     <>
+    
       <Card 
         className={cn(
           "flex flex-col transition-all relative cursor-pointer hover:shadow-lg h-full", 
@@ -280,7 +286,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
             <CardTitle className="font-headline text-base truncate">{candidate.name}</CardTitle>
             {showStatusBadge && displayStatus && (
               <Badge variant={getStatusBadgeVariant(displayStatus)} className="capitalize text-xs flex-shrink-0">
-                {React.createElement(statusIcons[displayStatus], { className: "mr-1 h-3 w-3" })}
+                {React.createElement(statusIcons[displayStatus] || statusIcons.__default, { className: "mr-1 h-3 w-3" })}
                 {displayStatus}
               </Badge>
             )}
@@ -294,6 +300,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
             )}
           </CardDescription>
         </CardHeader>
+
         <CardContent className="flex-grow space-y-2 p-4 pt-0 text-xs">
           <div className="text-muted-foreground truncate">
             {candidate.salary > 0 && 
@@ -331,6 +338,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
             </div>
           )}
         </CardContent>
+
         <CardFooter className="p-4 pt-0 flex-shrink-0">
             <div className="flex gap-2 w-full">
                 <Button className="flex-1" size="sm" asChild>
@@ -365,6 +373,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                 </Dialog>
             </div>
         </CardFooter>
+
       </Card>
 
       <Dialog open={isCancelDialogOpen} onOpenChange={(open) => { if (!open) resetCancelDialog(); else setIsCancelDialogOpen(open);}}>

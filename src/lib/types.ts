@@ -26,6 +26,8 @@ export const CandidateSchema = z.object({
 });
 export type Candidate = z.infer<typeof CandidateSchema>;
 
+
+
 // From referrers-flow.ts
 export const ReferrerSchema = z.object({
   id: z.string().describe("A unique UUID for the referrer."),
