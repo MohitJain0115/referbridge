@@ -19,7 +19,7 @@ export default function OnboardingLayout({
       <div className="absolute top-4 left-4">
         <Logo />
       </div>
-      <div className="w-full max-w-2xl mt-20">
+      <div className="w-full max-w-2xl mt-16 md:mt-20 pb-8">
         <div className="mb-8 text-center">
             <p className="text-sm font-semibold text-primary">
                 Step {currentStep} of {totalSteps}

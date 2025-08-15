@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { format } from "date-fns";
 import type { Candidate } from '@/lib/types';
 import { formatCurrency, calculateTotalExperienceInYears } from '@/lib/utils';
+import { Navbar } from '@/components/shared/Navbar';
 // import { awardPointsForView } from '@/ai/flows/leaderboard-flow';
 
 type Experience = {

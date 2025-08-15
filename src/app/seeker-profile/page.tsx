@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Navbar } from "@/components/shared/Navbar";
 
 export const dynamic = 'force-dynamic';
 
@@ -483,7 +484,10 @@ export default function SeekerProfilePage() {
   }
 
   return (
+    <>
+    <Navbar/>
     <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
+      
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Your Profile</CardTitle>
@@ -886,5 +890,6 @@ export default function SeekerProfilePage() {
       </AlertDialog>
 
     </div>
+    </>
   );
 }

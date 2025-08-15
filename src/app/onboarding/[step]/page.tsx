@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 
 type Job = {
@@ -438,7 +439,7 @@ export default function OnboardingStepPage() {
   
   return (
     <>
-    <Card className="w-full">
+    <Card className="w-full flex flex-col max-h-[calc(100vh-10rem)] overflow-hidden">
       <CardHeader>
         {currentStep === 1 && (
             <>
@@ -489,384 +490,386 @@ export default function OnboardingStepPage() {
             </>
         )}
       </CardHeader>
-      <CardContent className="space-y-6">
-        {currentStep === 1 && (
-            <div className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="name">Full Name<span className="text-destructive pl-1">*</span></Label>
-                    <Input id="name" placeholder="e.g., Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="current-role">Current Role<span className="text-destructive pl-1">*</span></Label>
-                    <Input id="current-role" placeholder="e.g., Product Manager" value={currentRole} onChange={(e) => setCurrentRole(e.target.value)} />
-                </div>
-            </div>
-        )}
-        {currentStep === 2 && (
-            <div className="flex flex-col items-center gap-4">
-                <Image
-                    src={profilePic}
-                    alt="Profile Picture"
-                    width={128}
-                    height={128}
-                    className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
-                    data-ai-hint="person avatar"
-                />
-                <input
-                    type="file"
-                    ref={profilePicInputRef}
-                    onChange={handleProfilePicChange}
-                    className="hidden"
-                    accept="image/*"
-                    disabled={isUploadingPic}
-                />
-                <Button variant="outline" onClick={() => profilePicInputRef.current?.click()} disabled={isUploadingPic}>
-                    {isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                    {isUploadingPic ? 'Uploading...' : 'Upload Photo'}
-                </Button>
-            </div>
-        )}
-        {currentStep === 3 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                  <Label htmlFor="target-role">Target Role</Label>
-                  <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="salary" className="flex items-center gap-2 font-medium">
-                  <DollarSign className="h-4 w-4 text-primary" /> Expected Annual Salary
-                </Label>
-                <div className="flex gap-2">
-                    <Select value={expectedSalaryCurrency} onValueChange={setExpectedSalaryCurrency}>
-                        <SelectTrigger className="w-[100px]">
-                            <SelectValue placeholder="Currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="INR">INR</SelectItem>
-                            <SelectItem value="USD">USD</SelectItem>
-                            <SelectItem value="EUR">EUR</SelectItem>
-                            <SelectItem value="GBP">GBP</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Input
-                        id="salary"
-                        type="number"
-                        placeholder="e.g., 1500000"
-                        value={expectedSalary}
-                        onChange={(e) => setExpectedSalary(e.target.value)}
-                        className="no-spinner"
-                    />
-                </div>
-                <p className="text-xs text-muted-foreground">(This will be visible to anyone who sees your profile)</p>
-              </div>
-            </div>
-        )}
-        {currentStep === 4 && (
-             <div className="space-y-6">
-                <div className="space-y-2">
-                <Label htmlFor="about" className="flex items-center gap-2 font-medium">
-                    <User className="h-4 w-4 text-primary" /> About Me
-                </Label>
-                <Textarea
-                    id="about"
-                    placeholder="A brief summary about your professional background, skills, and career aspirations."
-                    className="min-h-[100px]"
-                    value={about}
-                    onChange={(e) => setAbout(e.target.value)}
-                />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="skills" className="flex items-center gap-2 font-medium">
-                        <Sparkles className="h-4 w-4 text-primary" /> Top Skills
-                    </Label>
-                    <Input
-                        id="skills"
-                        placeholder="e.g., React, Node.js, TypeScript"
-                        value={skills}
-                        onChange={(e) => setSkills(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">Enter your key skills, separated by commas.</p>
-                </div>
-            </div>
-        )}
-        {currentStep === 5 && (
-            <div className="space-y-4">
-              <h3 className="flex items-center gap-2 font-medium text-base">
-                  <Briefcase className="h-5 w-5 text-primary" /> Work Experience
-              </h3>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="fresher" checked={isFresher} onCheckedChange={(checked) => setIsFresher(!!checked)} />
-                <Label htmlFor="fresher" className="font-normal cursor-pointer">I am a fresher (no work experience)</Label>
-              </div>
-
-              {!isFresher && (
-                <>
-                  <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                      {experiences.map((exp) => {
-                          const fromYear = exp.from ? getYear(exp.from) : null;
-                          const fromMonth = exp.from ? getMonth(exp.from) : null;
-                          
-                          const availableToYears = fromYear ? years.filter(year => year >= fromYear) : years;
-                          const availableToMonths = (fromYear && fromMonth !== null && exp.to && getYear(exp.to) === fromYear) 
-                            ? months.filter(month => month.value >= fromMonth) 
-                            : months;
-                        
-                          return (
-                          <Card key={exp.id} className="p-4 bg-muted/20 border-dashed">
-                              <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
-                                  <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} aria-label="Remove Experience">
-                                      <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                  <div className="space-y-2">
-                                      <Label htmlFor={`exp-role-${exp.id}`}>Role<span className="text-destructive pl-1">*</span></Label>
-                                      <Input id={`exp-role-${exp.id}`} placeholder="e.g., Product Manager" value={exp.role} onChange={(e) => handleExperienceChange(exp.id, 'role', e.target.value)} />
-                                  </div>
-                                  <div className="space-y-2">
-                                      <Label htmlFor={`exp-company-${exp.id}`}>Company<span className="text-destructive pl-1">*</span></Label>
-                                      <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)} />
-                                  </div>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-                                  <div className="space-y-2">
-                                      <Label>From<span className="text-destructive pl-1">*</span></Label>
-                                      <div className="flex gap-2">
-                                          <Select value={exp.from ? getMonth(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'month', value)}>
-                                              <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
-                                              <SelectContent>
-                                                  {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
-                                              </SelectContent>
-                                          </Select>
-                                          <Select value={exp.from ? getYear(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'year', value)}>
-                                              <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
-                                              <SelectContent>
-                                                  {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
-                                              </SelectContent>
-                                          </Select>
-                                      </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                      <Label>To<span className="text-destructive pl-1">*</span></Label>
-                                      <div className="flex gap-2">
-                                          <Select disabled={exp.currentlyWorking} value={exp.to ? getMonth(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'month', value)}>
-                                              <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
-                                              <SelectContent>
-                                                  {availableToMonths.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
-                                              </SelectContent>
-                                          </Select>
-                                          <Select disabled={exp.currentlyWorking} value={exp.to ? getYear(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'year', value)}>
-                                              <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
-                                              <SelectContent>
-                                                  {availableToYears.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
-                                              </SelectContent>
-                                          </Select>
-                                      </div>
-                                  </div>
-                              </div>
-                              <div className="flex items-center space-x-2 mb-4">
-                                  <Checkbox id={`exp-current-${exp.id}`} checked={exp.currentlyWorking} onCheckedChange={(checked) => handleExperienceChange(exp.id, 'currentlyWorking', !!checked)} />
-                                  <Label htmlFor={`exp-current-${exp.id}`} className="font-normal cursor-pointer">I currently work here</Label>
-                              </div>
-
-                              <div className="space-y-2">
-                                  <Label htmlFor={`exp-desc-${exp.id}`}>Description</Label>
-                                  <Textarea id={`exp-desc-${exp.id}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)} className="min-h-[100px]" />
-                              </div>
-                          </Card>
-                          )
-                      })}
+      <ScrollArea className="flex-grow">
+        <CardContent className="space-y-2 px-6 pt-0 pb-6">
+          {currentStep === 1 && (
+              <div className="space-y-4">
+                  <div className="space-y-2">
+                      <Label htmlFor="name">Full Name<span className="text-destructive pl-1">*</span></Label>
+                      <Input id="name" placeholder="e.g., Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
                   </div>
-                  <Button variant="secondary" onClick={addExperience} className="w-full">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Work Experience
-                  </Button>
-                </>
-              )}
-            </div>
-        )}
-        {currentStep === 6 && (
-            <div className="space-y-4">
-              <h3 className="flex items-center gap-2 font-medium text-base">
-                  <GraduationCap className="h-5 w-5 text-primary" /> Education
-              </h3>
-              <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                  {educations.map((edu) => {
-                    const fromYear = edu.from ? getYear(edu.from) : null;
-                    const fromMonth = edu.from ? getMonth(edu.from) : null;
-                    
-                    const availableToYears = fromYear ? years.filter(year => year >= fromYear) : years;
-                    const availableToMonths = (fromYear && fromMonth !== null && edu.to && getYear(edu.to) === fromYear) 
-                      ? months.filter(month => month.value >= fromMonth) 
-                      : months;
-
-                    return (
-                      <Card key={edu.id} className="p-4 bg-muted/20 border-dashed">
-                          <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
-                              <Button variant="ghost" size="icon" onClick={() => removeEducation(edu.id)} aria-label="Remove Education">
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                              <div className="space-y-2">
-                                  <Label htmlFor={`edu-institution-${edu.id}`}>Institution<span className="text-destructive pl-1">*</span></Label>
-                                  <Input id={`edu-institution-${edu.id}`} placeholder="e.g., Carnegie Mellon University" value={edu.institution} onChange={(e) => handleEducationChange(edu.id, 'institution', e.target.value)} />
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor={`edu-degree-${edu.id}`}>Degree<span className="text-destructive pl-1">*</span></Label>
-                                  <Input id={`edu-degree-${edu.id}`} placeholder="e.g., M.S. in HCI" value={edu.degree} onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)} />
-                              </div>
-                          </div>
-
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-                              <div className="space-y-2">
-                                  <Label>From<span className="text-destructive pl-1">*</span></Label>
-                                  <div className="flex gap-2">
-                                      <Select value={edu.from ? getMonth(edu.from).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'from', 'month', value)}>
-                                          <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
-                                          <SelectContent>
-                                              {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
-                                          </SelectContent>
-                                      </Select>
-                                      <Select value={edu.from ? getYear(edu.from).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'from', 'year', value)}>
-                                          <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
-                                          <SelectContent>
-                                              {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
-                                          </SelectContent>
-                                      </Select>
-                                  </div>
-                              </div>
-                              <div className="space-y-2">
-                                  <Label>To<span className="text-destructive pl-1">*</span></Label>
-                                  <div className="flex gap-2">
-                                      <Select value={edu.to ? getMonth(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'month', value)}>
-                                          <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
-                                          <SelectContent>
-                                            {availableToMonths.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
-                                          </SelectContent>
-                                      </Select>
-                                      <Select value={edu.to ? getYear(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'year', value)}>
-                                          <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
-                                          <SelectContent>
-                                            {availableToYears.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
-                                          </SelectContent>
-                                      </Select>
-                                  </div>
-                              </div>
-                          </div>
-                          <div className="space-y-2 mt-4">
-                              <Label htmlFor={`edu-desc-${edu.id}`}>Description / Notes</Label>
-                              <Textarea id={`edu-desc-${edu.id}`} placeholder="Describe any relevant coursework, activities, or honors..." value={edu.description} onChange={(e) => handleEducationChange(edu.id, 'description', e.target.value)} className="min-h-[80px]" />
-                          </div>
-                      </Card>
-                    )
-                  })}
+                  <div className="space-y-2">
+                      <Label htmlFor="current-role">Current Role<span className="text-destructive pl-1">*</span></Label>
+                      <Input id="current-role" placeholder="e.g., Product Manager" value={currentRole} onChange={(e) => setCurrentRole(e.target.value)} />
+                  </div>
               </div>
-              <Button variant="secondary" onClick={addEducation} className="w-full">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Education
-              </Button>
-            </div>
-        )}
-        {currentStep === 7 && (
-            <div className="space-y-6">
-                 <div className="space-y-4">
-                    <div className="space-y-1">
-                        <h3 className="flex items-center gap-2 font-medium text-base">
-                            <Building2 className="h-5 w-5 text-primary" /> Target Companies & Job Links
-                        </h3>
-                        <p className="text-sm text-muted-foreground">Add companies you're interested in and links to specific job postings.</p>
-                    </div>
-                    <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                        {companies.map((company) => (
-                        <Card key={company.id} className="p-4 bg-muted/20 border-dashed">
-                            <div className="flex items-center gap-2 mb-4">
-                            <Input
-                                placeholder="Company Name"
-                                value={company.name}
-                                onChange={(e) => updateCompanyName(company.id, e.target.value)}
-                                className="text-base font-semibold"
-                            />
-                            <Button variant="ghost" size="icon" onClick={() => removeCompany(company.id)} aria-label="Remove Company">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                            </div>
-                            <div className="space-y-2 pl-4 border-l-2 border-primary/50">
-                            <Label className="text-xs text-muted-foreground font-normal">Links to job postings</Label>
-                            {company.jobs.map((job) => (
-                                <div key={job.id} className="flex items-center gap-2">
-                                <Input
-                                    placeholder="https://..."
-                                    value={job.url}
-                                    onChange={(e) => updateJobLink(company.id, job.id, e.target.value)}
-                                />
-                                <Button variant="ghost" size="icon" onClick={() => removeJobLink(company.id, job.id)} aria-label="Remove Job Link">
-                                    <Trash2 className="h-4 w-4 text-destructive/70" />
-                                </Button>
+          )}
+          {currentStep === 2 && (
+              <div className="flex flex-col items-center gap-4">
+                  <Image
+                      src={profilePic}
+                      alt="Profile Picture"
+                      width={128}
+                      height={128}
+                      className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
+                      data-ai-hint="person avatar"
+                  />
+                  <input
+                      type="file"
+                      ref={profilePicInputRef}
+                      onChange={handleProfilePicChange}
+                      className="hidden"
+                      accept="image/*"
+                      disabled={isUploadingPic}
+                  />
+                  <Button variant="outline" onClick={() => profilePicInputRef.current?.click()} disabled={isUploadingPic}>
+                      {isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                      {isUploadingPic ? 'Uploading...' : 'Upload Photo'}
+                  </Button>
+              </div>
+          )}
+          {currentStep === 3 && (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                    <Label htmlFor="target-role">Target Role</Label>
+                    <Input id="target-role" placeholder="e.g., Senior Product Manager" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="salary" className="flex items-center gap-2 font-medium">
+                    <DollarSign className="h-4 w-4 text-primary" /> Expected Annual Salary
+                  </Label>
+                  <div className="flex gap-2">
+                      <Select value={expectedSalaryCurrency} onValueChange={setExpectedSalaryCurrency}>
+                          <SelectTrigger className="w-[100px]">
+                              <SelectValue placeholder="Currency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="INR">INR</SelectItem>
+                              <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="EUR">EUR</SelectItem>
+                              <SelectItem value="GBP">GBP</SelectItem>
+                          </SelectContent>
+                      </Select>
+                      <Input
+                          id="salary"
+                          type="number"
+                          placeholder="e.g., 1500000"
+                          value={expectedSalary}
+                          onChange={(e) => setExpectedSalary(e.target.value)}
+                          className="no-spinner"
+                      />
+                  </div>
+                  <p className="text-xs text-muted-foreground">(This will be visible to anyone who sees your profile)</p>
+                </div>
+              </div>
+          )}
+          {currentStep === 4 && (
+              <div className="space-y-6">
+                  <div className="space-y-2">
+                  <Label htmlFor="about" className="flex items-center gap-2 font-medium">
+                      <User className="h-4 w-4 text-primary" /> About Me
+                  </Label>
+                  <Textarea
+                      id="about"
+                      placeholder="A brief summary about your professional background, skills, and career aspirations."
+                      className="min-h-[100px]"
+                      value={about}
+                      onChange={(e) => setAbout(e.target.value)}
+                  />
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="skills" className="flex items-center gap-2 font-medium">
+                          <Sparkles className="h-4 w-4 text-primary" /> Top Skills
+                      </Label>
+                      <Input
+                          id="skills"
+                          placeholder="e.g., React, Node.js, TypeScript"
+                          value={skills}
+                          onChange={(e) => setSkills(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">Enter your key skills, separated by commas.</p>
+                  </div>
+              </div>
+          )}
+          {currentStep === 5 && (
+              <div className="space-y-4">
+                <h3 className="flex items-center gap-2 font-medium text-base">
+                    <Briefcase className="h-5 w-5 text-primary" /> Work Experience
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="fresher" checked={isFresher} onCheckedChange={(checked) => setIsFresher(!!checked)} />
+                  <Label htmlFor="fresher" className="font-normal cursor-pointer">I am a fresher (no work experience)</Label>
+                </div>
+
+                {!isFresher && (
+                  <>
+                    <div className="space-y-4">
+                        {experiences.map((exp) => {
+                            const fromYear = exp.from ? getYear(exp.from) : null;
+                            const fromMonth = exp.from ? getMonth(exp.from) : null;
+                            
+                            const availableToYears = fromYear ? years.filter(year => year >= fromYear) : years;
+                            const availableToMonths = (fromYear && fromMonth !== null && exp.to && getYear(exp.to) === fromYear) 
+                              ? months.filter(month => month.value >= fromMonth) 
+                              : months;
+                          
+                            return (
+                            <Card key={exp.id} className="p-4 bg-muted/20 border-dashed">
+                                <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
+                                    <Button variant="ghost" size="icon" onClick={() => removeExperience(exp.id)} aria-label="Remove Experience">
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
                                 </div>
-                            ))}
-                            <Button variant="outline" size="sm" onClick={() => addJobLink(company.id)} className="mt-2">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add Job Link
-                            </Button>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`exp-role-${exp.id}`}>Role<span className="text-destructive pl-1">*</span></Label>
+                                        <Input id={`exp-role-${exp.id}`} placeholder="e.g., Product Manager" value={exp.role} onChange={(e) => handleExperienceChange(exp.id, 'role', e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`exp-company-${exp.id}`}>Company<span className="text-destructive pl-1">*</span></Label>
+                                        <Input id={`exp-company-${exp.id}`} placeholder="e.g., TechCorp" value={exp.company} onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                    <div className="space-y-2">
+                                        <Label>From<span className="text-destructive pl-1">*</span></Label>
+                                        <div className="flex gap-2">
+                                            <Select value={exp.from ? getMonth(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'month', value)}>
+                                                <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <Select value={exp.from ? getYear(exp.from).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'from', 'year', value)}>
+                                                <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>To<span className="text-destructive pl-1">*</span></Label>
+                                        <div className="flex gap-2">
+                                            <Select disabled={exp.currentlyWorking} value={exp.to ? getMonth(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'month', value)}>
+                                                <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {availableToMonths.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <Select disabled={exp.currentlyWorking} value={exp.to ? getYear(exp.to).toString() : ""} onValueChange={(value) => handleExperienceDateChange(exp.id, 'to', 'year', value)}>
+                                                <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {availableToYears.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <Checkbox id={`exp-current-${exp.id}`} checked={exp.currentlyWorking} onCheckedChange={(checked) => handleExperienceChange(exp.id, 'currentlyWorking', !!checked)} />
+                                    <Label htmlFor={`exp-current-${exp.id}`} className="font-normal cursor-pointer">I currently work here</Label>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor={`exp-desc-${exp.id}`}>Description</Label>
+                                    <Textarea id={`exp-desc-${exp.id}`} placeholder="Describe your responsibilities and achievements..." value={exp.description} onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)} className="min-h-[100px]" />
+                                </div>
+                            </Card>
+                            )
+                        })}
+                    </div>
+                    <Button variant="secondary" onClick={addExperience} className="w-full">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Work Experience
+                    </Button>
+                  </>
+                )}
+              </div>
+          )}
+          {currentStep === 6 && (
+              <div className="space-y-4">
+                <h3 className="flex items-center gap-2 font-medium text-base">
+                    <GraduationCap className="h-5 w-5 text-primary" /> Education
+                </h3>
+                <div className="space-y-4">
+                    {educations.map((edu) => {
+                      const fromYear = edu.from ? getYear(edu.from) : null;
+                      const fromMonth = edu.from ? getMonth(edu.from) : null;
+                      
+                      const availableToYears = fromYear ? years.filter(year => year >= fromYear) : years;
+                      const availableToMonths = (fromYear && fromMonth !== null && edu.to && getYear(edu.to) === fromYear) 
+                        ? months.filter(month => month.value >= fromMonth) 
+                        : months;
+
+                      return (
+                        <Card key={edu.id} className="p-4 bg-muted/20 border-dashed">
+                            <div className="flex items-center justify-end mb-2 -mt-2 -mr-2">
+                                <Button variant="ghost" size="icon" onClick={() => removeEducation(edu.id)} aria-label="Remove Education">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor={`edu-institution-${edu.id}`}>Institution<span className="text-destructive pl-1">*</span></Label>
+                                    <Input id={`edu-institution-${edu.id}`} placeholder="e.g., Carnegie Mellon University" value={edu.institution} onChange={(e) => handleEducationChange(edu.id, 'institution', e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`edu-degree-${edu.id}`}>Degree<span className="text-destructive pl-1">*</span></Label>
+                                    <Input id={`edu-degree-${edu.id}`} placeholder="e.g., M.S. in HCI" value={edu.degree} onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)} />
+                                </div>
+                            </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                <div className="space-y-2">
+                                    <Label>From<span className="text-destructive pl-1">*</span></Label>
+                                    <div className="flex gap-2">
+                                        <Select value={edu.from ? getMonth(edu.from).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'from', 'month', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                            <SelectContent>
+                                                {months.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={edu.from ? getYear(edu.from).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'from', 'year', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                            <SelectContent>
+                                                {years.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>To<span className="text-destructive pl-1">*</span></Label>
+                                    <div className="flex gap-2">
+                                        <Select value={edu.to ? getMonth(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'month', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                                            <SelectContent>
+                                              {availableToMonths.map(month => <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={edu.to ? getYear(edu.to).toString() : ""} onValueChange={(value) => handleEducationDateChange(edu.id, 'to', 'year', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                                            <SelectContent>
+                                              {availableToYears.map(year => <SelectItem key={year} value={year.toString()}>{year}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-2 mt-4">
+                                <Label htmlFor={`edu-desc-${edu.id}`}>Description / Notes</Label>
+                                <Textarea id={`edu-desc-${edu.id}`} placeholder="Describe any relevant coursework, activities, or honors..." value={edu.description} onChange={(e) => handleEducationChange(edu.id, 'description', e.target.value)} className="min-h-[80px]" />
                             </div>
                         </Card>
-                        ))}
-                    </div>
-                    <Button variant="secondary" onClick={addCompany} className="w-full">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Another Company
-                    </Button>
+                      )
+                    })}
                 </div>
-            </div>
-        )}
-        {currentStep === 8 && (
-            <div className="space-y-2">
-              <Label>Resume<span className="text-destructive pl-1">*</span></Label>
-                <Card className={cn("p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center")}>
-                  {isUploadingResume ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  ) : resumeUrl ? (
-                    <div className="flex items-center justify-between gap-4 w-full">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <FileText className="h-5 w-5 text-primary flex-shrink-0" />
-                        <span className="font-medium text-sm truncate">{resumeName}</span>
+                <Button variant="secondary" onClick={addEducation} className="w-full">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Education
+                </Button>
+              </div>
+          )}
+          {currentStep === 7 && (
+              <div className="space-y-6">
+                  <div className="space-y-4">
+                      <div className="space-y-1">
+                          <h3 className="flex items-center gap-2 font-medium text-base">
+                              <Building2 className="h-5 w-5 text-primary" /> Target Companies & Job Links
+                          </h3>
+                          <p className="text-sm text-muted-foreground">Add companies you're interested in and links to specific job postings.</p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                          <Button variant="outline" size="sm" onClick={handleDownloadResume}>
-                              <Download className="mr-2 h-4 w-4" />
-                              Download
-                          </Button>
-                          <Button variant="secondary" size="sm" onClick={() => resumeInputRef.current?.click()}>
-                              <Upload className="mr-2 h-4 w-4" />
-                              Replace
-                          </Button>
+                      <div className="space-y-4">
+                          {companies.map((company) => (
+                          <Card key={company.id} className="p-4 bg-muted/20 border-dashed">
+                              <div className="flex items-center gap-2 mb-4">
+                              <Input
+                                  placeholder="Company Name"
+                                  value={company.name}
+                                  onChange={(e) => updateCompanyName(company.id, e.target.value)}
+                                  className="text-base font-semibold"
+                              />
+                              <Button variant="ghost" size="icon" onClick={() => removeCompany(company.id)} aria-label="Remove Company">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                              </div>
+                              <div className="space-y-2 pl-4 border-l-2 border-primary/50">
+                              <Label className="text-xs text-muted-foreground font-normal">Links to job postings</Label>
+                              {company.jobs.map((job) => (
+                                  <div key={job.id} className="flex items-center gap-2">
+                                  <Input
+                                      placeholder="https://..."
+                                      value={job.url}
+                                      onChange={(e) => updateJobLink(company.id, job.id, e.target.value)}
+                                  />
+                                  <Button variant="ghost" size="icon" onClick={() => removeJobLink(company.id, job.id)} aria-label="Remove Job Link">
+                                      <Trash2 className="h-4 w-4 text-destructive/70" />
+                                  </Button>
+                                  </div>
+                              ))}
+                              <Button variant="outline" size="sm" onClick={() => addJobLink(company.id)} className="mt-2">
+                                  <PlusCircle className="mr-2 h-4 w-4" />
+                                  Add Job Link
+                              </Button>
+                              </div>
+                          </Card>
+                          ))}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <p className="mb-2 text-sm text-muted-foreground">No resume uploaded.</p>
-                      <Button variant="outline" onClick={() => resumeInputRef.current?.click()}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload Resume
+                      <Button variant="secondary" onClick={addCompany} className="w-full">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add Another Company
                       </Button>
-                    </div>
-                  )}
-                </Card>
-                <input
-                  type="file"
-                  ref={resumeInputRef}
-                  onChange={handleResumeFileSelected}
-                  className="hidden"
-                  accept=".pdf,.doc,.docx"
-                  disabled={isUploadingResume}
-                />
-                <p className="text-xs text-muted-foreground pl-1">Upload your resume (PDF, DOC, DOCX). Max 5MB.</p>
-            </div>
-        )}
-      </CardContent>
-      <CardContent>
-        <div className="flex justify-between items-center gap-2 pt-4 border-t">
+                  </div>
+              </div>
+          )}
+          {currentStep === 8 && (
+              <div className="space-y-2">
+                <Label>Resume<span className="text-destructive pl-1">*</span></Label>
+                  <Card className={cn("p-4 bg-muted/20 border-dashed min-h-[116px] flex items-center justify-center")}>
+                    {isUploadingResume ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    ) : resumeUrl ? (
+                      <div className="flex items-center justify-between gap-4 w-full">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                          <span className="font-medium text-sm truncate">{resumeName}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button variant="outline" size="sm" onClick={handleDownloadResume}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={() => resumeInputRef.current?.click()}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Replace
+                            </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <p className="mb-2 text-sm text-muted-foreground">No resume uploaded.</p>
+                        <Button variant="outline" onClick={() => resumeInputRef.current?.click()}>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Resume
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                  <input
+                    type="file"
+                    ref={resumeInputRef}
+                    onChange={handleResumeFileSelected}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx"
+                    disabled={isUploadingResume}
+                  />
+                  <p className="text-xs text-muted-foreground pl-1">Upload your resume (PDF, DOC, DOCX). Max 5MB.</p>
+              </div>
+          )}
+        </CardContent>
+      </ScrollArea>
+      <CardFooter>
+        <div className="flex justify-between items-center gap-2 pt-4 w-full">
           <Button variant="outline" onClick={handleBack} disabled={currentStep === 1}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
@@ -878,13 +881,13 @@ export default function OnboardingStepPage() {
                 </Button>
               )}
               <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume || isStep1Invalid || isStep2Invalid || isStep5Invalid || isStep6Invalid || isStep8Invalid}>
-                  {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-2 animate-spin" /> : null}
                   {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
-                  {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-4" />}
+                  {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-2" />}
               </Button>
           </div>
         </div>
-      </CardContent>
+      </CardFooter>
     </Card>
 
     <AlertDialog open={showOverwriteDialog} onOpenChange={setShowOverwriteDialog}>
