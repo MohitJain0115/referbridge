@@ -90,69 +90,69 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center px-6">
-        {currentUser && (
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
+      <div className="container flex h-16 items-center justify-between px-6">
+        <div className="flex items-center gap-4">
+          {currentUser && (
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="flex flex-col p-0 w-[280px]">
+                 <SheetHeader className="sr-only">
+                  <SheetTitle>Navigation Menu</SheetTitle>
+                  <SheetDescription>A list of links to navigate the application.</SheetDescription>
+                </SheetHeader>
+                <div className="flex h-16 items-center border-b px-6">
+                  <Logo />
+                </div>
+                <div className="flex-1">
+                  <DashboardNav referralRequestCount={referralRequestCount} onNavigate={() => setIsSheetOpen(false)} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
+          <div className="hidden md:flex">
+            <Logo />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {!currentUser ? (
+            <nav className="flex items-center space-x-2">
+              <Button variant="ghost" asChild>
+                <Link href="/login">Login</Link>
               </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col p-0 w-[280px]">
-               <SheetHeader className="sr-only">
-                <SheetTitle>Navigation Menu</SheetTitle>
-                <SheetDescription>A list of links to navigate the application.</SheetDescription>
-              </SheetHeader>
-              <div className="flex h-16 items-center border-b px-6">
-                <Logo />
-              </div>
-              <div className="flex-1">
-                <DashboardNav referralRequestCount={referralRequestCount} onNavigate={() => setIsSheetOpen(false)} />
-              </div>
-            </SheetContent>
-          </Sheet>
-        )}
-        
-        <div className="flex w-full items-center gap-4">
-            <div className="hidden md:flex">
-             <Logo />
-            </div>
-            <div className="ml-auto flex items-center gap-4">
-                {!currentUser ? (
-                    <nav className="flex items-center space-x-2">
-                        <Button variant="ghost" asChild>
-                        <Link href="/login">Login</Link>
-                        </Button>
-                        <Button asChild>
-                        <Link href="/signup">Sign Up</Link>
-                        </Button>
-                    </nav>
-                ) : (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="secondary" size="icon" className="rounded-full">
-                                <UserCircle className="h-5 w-5" />
-                                <span className="sr-only">Toggle user menu</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                            <Link href="/seeker-profile">
-                                <User className="mr-2 h-4 w-4" />
-                                <span>Profile</span>
-                            </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleLogout}>
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Log out</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
-            </div>
+              <Button asChild>
+                <Link href="/signup">Sign Up</Link>
+              </Button>
+            </nav>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="rounded-full">
+                  <UserCircle className="h-5 w-5" />
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/seeker-profile">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>
