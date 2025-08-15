@@ -23,23 +23,9 @@ function ReferrerGridSkeleton() {
 }
 
 const normalizeCompanyName = (name: string): string => {
-  if (!name) return "";
-  let lowerName = name.toLowerCase().trim();
+  if (!name || typeof name !== 'string') return "";
   
-  // Remove common suffixes
-  const suffixes = [
-    ', inc.', ', inc', ' inc.', ' inc',
-    ', llc', ' llc',
-    ', ltd.', ', ltd', ' limited',
-    ' private limited', ' pvt ltd',
-    ' technologies', ' tech',
-    ' solutions', ' services'
-  ];
-  suffixes.forEach(suffix => {
-    if (lowerName.endsWith(suffix)) {
-      lowerName = lowerName.slice(0, -suffix.length);
-    }
-  });
+  let lowerName = name.toLowerCase().trim();
 
   const commonNames: { [key: string]: string[] } = {
     'Deloitte': ['deloitte'],
@@ -54,7 +40,8 @@ const normalizeCompanyName = (name: string): string => {
     'ICICI Bank': ['icici bank', 'icici securities'],
     'Infosys': ['infosys'],
     'ITC': ['itc'],
-    'HCL Tech': ['hcl'],
+    'HCL Tech': ['hcl', 'hcltech'],
+    'Natwest': ['natwest'],
   };
 
   for (const standardName in commonNames) {
@@ -62,9 +49,24 @@ const normalizeCompanyName = (name: string): string => {
       return standardName;
     }
   }
+
+  // Remove common suffixes and prefixes after specific checks
+  const suffixesToRemove = [
+    /\sgroup$/, /\sllc$/, /\sllp$/, /\sinc$/, /\sltd$/, /\spvt\s?ltd$/,
+    /,?\sinc\.?$/, /,?\sllc\.?$/, /,?\sltd\.?$/,
+    /\scorporation$/, /\sincorporated$/, /\slimited$/, /\sprivate\slimited$/,
+    /\stechnologies$/, /\stech$/, /\ssolutions$/, /\sservices$/,
+  ];
   
-  // Return original name (title-cased) if no match
-  return name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  suffixesToRemove.forEach(suffixRegex => {
+    lowerName = lowerName.replace(suffixRegex, '');
+  });
+
+  // Capitalize the first letter of each word for a clean display name
+  return lowerName
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 };
 
 
