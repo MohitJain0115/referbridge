@@ -15,11 +15,12 @@ import { useToast } from "@/hooks/use-toast";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, firebaseReady, auth } from "@/lib/firebase";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { saveAs } from 'file-saver';
+import { downloadResumeWithLimit } from "@/actions/resume";
 // import { awardPointsForReferral } from "@/ai/flows/leaderboard-flow";
 
 
@@ -52,33 +53,39 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
 
   const handleDownloadResume = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!firebaseReady || !db) {
-      toast({ title: "Firebase not ready", variant: "destructive" });
+    if (!firebaseReady || !auth.currentUser) {
+      toast({ title: "Please log in to download.", variant: "destructive" });
       return;
     }
+    
+    setIsActionLoading(true);
+
     try {
-      const resumeDocRef = doc(db, "resumes", candidate.id);
-      const resumeDoc = await getDoc(resumeDocRef);
-      if (resumeDoc.exists() && resumeDoc.data().fileUrl) {
-        const resumeData = resumeDoc.data();
+      const result = await downloadResumeWithLimit({
+        candidateId: candidate.id,
+        downloaderId: auth.currentUser.uid,
+      });
+
+      if (result.success && result.url) {
         toast({
           title: "Download Started",
           description: `Downloading ${candidate.name}'s resume.`
         });
         
-        const response = await fetch(resumeData.fileUrl);
+        const response = await fetch(result.url);
         if (!response.ok) {
           throw new Error(`Failed to fetch file: ${response.statusText}`);
         }
         const blob = await response.blob();
-        saveAs(blob, resumeData.fileName || `${candidate.name}_resume.pdf`);
-
+        saveAs(blob, result.fileName);
       } else {
-        toast({ title: "No Resume Found", description: `${candidate.name} has not uploaded a resume.`, variant: "destructive" });
+        toast({ title: "Download Failed", description: result.message, variant: "destructive" });
       }
     } catch (error) {
-      console.error("Error fetching resume:", error);
-      toast({ title: "Error", description: "Could not fetch the resume.", variant: "destructive" });
+      console.error("Error handling resume download:", error);
+      toast({ title: "Error", description: "Could not process the resume download.", variant: "destructive" });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -360,8 +367,8 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                             </DialogDescription>
                         </DialogHeader>
                         <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-                            <Button variant="outline" onClick={handleDownloadResume} className="flex-1">
-                                <Download className="mr-2 h-4 w-4" />
+                            <Button variant="outline" onClick={handleDownloadResume} className="flex-1" disabled={isActionLoading}>
+                                {isActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                                 Download to Device
                             </Button>
                             <Button onClick={handleShareToMail} className="flex-1" disabled={isEmailing}>

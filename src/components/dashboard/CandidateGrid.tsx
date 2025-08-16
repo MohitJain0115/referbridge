@@ -18,6 +18,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { doc, getDoc, writeBatch } from "firebase/firestore";
 import { db, firebaseReady, auth } from "@/lib/firebase";
 import { Checkbox } from "@/components/ui/checkbox";
+import { downloadResumeWithLimit } from "@/actions/resume";
+
+const SELECTION_LIMIT = 8;
 
 type CandidateGridProps = {
     candidates: Candidate[];
@@ -41,7 +44,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
   const { toast } = useToast();
 
   const handleSelectAllToggle = () => {
-    const allVisibleCandidates = filteredCandidates.slice(0, 20);
+    const allVisibleCandidates = filteredCandidates.slice(0, SELECTION_LIMIT);
     const allVisibleIds = allVisibleCandidates.map(c => c.id);
     const selectedVisibleCount = selectedCandidates.filter(id => allVisibleIds.includes(id)).length;
     const isAllSelected = allVisibleIds.length > 0 && selectedVisibleCount === allVisibleIds.length;
@@ -50,10 +53,10 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
         setSelectedCandidates([]);
     } else {
         setSelectedCandidates(allVisibleIds);
-        if (filteredCandidates.length > 20) {
+        if (filteredCandidates.length > SELECTION_LIMIT) {
             toast({
                 title: "Selection Limit",
-                description: "Selected the first 20 candidates. A maximum of 20 can be selected at once.",
+                description: `Selected the first ${SELECTION_LIMIT} candidates. A maximum of ${SELECTION_LIMIT} can be selected at once.`,
             });
         }
     }
@@ -127,97 +130,54 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
     );
   };
   
-  const getResumeLinksForSelected = async (): Promise<{name: string, url: string, fileName: string}[]> => {
-    if (!firebaseReady || !db) {
-        toast({ title: "Firebase not ready", description: "The database connection is not available.", variant: "destructive" });
-        return [];
-    }
-    const links = [];
-    for (const candidateId of selectedCandidates) {
-      try {
-        const resumeDocRef = doc(db, "resumes", candidateId);
-        const resumeDoc = await getDoc(resumeDocRef);
-        const resumeData = resumeDoc.data();
-        if (resumeDoc.exists() && resumeData?.fileUrl) {
-            const candidate = initialCandidates.find(c => c.id === candidateId);
-            links.push({ 
-                name: candidate?.name || 'Unknown Candidate',
-                url: resumeData.fileUrl,
-                fileName: resumeData.fileName || 'resume.pdf'
-            });
-        }
-      } catch (error) {
-          console.error(`Error fetching resume for ${candidateId}:`, error);
-      }
-    }
-    return links;
-  };
-
-
   const handleBulkDownload = async () => {
-    if (selectedCandidates.length === 0) return;
+    if (selectedCandidates.length === 0 || !auth.currentUser) return;
     setIsActionLoading(true);
 
-    const resumeLinks = await getResumeLinksForSelected();
+    const zip = new JSZip();
+    let downloadedCount = 0;
     
-    if (resumeLinks.length === 0) {
-      toast({ title: "No Resumes Found", description: "None of the selected candidates have an uploaded resume.", variant: "destructive" });
-    } else if (resumeLinks.length === 1) {
-        const resumeData = resumeLinks[0];
-        toast({ title: "Download Started", description: `Downloading ${resumeData.name}'s resume.` });
-        const response = await fetch(resumeData.url);
-        const blob = await response.blob();
-        saveAs(blob, resumeData.fileName);
-    } else {
-        toast({
-            title: "Preparing Download",
-            description: `Zipping ${resumeLinks.length} resumes. This may take a moment...`
+    toast({
+        title: "Preparing Download",
+        description: `Checking limits and fetching ${selectedCandidates.length} resumes. This may take a moment...`
+    });
+
+    for (const candidateId of selectedCandidates) {
+      try {
+        const result = await downloadResumeWithLimit({
+          candidateId,
+          downloaderId: auth.currentUser.uid,
         });
-        try {
-            const zip = new JSZip();
-            const fetchPromises = resumeLinks.map(async (link) => {
-                try {
-                    const response = await fetch(link.url);
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch ${link.url}: ${response.statusText}`);
-                    }
-                    return { blob: await response.blob(), link };
-                } catch (error) {
-                    console.error(`Could not add resume for ${link.name} to zip:`, error);
-                    toast({
-                        title: "Download Skipped",
-                        description: `Could not fetch resume for ${link.name}.`,
-                        variant: "destructive"
-                    });
-                    return null;
-                }
-            });
-
-            const results = await Promise.all(fetchPromises);
-
-            results.forEach(result => {
-                if(result) {
-                    const { blob, link } = result;
-                    const sanitizedCandidateName = link.name.replace(/[^a-z0-9]/gi, '_');
-                    zip.file(`${sanitizedCandidateName}_${link.fileName}`, blob);
-                }
-            });
-            
-            const zipBlob = await zip.generateAsync({ type: "blob" });
-            saveAs(zipBlob, "ReferBridge_Resumes.zip");
-             toast({
-                title: "Download Ready",
-                description: `Your zip file is downloading.`
-            });
-
-        } catch (error) {
-            console.error("Error creating zip file:", error);
-            toast({
-                title: "Zip Creation Failed",
-                description: "An error occurred while creating the zip file.",
-                variant: "destructive"
-            });
+        
+        if (result.success && result.url) {
+          const response = await fetch(result.url);
+          if (!response.ok) throw new Error(`Fetch failed for ${result.fileName}`);
+          const blob = await response.blob();
+          const candidate = initialCandidates.find(c => c.id === candidateId);
+          const sanitizedName = candidate?.name.replace(/[^a-z0-9]/gi, '_') || 'candidate';
+          zip.file(`${sanitizedName}_${result.fileName}`, blob);
+          downloadedCount++;
+        } else {
+          toast({ title: "Download Skipped", description: result.message, variant: "destructive" });
         }
+      } catch (error) {
+        console.error(`Error processing resume for ${candidateId}:`, error);
+        toast({ title: "Download Error", description: `Could not fetch resume for a candidate.`, variant: "destructive" });
+      }
+    }
+
+    if (downloadedCount === 0) {
+      toast({ title: "No Resumes Downloaded", description: "Could not download any of the selected resumes.", variant: "destructive" });
+    } else if (downloadedCount === 1) {
+        // If only one succeeded, save it directly without zipping to avoid confusion.
+        const zipEntries = Object.values(zip.files);
+        const fileData = await zipEntries[0].async("blob");
+        saveAs(fileData, zipEntries[0].name);
+        toast({ title: "Download Ready", description: "Your file is downloading." });
+    } else {
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        saveAs(zipBlob, "ReferBridge_Resumes.zip");
+        toast({ title: "Download Ready", description: `Your zip file with ${downloadedCount} resumes is downloading.` });
     }
 
     setIsActionLoading(false);
@@ -316,7 +276,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
     setOtherReasonText("");
   };
 
-  const allVisibleCandidates = filteredCandidates.slice(0, 20);
+  const allVisibleCandidates = filteredCandidates.slice(0, SELECTION_LIMIT);
   const allVisibleIds = allVisibleCandidates.map(c => c.id);
   const selectedVisibleCount = selectedCandidates.filter(id => allVisibleIds.includes(id)).length;
 
@@ -355,7 +315,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
                     aria-label="Select all candidates"
                 />
                 <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-                    Select All (Max 20)
+                    Select All (Max {SELECTION_LIMIT})
                 </Label>
             </>
            )}
@@ -404,7 +364,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
             <DialogHeader>
                 <DialogTitle>Resume Actions</DialogTitle>
                 <DialogDescription>
-                    You have selected {selectedCandidates.length} candidate(s). Choose how you would like to handle their resumes.
+                    You have selected {selectedCandidates.length} candidate(s). Choose how you would like to handle their resumes. This will respect your daily download limit.
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
