@@ -54,13 +54,14 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     }
     
     setIsActionLoading(true);
-
+    console.log(11)
     try {
       const result = await downloadResumeWithLimit({
         candidateId: candidate.id,
         downloaderId: auth.currentUser.uid,
       });
-
+      console.log(result)
+      console.log(111)
       if (result.success && result.url) {
         toast({
           title: "Download Started",
@@ -70,7 +71,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         saveAs(result.url, result.fileName);
 
       } else {
-        console.log(result)
+        // console.log(result)
         toast({ title: "Download Failed", description: result.message, variant: "destructive" });
       }
     } catch (error) {
