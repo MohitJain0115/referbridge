@@ -21,10 +21,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { saveAs } from 'file-saver';
 import { downloadResumeWithLimit } from "@/actions/resume";
-// import { awardPointsForReferral } from "@/ai/flows/leaderboard-flow";
-
-
-
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -66,18 +62,17 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         downloaderId: auth.currentUser.uid,
       });
 
-      if (result.success && result.url) {
+      if (result.success && result.fileData) {
         toast({
           title: "Download Started",
           description: `Downloading ${candidate.name}'s resume.`
         });
         
-        const response = await fetch(result.url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch file: ${response.statusText}`);
-        }
-        const blob = await response.blob();
+        // Convert base64 data URI to a blob and download
+        const res = await fetch(result.fileData);
+        const blob = await res.blob();
         saveAs(blob, result.fileName);
+
       } else {
         toast({ title: "Download Failed", description: result.message, variant: "destructive" });
       }

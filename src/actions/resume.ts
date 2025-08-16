@@ -3,8 +3,7 @@
 
 import { z } from 'zod';
 import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase'; // Assuming auth can be used server-side like this
-import { headers } from 'next/headers';
+import { db } from '@/lib/firebase';
 
 const DownloadResumeInputSchema = z.object({
   candidateId: z.string().describe('The ID of the candidate whose resume is being requested.'),
@@ -54,17 +53,28 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
     }
     const resumeData = resumeDoc.data();
 
-    // 3. Log the new download
+    // 3. Log the new download before proceeding
     await addDoc(activityRef, {
       downloaderId: downloaderId,
       candidateId: candidateId,
       downloadedAt: serverTimestamp(),
     });
+    
+    // 4. Fetch the file from the URL and return its content
+    const response = await fetch(resumeData.fileUrl);
+    if (!response.ok) {
+        throw new Error('Failed to fetch resume file from storage.');
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Data = buffer.toString('base64');
+    
+    const contentType = response.headers.get('content-type') || 'application/octet-stream';
 
     return { 
       success: true, 
       message: 'Download authorized.',
-      url: resumeData.fileUrl,
+      fileData: `data:${contentType};base64,${base64Data}`,
       fileName: resumeData.fileName || `${candidateId}_resume.pdf`
     };
 
