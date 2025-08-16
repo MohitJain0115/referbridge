@@ -104,12 +104,33 @@ export function SeekerDashboard() {
             .filter(doc => doc.id !== currentUser.uid)
             .map(doc => {
                 const data = doc.data();
+
+                let companyName = data.referrerCompany;
+                if (!companyName || companyName === "N/A") {
+                    const experiences = data.experiences?.map((exp: any) => ({
+                        ...exp,
+                        from: exp.from?.toDate ? exp.from.toDate() : undefined,
+                        to: exp.to?.toDate ? exp.to.toDate() : undefined,
+                    })) || [];
+
+                    if (experiences.length > 0) {
+                        const sortedExperiences = [...experiences].sort((a, b) => {
+                            const aDate = a.currentlyWorking ? new Date() : a.to;
+                            const bDate = b.currentlyWorking ? new Date() : b.to;
+                            if (!aDate) return 1;
+                            if (!bDate) return -1;
+                            return bDate.getTime() - aDate.getTime();
+                        });
+                        companyName = sortedExperiences[0].company;
+                    }
+                }
+
                 return {
                     id: doc.id,
                     name: data.name || "Unnamed Referrer",
                     avatar: data.profilePic || "https://placehold.co/100x100.png",
                     role: data.currentRole || "N/A",
-                    company: data.referrerCompany || "N/A",
+                    company: companyName || "N/A",
                     location: data.location || "Remote",
                     specialties: data.referrerSpecialties?.split(',').map((s: string) => s.trim()).filter(Boolean) || [],
                     bio: data.referrerAbout || "",
