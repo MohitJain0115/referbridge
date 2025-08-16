@@ -398,15 +398,20 @@ export default function OnboardingStepPage() {
   };
 
   const shouldShowSkip = useMemo(() => {
+    // Only show skip if the step is NOT mandatory and is one of the skippable steps
     return [3, 4, 7].includes(currentStep);
   }, [currentStep]);
 
   const isStep1Invalid = currentStep === 1 && (!name.trim() || !currentRole.trim());
+  
+  // Mandatory Step 2: Profile Picture
   const isStep2Invalid = currentStep === 2 && profilePic === "https://placehold.co/128x128.png";
+
+  // Mandatory Step 5: Work Experience
   const isStep5Invalid = useMemo(() => {
     if (currentStep !== 5) return false;
-    if (isFresher) return false;
-    if (experiences.length === 0) return true;
+    if (isFresher) return false; // If fresher, it's valid to have no experience
+    if (experiences.length === 0) return true; // Must have at least one experience if not fresher
     return experiences.some(
       (exp) =>
         !exp.role.trim() ||
@@ -417,9 +422,10 @@ export default function OnboardingStepPage() {
     );
   }, [currentStep, experiences, isFresher]);
 
+  // Mandatory Step 6: Education
   const isStep6Invalid = useMemo(() => {
     if (currentStep !== 6) return false;
-    if (educations.length === 0) return true;
+    if (educations.length === 0) return true; // Must have at least one education
     return educations.some(
       (edu) =>
         !edu.institution.trim() ||
@@ -439,7 +445,7 @@ export default function OnboardingStepPage() {
   
   return (
     <>
-    <Card className="w-full flex flex-col max-h-[calc(100vh-10rem)] overflow-hidden">
+    <Card className="w-full flex flex-col">
       <CardHeader>
         {currentStep === 1 && (
             <>
@@ -490,7 +496,7 @@ export default function OnboardingStepPage() {
             </>
         )}
       </CardHeader>
-      <ScrollArea className="flex-grow">
+      <ScrollArea className="flex-grow h-0 min-h-[300px]">
         <CardContent className="space-y-2 px-6 pt-0 pb-6">
           {currentStep === 1 && (
               <div className="space-y-4">
@@ -908,5 +914,3 @@ export default function OnboardingStepPage() {
     </>
   );
 }
-
-    
