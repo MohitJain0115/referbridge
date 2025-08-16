@@ -169,7 +169,6 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
     if (downloadedCount === 0) {
       toast({ title: "No Resumes Downloaded", description: "Could not download any of the selected resumes.", variant: "destructive" });
     } else if (downloadedCount === 1) {
-        // If only one succeeded, save it directly without zipping to avoid confusion.
         const zipEntries = Object.values(zip.files);
         const fileData = await zipEntries[0].async("blob");
         saveAs(fileData, zipEntries[0].name);

@@ -40,7 +40,6 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
   const [isEmailing, setIsEmailing] = useState(false);
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Stop propagation if the click is on an interactive element
     if (e.target instanceof HTMLElement && e.target.closest('button, a, [role="menuitem"], [role="dialog"], [role="checkbox"]')) {
       return;
     }
@@ -62,16 +61,13 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         downloaderId: auth.currentUser.uid,
       });
 
-      if (result.success && result.fileData) {
+      if (result.success && result.url) {
         toast({
           title: "Download Started",
           description: `Downloading ${candidate.name}'s resume.`
         });
         
-        // Convert base64 data URI to a blob and download
-        const res = await fetch(result.fileData);
-        const blob = await res.blob();
-        saveAs(blob, result.fileName);
+        saveAs(result.url, result.fileName);
 
       } else {
         console.log(result)
@@ -159,13 +155,10 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     const requestRef = doc(db, "referral_requests", candidate.requestId);
 
     try {
-      // const statusToSave = newStatus === null ? 'Pending' : newStatus;
       const statusToSave: ReferralRequestStatus = newStatus === null ? 'Pending' : newStatus;
       await updateDoc(requestRef, { status: statusToSave });
 
       if (statusToSave === 'Referred - Awaiting Confirmation') {
-          // Point awarding will be moved to after seeker confirms
-          // toast({ title: "Points Awarded!", description: "You've earned 10 points for a successful referral." });
       }
       
       setCurrentStatus(statusToSave);
