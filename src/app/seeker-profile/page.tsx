@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -203,7 +202,9 @@ export default function SeekerProfilePage() {
         setIsLoading(false);
       }
     }
-    loadUserData();
+    if (currentUser) {
+      loadUserData();
+    }
   }, [currentUser, toast]);
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
@@ -413,13 +414,18 @@ export default function SeekerProfilePage() {
     setErrors({});
     setIsSaving(true);
     
-    const mostRecentExperience = [...experiences].sort((a, b) => {
-      const aDate = a.currentlyWorking ? new Date() : a.to;
-      const bDate = b.currentlyWorking ? new Date() : b.to;
-      if (!aDate) return 1;
-      if (!bDate) return -1;
-      return bDate.getTime() - aDate.getTime();
-    })[0];
+    const sortedExperiences = [...experiences].sort((a, b) => {
+        const aDate = a.currentlyWorking ? new Date() : a.to;
+        const bDate = b.currentlyWorking ? new Date() : b.to;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        // Handle cases where 'to' date might be null for currently working positions
+        if (a.currentlyWorking && !b.currentlyWorking) return -1;
+        if (!a.currentlyWorking && b.currentlyWorking) return 1;
+        return (bDate as Date).getTime() - (aDate as Date).getTime();
+    });
+
+    const mostRecentExperience = sortedExperiences[0];
     
     const referrerCompany = mostRecentExperience ? mostRecentExperience.company : "";
     const referrerAbout = mostRecentExperience ? `As a ${mostRecentExperience.role} at ${mostRecentExperience.company}, I'm happy to refer strong candidates in my field.` : "";
@@ -893,3 +899,5 @@ export default function SeekerProfilePage() {
     </>
   );
 }
+
+    
