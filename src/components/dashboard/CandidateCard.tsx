@@ -74,6 +74,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         saveAs(blob, result.fileName);
 
       } else {
+        console.log(result)
         toast({ title: "Download Failed", description: result.message, variant: "destructive" });
       }
     } catch (error) {

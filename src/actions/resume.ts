@@ -3,7 +3,9 @@
 
 import { z } from 'zod';
 import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { Storage } from '@google-cloud/storage';
 
 const DownloadResumeInputSchema = z.object({
   candidateId: z.string().describe('The ID of the candidate whose resume is being requested.'),
@@ -23,8 +25,8 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
 
   const { candidateId, downloaderId } = validatedInput.data;
 
-  if (!db) {
-    return { success: false, message: 'Firestore database is not initialized.' };
+  if (!db || !storage) {
+    return { success: false, message: 'Firestore or Storage is not initialized.' };
   }
   
   try {
@@ -44,24 +46,30 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
       return { success: false, message: `You have reached your limit of ${DOWNLOAD_LIMIT} downloads per 24 hours.` };
     }
 
-    // 2. If within limit, fetch the resume URL
+    // 2. If within limit, fetch the resume document
     const resumeDocRef = doc(db, 'resumes', candidateId);
     const resumeDoc = await getDoc(resumeDocRef);
 
-    if (!resumeDoc.exists() || !resumeDoc.data()?.fileUrl) {
+    if (!resumeDoc.exists() || !resumeDoc.data()?.fileName) {
       return { success: false, message: 'This user has not uploaded a resume.' };
     }
     const resumeData = resumeDoc.data();
+    const fileName = resumeData.fileName;
+    const filePath = `resumes/${candidateId}/${fileName}`;
+    
+    // 3. Get a downloadable URL using the Firebase SDK
+    const fileRef = ref(storage, filePath);
+    const downloadUrl = await getDownloadURL(fileRef);
 
-    // 3. Log the new download before proceeding
+    // 4. Log the new download before proceeding
     await addDoc(activityRef, {
       downloaderId: downloaderId,
       candidateId: candidateId,
       downloadedAt: serverTimestamp(),
     });
     
-    // 4. Fetch the file from the URL and return its content
-    const response = await fetch(resumeData.fileUrl);
+    // 5. Fetch the file from the URL and return its content
+    const response = await fetch(downloadUrl);
     if (!response.ok) {
         throw new Error('Failed to fetch resume file from storage.');
     }
@@ -78,8 +86,14 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
       fileName: resumeData.fileName || `${candidateId}_resume.pdf`
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in downloadResumeWithLimit:', error);
-    return { success: false, message: 'An error occurred while processing the download.' };
+    let message = 'An error occurred while processing the download.';
+    if (error.code === 'storage/object-not-found') {
+      message = 'Resume file not found in storage. It may have been deleted.';
+    } else if (error.code === 'permission-denied' || error.message.includes('permission-denied')) {
+        message = 'Permission denied. Please check your Firebase Storage security rules.';
+    }
+    return { success: false, message };
   }
 }
