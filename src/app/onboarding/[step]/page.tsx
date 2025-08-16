@@ -450,7 +450,7 @@ export default function OnboardingStepPage() {
         {currentStep === 2 && (
             <>
                 <CardTitle className="font-headline text-2xl">Upload Your Profile Picture</CardTitle>
-                <CardDescription>A professional headshot helps referrers put a face to a name.</CardDescription>
+                <CardDescription>A professional headshot helps referrers put a face to a name.<span className="text-destructive pl-1">*</span></CardDescription>
             </>
         )}
         {currentStep === 3 && (
@@ -468,13 +468,13 @@ export default function OnboardingStepPage() {
         {currentStep === 5 && (
             <>
                 <CardTitle className="font-headline text-2xl">Work Experience</CardTitle>
-                <CardDescription>Detail your professional journey so far.</CardDescription>
+                <CardDescription>Detail your professional journey so far.<span className="text-destructive pl-1">*</span></CardDescription>
             </>
         )}
         {currentStep === 6 && (
             <>
                 <CardTitle className="font-headline text-2xl">Education</CardTitle>
-                <CardDescription>Add your educational background.</CardDescription>
+                <CardDescription>Add your educational background.<span className="text-destructive pl-1">*</span></CardDescription>
             </>
         )}
         {currentStep === 7 && (
@@ -486,7 +486,7 @@ export default function OnboardingStepPage() {
         {currentStep === 8 && (
             <>
                 <CardTitle className="font-headline text-2xl">Upload Your Resume</CardTitle>
-                <CardDescription>A resume is crucial for getting referrals. You can upload a PDF, DOC, or DOCX file (max 5MB).</CardDescription>
+                <CardDescription>A resume is crucial for getting referrals. You can upload a PDF, DOC, or DOCX file (max 5MB).<span className="text-destructive pl-1">*</span></CardDescription>
             </>
         )}
       </CardHeader>
@@ -881,7 +881,7 @@ export default function OnboardingStepPage() {
                 </Button>
               )}
               <Button onClick={handleSaveAndContinue} disabled={isSaving || isUploadingPic || isUploadingResume || isStep1Invalid || isStep2Invalid || isStep5Invalid || isStep6Invalid || isStep8Invalid}>
-                  {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-2 animate-spin" /> : null}
+                  {isSaving || isUploadingPic || isUploadingResume ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {currentStep === TOTAL_STEPS ? 'Finish' : 'Save & Continue'}
                   {currentStep < TOTAL_STEPS && !isSaving && !isUploadingPic && !isUploadingResume && <ArrowRight className="ml-2 h-4 w-2" />}
               </Button>
@@ -908,3 +908,5 @@ export default function OnboardingStepPage() {
     </>
   );
 }
+
+    
