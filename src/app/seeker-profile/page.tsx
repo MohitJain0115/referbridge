@@ -103,17 +103,22 @@ function PageSkeleton() {
 }
 
 const StatCard = ({ icon: Icon, title, value, isLoading }: { icon: React.ElementType, title: string, value: string | number, isLoading?: boolean }) => (
-    <Card className="text-center p-3">
+    <Card className="flex items-center p-3">
         {isLoading ? (
-            <div className="space-y-1">
-                <Skeleton className="h-5 w-8 mx-auto" />
-                <Skeleton className="h-3 w-20 mx-auto" />
+            <div className="flex items-center gap-3 w-full">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="space-y-1">
+                    <Skeleton className="h-5 w-8" />
+                    <Skeleton className="h-3 w-20" />
+                </div>
             </div>
         ) : (
             <>
-                <Icon className="h-5 w-5 text-primary mx-auto mb-1" />
-                <p className="text-lg font-bold">{value}</p>
-                <p className="text-xs text-muted-foreground">{title}</p>
+                <Icon className="h-5 w-5 text-primary mr-3" />
+                <div>
+                    <p className="text-lg font-bold">{value}</p>
+                    <p className="text-xs text-muted-foreground">{title}</p>
+                </div>
             </>
         )}
     </Card>
@@ -511,7 +516,7 @@ export default function SeekerProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex flex-col md:flex-row items-center gap-6 border-b pb-6">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 border-b pb-6">
               <div className="flex flex-col items-center gap-4 flex-shrink-0">
                   <Dialog>
                       <DialogTrigger asChild>
@@ -539,7 +544,6 @@ export default function SeekerProfilePage() {
                           />
                       </DialogContent>
                   </Dialog>
-                  <input type="file" ref={profilePicInputRef} onChange={handleProfilePicChange} className="hidden" accept="image/*" disabled={isUploadingPic} />
                   <Button variant="outline" onClick={() => profilePicInputRef.current?.click()} disabled={isUploadingPic}>
                       {isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                       {isUploadingPic ? 'Uploading...' : 'Upload Photo'}
@@ -548,13 +552,13 @@ export default function SeekerProfilePage() {
 
               <div className="flex-1 w-full space-y-3">
                 {isPremium && (
-                  <div className="text-center md:text-left">
-                    <h3 className="font-semibold text-lg text-primary flex items-center gap-2 justify-center md:justify-start">
+                  <div className="text-left mb-3">
+                    <h3 className="font-semibold text-lg text-primary flex items-center gap-2">
                         <Crown className="h-5 w-5" /> You've unlocked Earnings!
                     </h3>
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex flex-col gap-3">
                   <StatCard icon={Users} title="Requests Available Today" value={remainingRequests} isLoading={isLoadingStats} />
                   <StatCard icon={CheckCircle} title="Candidates Referred" value={confirmedReferrals} isLoading={isLoadingStats} />
                   <StatCard icon={Gift} title="Points Earned" value={points} isLoading={isLoadingStats} />
