@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,10 +6,12 @@ import { CandidateGrid } from "./CandidateGrid";
 import type { Candidate } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, query, getDocs } from "firebase/firestore";
+import { collection, query, getDocs, doc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "firebase/auth";
 import { calculateTotalExperienceInYears } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Crown } from "lucide-react";
 
 function CandidateGridSkeleton() {
   return (
@@ -26,6 +27,7 @@ export function ReferrerDashboard() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -45,6 +47,13 @@ export function ReferrerDashboard() {
         }
         setIsLoading(true);
         try {
+            // Fetch current user's profile to check for premium status
+            const userProfileRef = doc(db, "profiles", currentUser.uid);
+            const userProfileSnap = await getDoc(userProfileRef);
+            if (userProfileSnap.exists() && userProfileSnap.data().isPremiumReferrer === true) {
+              setIsPremium(true);
+            }
+
             const profilesRef = collection(db, "profiles");
             const q = query(profilesRef);
             const querySnapshot = await getDocs(q);
@@ -97,6 +106,12 @@ export function ReferrerDashboard() {
 
   return (
     <div className="space-y-6">
+      {isPremium && (
+          <div className="p-4 bg-accent/10 rounded-lg border border-dashed border-accent flex items-center justify-center">
+              <Crown className="h-6 w-6 text-accent mr-3" />
+              <p className="text-lg font-semibold text-accent-foreground">You are a Premium Referrer!</p>
+          </div>
+      )}
       {isLoading && candidates.length === 0 ? <CandidateGridSkeleton /> : <CandidateGrid candidates={candidates} showCancelAction={false} />}
     </div>
   );

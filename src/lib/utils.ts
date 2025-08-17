@@ -54,6 +54,8 @@ export const calculateTotalExperienceInYears = (experiences: any[] | undefined):
 };
 
 export const formatCurrency = (amount: number, currency: string = 'USD') => {
+    if (typeof amount !== 'number') return '';
+    
     const formattedAmount = new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,

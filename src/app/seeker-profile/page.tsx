@@ -7,10 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Eye, Sparkles, Building2, Download, FileText, Loader2, Info } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Eye, Sparkles, Building2, Download, FileText, Loader2, Info, Crown } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
-import { cn, calculateTotalExperienceInYears } from "@/lib/utils";
+import { cn, calculateTotalExperienceInYears, formatCurrency } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, getMonth, getYear } from "date-fns";
@@ -111,6 +111,8 @@ export default function SeekerProfilePage() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [points, setPoints] = useState(0);
 
   const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
   const [isUploadingPic, setIsUploadingPic] = useState(false);
@@ -173,6 +175,8 @@ export default function SeekerProfilePage() {
             setExperiences(data.experiences?.map((exp: any) => ({ ...exp, id: exp.id || Date.now() + Math.random(), from: exp.from?.toDate(), to: exp.to?.toDate() })) || []);
             setEducations(data.educations?.map((edu: any) => ({ ...edu, id: edu.id || Date.now() + Math.random(), from: edu.from?.toDate(), to: edu.to?.toDate() })) || []);
             setProfilePic(data.profilePic || "https://placehold.co/128x128.png");
+            setIsPremium(data.isPremiumReferrer === true);
+            setPoints(data.points || 0);
         }
 
         const resumeDocRef = doc(db, "resumes", currentUser.uid);
@@ -496,10 +500,20 @@ export default function SeekerProfilePage() {
       
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Your Profile</CardTitle>
-          <CardDescription>
-            This information will be visible to potential referrers and job seekers. Make it count!
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="font-headline text-2xl">Your Profile</CardTitle>
+              <CardDescription>
+                This information will be visible to potential referrers and job seekers. Make it count!
+              </CardDescription>
+            </div>
+             {isPremium && (
+                <div className="text-right">
+                    <h3 className="font-semibold text-primary">You have unlocked earnings!</h3>
+                    <p className="text-sm text-muted-foreground">Total points earned: <strong>{points}</strong></p>
+                </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center gap-4 border-b pb-6">
@@ -899,5 +913,3 @@ export default function SeekerProfilePage() {
     </>
   );
 }
-
-    
