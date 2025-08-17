@@ -517,52 +517,57 @@ export default function SeekerProfilePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 border-b pb-6">
-              <div className="flex flex-col items-center gap-4 flex-shrink-0">
-                  <Dialog>
-                      <DialogTrigger asChild>
-                          <button className="relative group rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+              
+              {/* Half 1: Profile Picture */}
+              <div className="w-full md:w-1/2 flex justify-center md:justify-start">
+                  <div className="flex flex-col items-center gap-4">
+                      <Dialog>
+                          <DialogTrigger asChild>
+                              <button className="relative group rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                                  <Image
+                                      src={profilePic}
+                                      alt="Profile Picture"
+                                      width={128}
+                                      height={128}
+                                      className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
+                                      data-ai-hint="person avatar"
+                                  />
+                                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                      {isUploadingPic ? <Loader2 className="text-white h-8 w-8 animate-spin" /> : <Eye className="text-white h-8 w-8" />}
+                                  </div>
+                              </button>
+                          </DialogTrigger>
+                          <DialogContent className="border-0 bg-transparent shadow-none w-auto h-auto p-0 flex items-center justify-center [&>[data-radix-dialog-close]]:text-white">
                               <Image
                                   src={profilePic}
                                   alt="Profile Picture"
-                                  width={128}
-                                  height={128}
-                                  className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
-                                  data-ai-hint="person avatar"
+                                  width={1024}
+                                  height={1024}
+                                  className="rounded-lg object-contain h-auto max-h-[calc(100vh-4rem)] max-w-[calc(100vw-4rem)]"
                               />
-                              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                  {isUploadingPic ? <Loader2 className="text-white h-8 w-8 animate-spin" /> : <Eye className="text-white h-8 w-8" />}
-                              </div>
-                          </button>
-                      </DialogTrigger>
-                      <DialogContent className="border-0 bg-transparent shadow-none w-auto h-auto p-0 flex items-center justify-center [&>[data-radix-dialog-close]]:text-white">
-                          <Image
-                              src={profilePic}
-                              alt="Profile Picture"
-                              width={1024}
-                              height={1024}
-                              className="rounded-lg object-contain h-auto max-h-[calc(100vh-4rem)] max-w-[calc(100vw-4rem)]"
-                          />
-                      </DialogContent>
-                  </Dialog>
-                  <Button variant="outline" onClick={() => profilePicInputRef.current?.click()} disabled={isUploadingPic}>
-                      {isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                      {isUploadingPic ? 'Uploading...' : 'Upload Photo'}
-                  </Button>
+                          </DialogContent>
+                      </Dialog>
+                      <Button variant="outline" onClick={() => profilePicInputRef.current?.click()} disabled={isUploadingPic}>
+                          {isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                          {isUploadingPic ? 'Uploading...' : 'Upload Photo'}
+                      </Button>
+                  </div>
               </div>
 
-              <div className="flex-1 w-full space-y-3">
-                {isPremium && (
-                  <div className="text-left mb-3">
-                    <h3 className="font-semibold text-lg text-primary flex items-center gap-2">
-                        <Crown className="h-5 w-5" /> You've unlocked Earnings!
-                    </h3>
+              {/* Half 2: Stats */}
+              <div className="w-full md:w-1/2">
+                  <div className="flex flex-col gap-3">
+                      {isPremium && (
+                        <div className="text-left mb-1">
+                          <h3 className="font-semibold text-lg text-primary flex items-center gap-2">
+                              <Crown className="h-5 w-5" /> You've unlocked Earnings!
+                          </h3>
+                        </div>
+                      )}
+                      <StatCard icon={Users} title="Requests Available Today" value={remainingRequests} isLoading={isLoadingStats} />
+                      <StatCard icon={CheckCircle} title="Candidates Referred" value={confirmedReferrals} isLoading={isLoadingStats} />
+                      <StatCard icon={Gift} title="Points Earned" value={points} isLoading={isLoadingStats} />
                   </div>
-                )}
-                <div className="flex flex-col gap-3">
-                  <StatCard icon={Users} title="Requests Available Today" value={remainingRequests} isLoading={isLoadingStats} />
-                  <StatCard icon={CheckCircle} title="Candidates Referred" value={confirmedReferrals} isLoading={isLoadingStats} />
-                  <StatCard icon={Gift} title="Points Earned" value={points} isLoading={isLoadingStats} />
-                </div>
               </div>
           </div>
 
