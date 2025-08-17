@@ -12,8 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Briefcase, Sparkles, Send, Loader2, Info } from "lucide-react";
-import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
+import { auth, firebaseReady } from "@/lib/firebase";
+import { sendReferralRequestWithLimit } from "@/actions/referral-request";
 
 type ReferrerCardProps = {
   referrer: Referrer;
@@ -33,49 +33,29 @@ export function ReferrerCard({ referrer }: ReferrerCardProps) {
     setIsSending(true);
     
     try {
-      // Check if a request already exists
-      const requestsRef = collection(db, "referral_requests");
-      const q = query(
-        requestsRef,
-        where("seekerId", "==", auth.currentUser.uid),
-        where("referrerId", "==", referrer.id)
-      );
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        toast({
-          title: "Request Already Sent",
-          description: `You have already sent a referral request to ${referrer.name}.`,
-          variant: "destructive",
-        });
-        setIsSending(false);
-        setIsRequestDialogOpen(false);
-        return;
-      }
-
-      await addDoc(collection(db, "referral_requests"), {
+      const result = await sendReferralRequestWithLimit({
         seekerId: auth.currentUser.uid,
         referrerId: referrer.id,
         jobInfo: jobInfo,
-        status: "Pending",
-        requestedAt: serverTimestamp(),
-        cancellationReason: null,
-      });
-      
-      toast({
-        title: "Profile Sent!",
-        description: `Your profile and resume have been shared with ${referrer.name}. You can track the status in 'My Requests'.`,
       });
 
-      setIsRequestDialogOpen(false);
-      setJobInfo("");
-    } catch (error: any) {
-      console.error("Error sending referral request:", error);
-      let description = "Could not send your request. Please try again.";
-      if (error.code === 'permission-denied') {
-        description = "Permission denied. Please check your Firestore security rules for the 'referral_requests' collection.";
+      if (result.success) {
+        toast({
+          title: "Profile Sent!",
+          description: `Your profile has been shared with ${referrer.name}. You can track the status in 'My Requests'.`,
+        });
+        setIsRequestDialogOpen(false);
+        setJobInfo("");
+      } else {
+        toast({
+          title: "Request Failed",
+          description: result.message,
+          variant: "destructive",
+        });
       }
-      toast({ title: "Request Failed", description, variant: "destructive" });
+    } catch (error) {
+      console.error("Error sending referral request:", error);
+      toast({ title: "Request Failed", description: "An unexpected error occurred.", variant: "destructive" });
     } finally {
       setIsSending(false);
     }

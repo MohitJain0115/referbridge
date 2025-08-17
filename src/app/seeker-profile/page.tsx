@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Eye, Sparkles, Building2, Download, FileText, Loader2, Info, Crown } from "lucide-react";
+import { Save, Upload, User, Briefcase, GraduationCap, PlusCircle, Trash2, Eye, Sparkles, Building2, Download, FileText, Loader2, Info, Crown, Users, CheckCircle, Gift } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn, calculateTotalExperienceInYears, formatCurrency } from "@/lib/utils";
@@ -17,7 +17,7 @@ import { format, getMonth, getYear } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, Timestamp, collection, query, where, getDocs, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, storage, firebaseReady } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Navbar } from "@/components/shared/Navbar";
+import { getRemainingRequests } from "@/actions/referral-request";
 
 export const dynamic = 'force-dynamic';
 
@@ -61,17 +62,21 @@ type Education = {
 function PageSkeleton() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
-            <Card className="w-full max-w-2xl">
+            <Card className="w-full max-w-4xl">
                 <CardHeader>
                     <Skeleton className="h-8 w-3/4" />
                     <Skeleton className="h-4 w-1/2" />
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="flex flex-col items-center gap-4 border-b pb-6">
+                    <div className="flex flex-col md:flex-row items-center gap-8 border-b pb-6">
                         <Skeleton className="h-32 w-32 rounded-full" />
-                        <Skeleton className="h-10 w-32" />
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                           <Skeleton className="h-24 w-full" />
+                           <Skeleton className="h-24 w-full" />
+                           <Skeleton className="h-24 w-full" />
+                        </div>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-4 pt-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Skeleton className="h-4 w-1/4" />
@@ -97,6 +102,23 @@ function PageSkeleton() {
     );
 }
 
+const StatCard = ({ icon: Icon, title, value, isLoading }: { icon: React.ElementType, title: string, value: string | number, isLoading?: boolean }) => (
+    <Card className="text-center p-4 h-full flex flex-col justify-center items-center">
+        {isLoading ? (
+            <div className="space-y-2">
+                <Skeleton className="h-6 w-12 mx-auto" />
+                <Skeleton className="h-4 w-24 mx-auto" />
+            </div>
+        ) : (
+            <>
+                <Icon className="h-6 w-6 text-primary mb-2" />
+                <p className="text-2xl font-bold">{value}</p>
+                <p className="text-xs text-muted-foreground">{title}</p>
+            </>
+        )}
+    </Card>
+);
+
 export default function SeekerProfilePage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -113,6 +135,9 @@ export default function SeekerProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [points, setPoints] = useState(0);
+  const [confirmedReferrals, setConfirmedReferrals] = useState(0);
+  const [remainingRequests, setRemainingRequests] = useState(0);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   const [profilePic, setProfilePic] = useState<string>("https://placehold.co/128x128.png");
   const [isUploadingPic, setIsUploadingPic] = useState(false);
@@ -188,20 +213,7 @@ export default function SeekerProfilePage() {
         }
       } catch (error: any) {
           console.error("Error loading user data:", error);
-          if (error.code === 'permission-denied') {
-            toast({
-              title: "Permission Denied",
-              description: "Could not load profile. Check Firestore Security Rules.",
-              variant: "destructive",
-              duration: 10000,
-            });
-          } else {
-            toast({
-                title: "Loading Error",
-                description: "Could not load your profile data. Please try refreshing.",
-                variant: "destructive",
-            });
-          }
+          toast({ title: "Loading Error", description: "Could not load your profile data." });
       } finally {
         setIsLoading(false);
       }
@@ -210,6 +222,40 @@ export default function SeekerProfilePage() {
       loadUserData();
     }
   }, [currentUser, toast]);
+
+  // Fetch stats
+  useEffect(() => {
+    if (!currentUser || !db) return;
+    
+    setIsLoadingStats(true);
+    
+    // Fetch remaining requests
+    getRemainingRequests(currentUser.uid)
+        .then(result => {
+            if (result.success) {
+                setRemainingRequests(result.remaining);
+            }
+        });
+
+    // Subscribe to confirmed referrals count
+    const referralsQuery = query(
+        collection(db, "referral_requests"),
+        where('referrerId', '==', currentUser.uid),
+        where('status', '==', 'Confirmed Referral')
+    );
+    
+    const unsubscribe = onSnapshot(referralsQuery, (snapshot) => {
+        setConfirmedReferrals(snapshot.size);
+        setIsLoadingStats(false);
+    }, (error) => {
+        console.error("Error fetching confirmed referrals:", error);
+        setIsLoadingStats(false);
+    });
+
+    return () => unsubscribe();
+
+  }, [currentUser]);
+
 
   const addCompany = () => setCompanies([...companies, { id: Date.now(), name: '', jobs: [{ id: Date.now(), url: '' }] }]);
   const removeCompany = (companyId: number) => setCompanies(companies.filter(c => c.id !== companyId));
@@ -265,7 +311,7 @@ export default function SeekerProfilePage() {
         } else {
           newDate.setFullYear(parseInt(value, 10));
         }
-        return { ...edu, [field]: newDate };
+        return { ...exp, [field]: newDate };
       }
       return edu;
     }));
@@ -289,19 +335,7 @@ export default function SeekerProfilePage() {
         } catch (error: any) {
             console.error("Profile picture upload error:", error);
             if (error.code === 'storage/unauthorized') {
-                toast({
-                    title: "Storage Access Denied",
-                    description: "Check Storage CORS and Security Rules.",
-                    variant: "destructive",
-                    duration: 10000
-                });
-            } else if (error.code === 'permission-denied') {
-                 toast({
-                    title: "Permission Denied",
-                    description: "Could not save photo URL. Check Firestore Security Rules.",
-                    variant: "destructive",
-                    duration: 10000,
-                });
+                toast({ title: "Storage Access Denied", description: "Check Storage CORS and Security Rules.", variant: "destructive" });
             } else {
                 toast({ title: "Upload Failed", description: "There was a problem uploading your photo.", variant: "destructive" });
             }
@@ -355,19 +389,7 @@ export default function SeekerProfilePage() {
     } catch (error: any) {
         console.error("Resume upload error:", error);
         if (error.code === 'storage/unauthorized') {
-          toast({
-            title: "Permission Denied",
-            description: "Check Storage CORS and Security Rules.",
-            variant: "destructive",
-            duration: 10000,
-          });
-        } else if (error.code === 'permission-denied') {
-             toast({
-                title: "Permission Denied",
-                description: "Could not save resume data. Check Firestore Security Rules.",
-                variant: "destructive",
-                duration: 10000,
-            });
+          toast({ title: "Permission Denied", description: "Check Storage CORS and Security Rules.", variant: "destructive" });
         } else {
           toast({ title: "Upload Failed", description: "There was a problem uploading your resume.", variant: "destructive" });
         }
@@ -407,11 +429,7 @@ export default function SeekerProfilePage() {
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      toast({
-        title: "Missing Required Fields",
-        description: "Please fill in all fields marked with an asterisk (*).",
-        variant: "destructive",
-      });
+      toast({ title: "Missing Required Fields", description: "Please fill in all required fields.", variant: "destructive" });
       return;
     }
 
@@ -423,7 +441,6 @@ export default function SeekerProfilePage() {
         const bDate = b.currentlyWorking ? new Date() : b.to;
         if (!aDate) return 1;
         if (!bDate) return -1;
-        // Handle cases where 'to' date might be null for currently working positions
         if (a.currentlyWorking && !b.currentlyWorking) return -1;
         if (!a.currentlyWorking && b.currentlyWorking) return 1;
         return (bDate as Date).getTime() - (aDate as Date).getTime();
@@ -432,7 +449,7 @@ export default function SeekerProfilePage() {
     const mostRecentExperience = sortedExperiences[0];
     
     const referrerCompany = mostRecentExperience ? mostRecentExperience.company : "";
-    const referrerAbout = mostRecentExperience ? `As a ${mostRecentExperience.role} at ${mostRecentExperience.company}, I'm happy to refer strong candidates in my field.` : "";
+    const referrerBio = mostRecentExperience ? `As a ${mostRecentExperience.role} at ${mostRecentExperience.company}, I'm happy to refer strong candidates in my field.` : "";
     const referrerSpecialties = skills;
 
     const experiencesForFirestore = experiences.map(exp => ({
@@ -468,22 +485,10 @@ export default function SeekerProfilePage() {
 
     try {
       await setDoc(doc(db, "profiles", currentUser.uid), profileData, { merge: true });
-      toast({
-        title: "Profile Saved!",
-        description: `Your profile has been successfully updated.`,
-      });
-    } catch (error: any) {
+      toast({ title: "Profile Saved!", description: `Your profile has been successfully updated.` });
+    } catch (error) {
       console.error("Error saving profile:", error);
-      if (error.code === 'permission-denied') {
-        toast({
-          title: "Permission Denied",
-          description: "Could not save profile. Check Firestore Security Rules.",
-          variant: "destructive",
-          duration: 10000,
-        });
-      } else {
-        toast({ title: "Save Failed", description: "Could not save your profile. Please try again.", variant: "destructive" });
-      }
+      toast({ title: "Save Failed", description: "Could not save your profile. Please try again.", variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -498,73 +503,67 @@ export default function SeekerProfilePage() {
     <Navbar/>
     <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
       
-      <Card className="w-full max-w-2xl">
+      <Card className="w-full max-w-4xl">
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="font-headline text-2xl">Your Profile</CardTitle>
-              <CardDescription>
-                This information will be visible to potential referrers and job seekers. Make it count!
-              </CardDescription>
-            </div>
-             {isPremium && (
-                <div className="text-right">
-                    <h3 className="font-semibold text-primary">You have unlocked earnings!</h3>
-                    <p className="text-sm text-muted-foreground">Total points earned: <strong>{points}</strong></p>
-                </div>
-            )}
-          </div>
+          <CardTitle className="font-headline text-2xl">Your Profile</CardTitle>
+          <CardDescription>
+            This information is visible to potential referrers and job seekers. Make it count!
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex flex-col items-center gap-4 border-b pb-6">
-             <Dialog>
-              <DialogTrigger asChild>
-                <button className="relative group rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-                  <Image
-                    src={profilePic}
-                    alt="Profile Picture"
-                    width={128}
-                    height={128}
-                    className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
-                    data-ai-hint="person avatar"
-                  />
-                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                     {isUploadingPic ? <Loader2 className="text-white h-8 w-8 animate-spin" /> : <Eye className="text-white h-8 w-8" />}
-                  </div>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="border-0 bg-transparent shadow-none w-auto h-auto p-0 flex items-center justify-center [&>[data-radix-dialog-close]]:text-white">
-                <DialogHeader className="sr-only">
-                    <DialogTitle>Profile Picture</DialogTitle>
-                    <DialogDescription>A larger view of the user's profile picture.</DialogDescription>
-                </DialogHeader>
-                <div className="p-4">
-                  <Image
-                      src={profilePic}
-                      alt="Profile Picture"
-                      width={1024}
-                      height={1024}
-                      className="rounded-lg object-contain h-auto max-h-[calc(100vh-4rem)] max-w-[calc(100vw-4rem)]"
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
+          <div className="flex flex-col md:flex-row items-center gap-8 border-b pb-6">
+              <div className="flex flex-col items-center gap-4 flex-shrink-0">
+                  <Dialog>
+                      <DialogTrigger asChild>
+                          <button className="relative group rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                              <Image
+                                  src={profilePic}
+                                  alt="Profile Picture"
+                                  width={128}
+                                  height={128}
+                                  className="rounded-full object-cover aspect-square border-4 border-primary/20 shadow-md"
+                                  data-ai-hint="person avatar"
+                              />
+                              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  {isUploadingPic ? <Loader2 className="text-white h-8 w-8 animate-spin" /> : <Eye className="text-white h-8 w-8" />}
+                              </div>
+                          </button>
+                      </DialogTrigger>
+                      <DialogContent className="border-0 bg-transparent shadow-none w-auto h-auto p-0 flex items-center justify-center [&>[data-radix-dialog-close]]:text-white">
+                          <Image
+                              src={profilePic}
+                              alt="Profile Picture"
+                              width={1024}
+                              height={1024}
+                              className="rounded-lg object-contain h-auto max-h-[calc(100vh-4rem)] max-w-[calc(100vw-4rem)]"
+                          />
+                      </DialogContent>
+                  </Dialog>
+                  <input type="file" ref={profilePicInputRef} onChange={handleProfilePicChange} className="hidden" accept="image/*" disabled={isUploadingPic} />
+                  <Button variant="outline" onClick={() => profilePicInputRef.current?.click()} disabled={isUploadingPic}>
+                      {isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                      {isUploadingPic ? 'Uploading...' : 'Upload Photo'}
+                  </Button>
+              </div>
 
-            <input
-              type="file"
-              ref={profilePicInputRef}
-              onChange={handleProfilePicChange}
-              className="hidden"
-              accept="image/*"
-              disabled={isUploadingPic}
-            />
-            <Button variant="outline" onClick={() => profilePicInputRef.current?.click()} disabled={isUploadingPic}>
-              {isUploadingPic ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-              {isUploadingPic ? 'Uploading...' : 'Upload Photo'}
-            </Button>
+              <div className="flex-1 w-full">
+                {isPremium && (
+                  <div className="mb-4 text-center md:text-left">
+                    <h3 className="font-semibold text-lg text-primary flex items-center gap-2 justify-center md:justify-start">
+                        <Crown className="h-5 w-5" /> You've unlocked Earnings!
+                    </h3>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <StatCard icon={Users} title="Requests Available Today" value={remainingRequests} isLoading={isLoadingStats} />
+                  <StatCard icon={CheckCircle} title="Candidates Referred" value={confirmedReferrals} isLoading={isLoadingStats} />
+                  <StatCard icon={Gift} title="Points Earned" value={points} isLoading={isLoadingStats} />
+                </div>
+              </div>
           </div>
 
-          <div className="space-y-4">
+
+          <div className="space-y-4 pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name<span className="text-destructive pl-1">*</span></Label>
