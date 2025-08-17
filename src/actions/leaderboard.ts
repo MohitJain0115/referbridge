@@ -57,7 +57,7 @@ export async function awardPointsForReferral(input: AwardPointsInput) {
         });
       }
 
-      revalidatePath('/dashboard');
+      revalidatePath('/dashboard', 'page');
       return { success: true, message: 'Referral confirmed and points awarded.' };
     } catch (error) {
       console.error('Error in awardPointsForReferral:', error);
