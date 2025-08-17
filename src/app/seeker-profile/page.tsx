@@ -103,16 +103,16 @@ function PageSkeleton() {
 }
 
 const StatCard = ({ icon: Icon, title, value, isLoading }: { icon: React.ElementType, title: string, value: string | number, isLoading?: boolean }) => (
-    <Card className="text-center p-4 h-full flex flex-col justify-center items-center">
+    <Card className="text-center p-3">
         {isLoading ? (
-            <div className="space-y-2">
-                <Skeleton className="h-6 w-12 mx-auto" />
-                <Skeleton className="h-4 w-24 mx-auto" />
+            <div className="space-y-1">
+                <Skeleton className="h-5 w-8 mx-auto" />
+                <Skeleton className="h-3 w-20 mx-auto" />
             </div>
         ) : (
             <>
-                <Icon className="h-6 w-6 text-primary mb-2" />
-                <p className="text-2xl font-bold">{value}</p>
+                <Icon className="h-5 w-5 text-primary mx-auto mb-1" />
+                <p className="text-lg font-bold">{value}</p>
                 <p className="text-xs text-muted-foreground">{title}</p>
             </>
         )}
@@ -477,7 +477,7 @@ export default function SeekerProfilePage() {
       experiences: experiencesForFirestore,
       educations: educationsForFirestore,
       referrerCompany,
-      referrerAbout,
+      referrerBio,
       referrerSpecialties,
       profilePic,
       updatedAt: new Date(),
@@ -511,7 +511,7 @@ export default function SeekerProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex flex-col md:flex-row items-center gap-8 border-b pb-6">
+          <div className="flex flex-col md:flex-row items-center gap-6 border-b pb-6">
               <div className="flex flex-col items-center gap-4 flex-shrink-0">
                   <Dialog>
                       <DialogTrigger asChild>
@@ -546,15 +546,15 @@ export default function SeekerProfilePage() {
                   </Button>
               </div>
 
-              <div className="flex-1 w-full">
+              <div className="flex-1 w-full space-y-3">
                 {isPremium && (
-                  <div className="mb-4 text-center md:text-left">
+                  <div className="text-center md:text-left">
                     <h3 className="font-semibold text-lg text-primary flex items-center gap-2 justify-center md:justify-start">
                         <Crown className="h-5 w-5" /> You've unlocked Earnings!
                     </h3>
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <StatCard icon={Users} title="Requests Available Today" value={remainingRequests} isLoading={isLoadingStats} />
                   <StatCard icon={CheckCircle} title="Candidates Referred" value={confirmedReferrals} isLoading={isLoadingStats} />
                   <StatCard icon={Gift} title="Points Earned" value={points} isLoading={isLoadingStats} />
