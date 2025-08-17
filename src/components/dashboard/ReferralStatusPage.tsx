@@ -47,7 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, writeBatch, updateDoc, onSnapshot } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
 import { awardPointsForReferral } from "@/actions/leaderboard";
 
@@ -74,61 +74,62 @@ export function ReferralStatusPage() {
     return () => unsubscribe();
   }, []);
 
-  const fetchData = async (user: FirebaseUser) => {
-    if (!db) {
-        setIsLoading(false);
-        return;
-    }
-    setIsLoading(true);
-    try {
-      const requestsQuery = query(collection(db, "referral_requests"), where("seekerId", "==", user.uid));
-      const requestSnapshots = await getDocs(requestsQuery);
-
-      const trackedRequestsPromises = requestSnapshots.docs.map(async (requestDoc) => {
-        const requestData = requestDoc.data();
-        const referrerDocRef = doc(db, "profiles", requestData.referrerId);
-        const referrerDoc = await getDoc(referrerDocRef);
-
-        if (!referrerDoc.exists()) {
-          console.warn(`Referrer profile not found for ID: ${requestData.referrerId}`);
-          return null;
-        }
-
-        const referrerData = referrerDoc.data();
-        
-        return {
-          id: requestDoc.id,
-          referrer: {
-            id: referrerDoc.id,
-            name: referrerData.name || "Unknown Referrer",
-            avatar: referrerData.profilePic || "https://placehold.co/100x100.png",
-            role: referrerData.currentRole || "N/A",
-            company: referrerData.referrerCompany || "N/A",
-            specialties: referrerData.referrerSpecialties?.split(',').map((s:string) => s.trim()).filter(Boolean) || [],
-          },
-          status: requestData.status,
-          cancellationReason: requestData.cancellationReason,
-          requestedAt: requestData.requestedAt?.toDate() || new Date(),
-        } as TrackedRequest;
-      });
-
-      const results = (await Promise.all(trackedRequestsPromises)).filter(Boolean) as TrackedRequest[];
-      // Sort by most recent
-      results.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
-      setRequests(results);
-
-    } catch (error) {
-      console.error("Failed to fetch tracked requests:", error);
-      toast({ title: "Error", description: "Could not fetch your referral requests.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   useEffect(() => {
-    if (currentUser) {
-      fetchData(currentUser);
+    if (!currentUser || !db) {
+      setIsLoading(false);
+      return;
     }
+    
+    setIsLoading(true);
+
+    const requestsQuery = query(collection(db, "referral_requests"), where("seekerId", "==", currentUser.uid));
+    
+    const unsubscribe = onSnapshot(requestsQuery, async (requestSnapshots) => {
+      try {
+        const trackedRequestsPromises = requestSnapshots.docs.map(async (requestDoc) => {
+          const requestData = requestDoc.data();
+          const referrerDocRef = doc(db, "profiles", requestData.referrerId);
+          const referrerDoc = await getDoc(referrerDocRef);
+
+          if (!referrerDoc.exists()) {
+            console.warn(`Referrer profile not found for ID: ${requestData.referrerId}`);
+            return null;
+          }
+
+          const referrerData = referrerDoc.data();
+          
+          return {
+            id: requestDoc.id,
+            referrer: {
+              id: referrerDoc.id,
+              name: referrerData.name || "Unknown Referrer",
+              avatar: referrerData.profilePic || "https://placehold.co/100x100.png",
+              role: referrerData.currentRole || "N/A",
+              company: referrerData.referrerCompany || "N/A",
+              specialties: referrerData.referrerSpecialties?.split(',').map((s:string) => s.trim()).filter(Boolean) || [],
+            },
+            status: requestData.status,
+            cancellationReason: requestData.cancellationReason,
+            requestedAt: requestData.requestedAt?.toDate() || new Date(),
+          } as TrackedRequest;
+        });
+
+        const results = (await Promise.all(trackedRequestsPromises)).filter(Boolean) as TrackedRequest[];
+        results.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+        setRequests(results);
+      } catch (error) {
+        console.error("Failed to fetch tracked requests:", error);
+        toast({ title: "Error", description: "Could not fetch your referral requests.", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
+    }, (error) => {
+      console.error("Failed to subscribe to requests:", error);
+      toast({ title: "Error", description: "Could not connect to the requests feed.", variant: "destructive" });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [currentUser, toast]);
 
   const handleConfirmReferral = async (request: TrackedRequest) => {

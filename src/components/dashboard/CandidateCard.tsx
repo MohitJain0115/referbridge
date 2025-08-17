@@ -54,14 +54,12 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     }
     
     setIsActionLoading(true);
-    console.log(11)
     try {
       const result = await downloadResumeWithLimit({
         candidateId: candidate.id,
         downloaderId: auth.currentUser.uid,
       });
-      console.log(result)
-      console.log(111)
+      
       if (result.success && result.url) {
         toast({
           title: "Download Started",
@@ -71,7 +69,6 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         saveAs(result.url, result.fileName);
 
       } else {
-        // console.log(result)
         toast({ title: "Download Failed", description: result.message, variant: "destructive" });
       }
     } catch (error) {
@@ -158,9 +155,6 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     try {
       const statusToSave: ReferralRequestStatus = newStatus === null ? 'Pending' : newStatus;
       await updateDoc(requestRef, { status: statusToSave });
-
-      if (statusToSave === 'Referred - Awaiting Confirmation') {
-      }
       
       setCurrentStatus(statusToSave);
       
@@ -173,7 +167,8 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
         description: toastMessage,
       });
 
-      if (isFromRequestPage && (newStatus === 'Referred - Awaiting Confirmation' || statusToSave === 'Cancelled')) {
+      // Don't auto-remove on these statuses. The page query will handle visibility.
+      if (isFromRequestPage && (statusToSave === 'Cancelled')) {
         onUpdateRequest?.(candidate.id);
       }
     } catch (error: any) {

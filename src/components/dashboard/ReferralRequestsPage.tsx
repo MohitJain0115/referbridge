@@ -8,7 +8,7 @@ import type { Candidate } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, firebaseReady } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { calculateTotalExperienceInYears } from "@/lib/utils";
 
@@ -41,20 +41,21 @@ export function ReferralRequestsPage() {
   }, []);
 
   useEffect(() => {
-    async function fetchData() {
-       if (!currentUser || !db) {
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const requestsQuery = query(
-          collection(db, "referral_requests"), 
-          where("referrerId", "==", currentUser.uid),
-          where("status", "in", ["Pending", "Viewed", "Resume Downloaded"])
-        );
-        const requestSnapshots = await getDocs(requestsQuery);
+    if (!currentUser || !db) {
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
 
+    const requestsQuery = query(
+      collection(db, "referral_requests"), 
+      where("referrerId", "==", currentUser.uid),
+      where("status", "in", ["Pending", "Viewed", "Resume Downloaded", "Referred - Awaiting Confirmation"])
+    );
+    
+    const unsubscribe = onSnapshot(requestsQuery, async (requestSnapshots) => {
+      try {
         const candidatePromises = requestSnapshots.docs.map(async (requestDoc) => {
           const requestData = requestDoc.data();
           if (!requestData.seekerId) return null;
@@ -68,8 +69,7 @@ export function ReferralRequestsPage() {
           }
           
           const seekerData = seekerDoc.data();
-
-          // Safely handle experiences array before mapping
+          
           const experiencesWithDates = seekerData.experiences
             ? seekerData.experiences.map((exp: any) => ({
                 ...exp,
@@ -102,9 +102,8 @@ export function ReferralRequestsPage() {
         
         const candidates = (await Promise.all(candidatePromises)).filter(c => c !== null) as Candidate[];
         setRequestedCandidates(candidates);
-
-      } catch (error: any) {
-        console.error("Failed to fetch requested candidates:", error);
+      } catch (error) {
+        console.error("Failed to process referral requests:", error);
         toast({
             title: "Error fetching requests",
             description: "Could not load referral requests. Please try again later.",
@@ -113,8 +112,18 @@ export function ReferralRequestsPage() {
       } finally {
         setIsLoading(false);
       }
-    }
-    fetchData();
+    }, (error) => {
+      console.error("Failed to subscribe to referral requests:", error);
+      toast({
+          title: "Error",
+          description: "Could not connect to the requests feed.",
+          variant: "destructive",
+      });
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+
   }, [currentUser, toast]);
 
   const handleCandidateUpdate = (candidateId: string) => {
