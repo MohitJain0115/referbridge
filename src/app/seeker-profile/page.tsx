@@ -518,8 +518,7 @@ export default function SeekerProfilePage() {
         <CardContent className="space-y-6">
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 border-b pb-6">
               
-              {/* Half 1: Profile Picture */}
-              <div className="w-full md:w-1/2 flex justify-center md:justify-start">
+              <div className="w-full md:w-1/2 flex justify-center">
                   <div className="flex flex-col items-center gap-4">
                       <Dialog>
                           <DialogTrigger asChild>
@@ -554,7 +553,6 @@ export default function SeekerProfilePage() {
                   </div>
               </div>
 
-              {/* Half 2: Stats */}
               <div className="w-full md:w-1/2">
                   <div className="flex flex-col gap-3">
                       {isPremium && (
