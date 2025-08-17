@@ -35,6 +35,7 @@ async function fetchRemainingRequests(userId: string): Promise<number> {
     if (!db) return 0;
 
     const twentyFourHoursAgo = Timestamp.fromMillis(Date.now() - TWENTY_FOUR_HOURS_IN_MS);
+    
     const activityRef = collection(db, 'referral_requests_activity');
     const q = query(
         activityRef,
