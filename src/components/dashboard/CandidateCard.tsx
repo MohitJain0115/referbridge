@@ -66,7 +66,22 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
           description: `Downloading ${candidate.name}'s resume.`
         });
         
-        saveAs(result.url, result.fileName);
+        try {
+          const response = await fetch(result.url, { mode: 'cors' });
+          if (!response.ok) throw new Error(`Fetch failed with status ${response.status}`);
+          const blob = await response.blob();
+          saveAs(blob, result.fileName);
+        } catch (fetchErr) {
+          // Fallback: try opening in a new tab/window (may be blocked by popup blocker)
+          const win = window.open(result.url, '_blank', 'noopener,noreferrer');
+          if (!win) {
+            toast({ 
+              title: "Popup Blocked",
+              description: "Your browser blocked the download. Please allow popups for this site and try again.",
+              variant: "destructive" 
+            });
+          }
+        }
 
       } else {
         toast({ title: "Download Failed", description: result.message, variant: "destructive" });
@@ -205,7 +220,6 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     'Not a Fit': XCircle,
     'Cancelled': XCircle,
     'Resume Downloaded': Download,
-    __default: Info,
   };
 
   const displayStatus = currentStatus === 'Cancelled' ? 'Not a Fit' : currentStatus;
@@ -278,7 +292,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
             <CardTitle className="font-headline text-base truncate">{candidate.name}</CardTitle>
             {showStatusBadge && displayStatus && (
               <Badge variant={getStatusBadgeVariant(displayStatus)} className="capitalize text-xs flex-shrink-0">
-                {React.createElement(statusIcons[displayStatus] || statusIcons.__default, { className: "mr-1 h-3 w-3" })}
+                {React.createElement(statusIcons[displayStatus] ?? Info, { className: "mr-1 h-3 w-3" })}
                 {displayStatus}
               </Badge>
             )}

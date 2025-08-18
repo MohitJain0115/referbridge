@@ -150,7 +150,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
         });
         
         if (result.success && result.url) {
-          const response = await fetch(result.url);
+          const response = await fetch(result.url, { mode: 'cors' });
           if (!response.ok) throw new Error(`Fetch failed for ${result.fileName}`);
           const blob = await response.blob();
           const candidate = initialCandidates.find(c => c.id === candidateId);
