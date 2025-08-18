@@ -121,19 +121,8 @@
 'use server';
 
 import { z } from 'zod';
-import { 
-  doc, 
-  getDoc, 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  getDocs, 
-  serverTimestamp, 
-  Timestamp 
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import admin from 'firebase-admin';
+import 'firebase-admin/firestore';
 
 const DownloadResumeInputSchema = z.object({
   candidateId: z.string().min(1, 'Candidate ID is required'),
@@ -173,27 +162,19 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
   const { candidateId, downloaderId } = validatedInput.data;
   console.log(`Input validated for candidateId: ${candidateId}, downloaderId: ${downloaderId}`);
 
-  // Check Firebase initialization
-  if (!db) {
-    console.error('Firestore is not properly initialized');
-    return { 
-      success: false, 
-      message: 'Service temporarily unavailable. Please try again later.' 
-    };
-  }
+  // Use Admin Firestore (bypasses security rules in server environment)
+  const adminDb = admin.firestore();
   
   try {
     // Check download limit
-    const twentyFourHoursAgo = Timestamp.fromMillis(Date.now() - TWENTY_FOUR_HOURS_IN_MS);
-    const activityRef = collection(db, 'downloadActivity');
-    const downloadQuery = query(
-      activityRef,
-      where('downloaderId', '==', downloaderId),
-      where('downloadedAt', '>=', twentyFourHoursAgo)
-    );
+    const twentyFourHoursAgo = admin.firestore.Timestamp.fromMillis(Date.now() - TWENTY_FOUR_HOURS_IN_MS);
+    const activityRef = adminDb.collection('downloadActivity');
+    const downloadQuery = activityRef
+      .where('downloaderId', '==', downloaderId)
+      .where('downloadedAt', '>=', twentyFourHoursAgo);
     
     console.log('Checking download activity...');
-    const activitySnapshot = await getDocs(downloadQuery);
+    const activitySnapshot = await downloadQuery.get();
     const downloadCount = activitySnapshot.size;
     console.log(`Found ${downloadCount} downloads in the last 24 hours`);
 
@@ -207,10 +188,10 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
     
     // Fetch resume document
     console.log(`Fetching resume document for candidate: ${candidateId}`);
-    const resumeDocRef = doc(db, 'resumes', candidateId);
-    const resumeDoc = await getDoc(resumeDocRef);
+    const resumeDocRef = adminDb.collection('resumes').doc(candidateId);
+    const resumeDoc = await resumeDocRef.get();
     
-    if (!resumeDoc.exists()) {
+    if (!resumeDoc.exists) {
       console.error(`Resume document not found for candidate: ${candidateId}`);
       return { 
         success: false, 
@@ -256,11 +237,11 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
     console.log('Successfully generated signed URL');
     
     // Log download activity
-    await addDoc(activityRef, {
+    await activityRef.add({
       downloaderId: downloaderId,
       candidateId: candidateId,
       fileName: fileName,
-      downloadedAt: serverTimestamp(),
+      downloadedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     console.log('Download activity logged successfully');
 
