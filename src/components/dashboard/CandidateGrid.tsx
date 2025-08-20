@@ -22,6 +22,43 @@ import { downloadResumeWithLimit } from "@/actions/resume";
 
 const SELECTION_LIMIT = 8;
 
+const normalizeCompanyName = (name: string): string => {
+  if (!name || typeof name !== 'string') return "";
+  
+  let lowerName = name.toLowerCase().trim();
+
+  const commonNames: { [key: string]: string[] } = {
+    'EY': ['ey', 'ernst & young', 'ernst and young'],
+    'Google': ['google', 'alphabet'],
+    'Amazon': ['amazon', 'aws'],
+    'Microsoft': ['microsoft'],
+    'Meta': ['meta', 'facebook'],
+    'HCL Tech': ['hcl', 'hcltech'],
+  };
+
+  for (const standardName in commonNames) {
+    if (commonNames[standardName].some(variant => lowerName.includes(variant))) {
+      return standardName;
+    }
+  }
+  
+  const suffixesToRemove = [
+    /\sgroup$/, /\sllc$/, /\sllp$/, /\sinc$/, /\sltd$/, /\spvt\s?ltd$/,
+    /,?\sinc\.?$/, /,?\sllc\.?$/, /,?\sltd\.?$/,
+    /\scorporation$/, /\sincorporated$/, /\slimited$/, /\sprivate\slimited$/,
+    /\stechnologies$/, /\stech$/, /\ssolutions$/, /\sservices$/,
+  ];
+  
+  suffixesToRemove.forEach(suffixRegex => {
+    lowerName = lowerName.replace(suffixRegex, '');
+  });
+
+  return lowerName
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 type CandidateGridProps = {
     candidates: Candidate[];
     showCancelAction?: boolean;
@@ -30,7 +67,7 @@ type CandidateGridProps = {
 
 export function CandidateGrid({ candidates: initialCandidates, showCancelAction = false, onCandidateUpdate }: CandidateGridProps) {
   const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>(initialCandidates);
-  const [company, setCompany] = useState("");
+  const [companies, setCompanies] = useState<string[]>([]);
   const [experience, setExperience] = useState("all");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState<Candidate['status'] | 'all'>('all');
@@ -68,32 +105,27 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
   }, [initialCandidates]);
 
   const availableCompanies = useMemo(() => {
-    const companies = new Set(
+    const companyNames = new Set(
       initialCandidates
         .flatMap(c => c.targetCompanies)
-        .filter(name => typeof name === 'string' && !name.includes(',')) // Disregard entries with commas
-        .map(name => name.trim())
+        .filter(name => typeof name === 'string' && !name.includes(','))
+        .map(normalizeCompanyName)
         .filter(Boolean)
     );
-     const normalizedCompanies = new Map<string, string>();
-    companies.forEach(name => {
-      const normalized = name.toLowerCase();
-      if (!normalizedCompanies.has(normalized)) {
-        normalizedCompanies.set(normalized, name);
-      }
-    });
-    return Array.from(normalizedCompanies.values()).sort();
+    return Array.from(companyNames).sort();
   }, [initialCandidates]);
 
   const isFiltered = useMemo(() => {
-    return company !== "" || experience !== "all" || role !== "" || status !== "all";
-  }, [company, experience, role, status]);
+    return companies.length > 0 || experience !== "all" || role !== "" || status !== "all";
+  }, [companies, experience, role, status]);
 
   const handleApplyFilters = () => {
     let candidates = [...initialCandidates];
 
-    if (company) {
-      candidates = candidates.filter(c => c.targetCompanies.some(tc => tc.toLowerCase() === company.toLowerCase()));
+    if (companies.length > 0) {
+      candidates = candidates.filter(c => 
+        c.targetCompanies.some(tc => companies.includes(normalizeCompanyName(tc)))
+      );
     }
 
     if (experience !== "all") {
@@ -127,7 +159,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
   };
 
   const handleClearFilters = () => {
-    setCompany("");
+    setCompanies([]);
     setExperience("all");
     setRole("");
     setStatus("all");
@@ -302,8 +334,8 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
   return (
     <>
       <CandidateFilters 
-        company={company}
-        setCompany={setCompany}
+        companies={companies}
+        setCompanies={setCompanies}
         availableCompanies={availableCompanies}
         experience={experience}
         setExperience={setExperience}

@@ -3,20 +3,21 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button";
-import { SlidersHorizontal, X, Check, ChevronsUpDown } from "lucide-react";
+import { SlidersHorizontal, X, Check, ChevronsUpDown, XIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import type { Candidate } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 
 type Status = Candidate['status'] | 'all';
 
 type CandidateFiltersProps = {
-    company: string;
-    setCompany: (value: string) => void;
+    companies: string[];
+    setCompanies: (value: string[]) => void;
     availableCompanies: string[];
     experience: string;
     setExperience: (value: string) => void;
@@ -30,15 +31,23 @@ type CandidateFiltersProps = {
 }
 
 export function CandidateFilters({
-    company, setCompany, availableCompanies, experience, setExperience, role, setRole, status, setStatus, onApplyFilters, onClearFilters, isFiltered
+    companies, setCompanies, availableCompanies, experience, setExperience, role, setRole, status, setStatus, onApplyFilters, onClearFilters, isFiltered
 }: CandidateFiltersProps) {
     const [open, setOpen] = React.useState(false)
     const companyOptions = availableCompanies.map(c => ({ value: c, label: c }));
 
+    const handleCompanySelect = (companyValue: string) => {
+        setCompanies(
+            companies.includes(companyValue)
+                ? companies.filter((c) => c !== companyValue)
+                : [...companies, companyValue]
+        );
+    };
+
     return (
-        <div className="p-4 bg-card rounded-lg shadow-sm border">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                <div className="space-y-2">
+        <div className="p-4 bg-card rounded-lg shadow-sm border space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div className="space-y-2 lg:col-span-1">
                     <label htmlFor="company" className="text-sm font-medium">Target Company</label>
                      <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
@@ -48,9 +57,11 @@ export function CandidateFilters({
                           aria-expanded={open}
                           className="w-full justify-between font-normal"
                         >
-                          {company
-                            ? companyOptions.find((c) => c.value.toLowerCase() === company.toLowerCase())?.label
-                            : "Select company..."}
+                          <span className="truncate">
+                            {companies.length === 0 && "Select companies..."}
+                            {companies.length === 1 && companies[0]}
+                            {companies.length > 1 && `${companies.length} companies selected`}
+                          </span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -64,15 +75,12 @@ export function CandidateFilters({
                                 <CommandItem
                                   key={c.value}
                                   value={c.value}
-                                  onSelect={(currentValue) => {
-                                    setCompany(currentValue.toLowerCase() === company.toLowerCase() ? "" : c.value)
-                                    setOpen(false)
-                                  }}
+                                  onSelect={() => handleCompanySelect(c.value)}
                                 >
                                   <Check
                                     className={cn(
                                       "mr-2 h-4 w-4",
-                                      company.toLowerCase() === c.value.toLowerCase() ? "opacity-100" : "opacity-0"
+                                      companies.includes(c.value) ? "opacity-100" : "opacity-0"
                                     )}
                                   />
                                   {c.label}
@@ -122,17 +130,35 @@ export function CandidateFilters({
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button onClick={onApplyFilters} className="flex-1">
-                        <SlidersHorizontal className="mr-2 h-4 w-4" />
-                        Apply Filters
-                    </Button>
-                     {isFiltered && (
-                        <Button onClick={onClearFilters} variant="ghost" size="icon" aria-label="Clear filters">
-                            <X className="h-4 w-4" />
-                        </Button>
-                    )}
+            </div>
+             {companies.length > 0 && (
+                <div className="flex flex-wrap gap-2 items-center">
+                    <span className="text-sm font-medium">Selected:</span>
+                    {companies.map(company => (
+                        <Badge key={company} variant="secondary" className="pl-2 pr-1">
+                            {company}
+                            <button
+                                onClick={() => handleCompanySelect(company)}
+                                className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-muted-foreground/20"
+                                aria-label={`Remove ${company}`}
+                            >
+                                <XIcon className="h-3 w-3" />
+                            </button>
+                        </Badge>
+                    ))}
                 </div>
+            )}
+            <div className="flex items-center justify-end gap-2 pt-2">
+                <Button onClick={onApplyFilters}>
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    Apply Filters
+                </Button>
+                 {isFiltered && (
+                    <Button onClick={onClearFilters} variant="ghost">
+                        <X className="mr-2 h-4 w-4" />
+                        Clear
+                    </Button>
+                )}
             </div>
         </div>
     )

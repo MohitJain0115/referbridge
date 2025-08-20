@@ -28,20 +28,12 @@ const normalizeCompanyName = (name: string): string => {
   let lowerName = name.toLowerCase().trim();
 
   const commonNames: { [key: string]: string[] } = {
-    'Deloitte': ['deloitte'],
-    'EY': ['ey', 'ernst & young'],
-    'PwC': ['pwc', 'pricewaterhousecoopers'],
-    'KPMG': ['kpmg'],
+    'EY': ['ey', 'ernst & young', 'ernst and young'],
     'Google': ['google', 'alphabet'],
     'Amazon': ['amazon', 'aws'],
     'Microsoft': ['microsoft'],
     'Meta': ['meta', 'facebook'],
-    'Hindustan Unilever': ['hindustan unilever'],
-    'ICICI Bank': ['icici bank', 'icici securities'],
-    'Infosys': ['infosys'],
-    'ITC': ['itc'],
     'HCL Tech': ['hcl', 'hcltech'],
-    'Natwest': ['natwest'],
   };
 
   for (const standardName in commonNames) {
