@@ -8,20 +8,25 @@
  */
 
 import { z } from 'zod';
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  addDoc, 
-  serverTimestamp, 
-  Timestamp 
-} from 'firebase/firestore';
-import { db, firebaseReady } from '@/lib/firebase';
+import admin from 'firebase-admin';
+import 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 
 const REQUEST_LIMIT = 15;
 const TWENTY_FOUR_HOURS_IN_MS = 24 * 60 * 60 * 1000;
+
+// Initialize Firebase Admin SDK (only once)
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+    });
+  } catch (error) {
+    console.error('Firebase Admin initialization error:', error);
+  }
+}
+const db = admin.firestore();
+
 
 // Schema for sending a request
 const SendRequestSchema = z.object({
@@ -35,16 +40,14 @@ type SendRequestInput = z.infer<typeof SendRequestSchema>;
 async function fetchRemainingRequests(userId: string): Promise<number> {
     if (!db) return 0;
 
-    const twentyFourHoursAgo = Timestamp.fromMillis(Date.now() - TWENTY_FOUR_HOURS_IN_MS);
+    const twentyFourHoursAgo = admin.firestore.Timestamp.fromMillis(Date.now() - TWENTY_FOUR_HOURS_IN_MS);
     
-    const activityRef = collection(db, 'referral_requests_activity');
-    const q = query(
-        activityRef,
-        where('seekerId', '==', userId),
-        where('requestedAt', '>=', twentyFourHoursAgo)
-    );
+    const activityRef = db.collection('referral_requests_activity');
+    const q = activityRef
+        .where('seekerId', '==', userId)
+        .where('requestedAt', '>=', twentyFourHoursAgo);
     
-    const activitySnapshot = await getDocs(q);
+    const activitySnapshot = await q.get();
     const requestCount = activitySnapshot.size;
     
     return Math.max(0, REQUEST_LIMIT - requestCount);
@@ -67,7 +70,7 @@ export async function getRemainingRequests(userId: string) {
 
 // --- Server Action: Send Referral Request ---
 export async function sendReferralRequestWithLimit(input: SendRequestInput) {
-    if (!firebaseReady || !db) {
+    if (!db) {
         return { success: false, message: 'Service not available. Please try again later.' };
     }
     
@@ -80,13 +83,11 @@ export async function sendReferralRequestWithLimit(input: SendRequestInput) {
 
     try {
         // 1. Check if a request already exists to this referrer
-        const requestsRef = collection(db, "referral_requests");
-        const existingReqQuery = query(
-            requestsRef,
-            where("seekerId", "==", seekerId),
-            where("referrerId", "==", referrerId)
-        );
-        const existingReqSnapshot = await getDocs(existingReqQuery);
+        const requestsRef = db.collection("referral_requests");
+        const existingReqQuery = requestsRef
+            .where("seekerId", "==", seekerId)
+            .where("referrerId", "==", referrerId);
+        const existingReqSnapshot = await existingReqQuery.get();
         if (!existingReqSnapshot.empty) {
             return { success: false, message: `You have already sent a request to this referrer.` };
         }
@@ -98,24 +99,24 @@ export async function sendReferralRequestWithLimit(input: SendRequestInput) {
         }
         
         // 3. Log the request activity for rate limiting
-        const activityRef = collection(db, 'referral_requests_activity');
-        await addDoc(activityRef, {
+        const activityRef = db.collection('referral_requests_activity');
+        await activityRef.add({
             seekerId: seekerId,
             referrerId: referrerId,
-            requestedAt: serverTimestamp(),
+            requestedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         // 4. Create the actual referral request
-        await addDoc(requestsRef, {
+        await requestsRef.add({
             seekerId: seekerId,
             referrerId: referrerId,
             jobInfo: jobInfo || '',
             status: "Pending",
-            requestedAt: serverTimestamp(),
+            requestedAt: admin.firestore.FieldValue.serverTimestamp(),
             cancellationReason: null,
         });
         
-        revalidatePath('/seeker-profile');
+        revalidatePath('/seeker-profile', 'page');
         return { success: true, message: 'Your profile has been shared.' };
 
     } catch (error) {
