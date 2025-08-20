@@ -71,8 +71,9 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
     const companies = new Set(
       initialCandidates
         .flatMap(c => c.targetCompanies)
-        .map(name => name.trim()) // Trim whitespace
-        .filter(Boolean) // Filter out empty strings
+        .filter(name => typeof name === 'string' && !name.includes(',')) // Disregard entries with commas
+        .map(name => name.trim())
+        .filter(Boolean)
     );
      const normalizedCompanies = new Map<string, string>();
     companies.forEach(name => {
