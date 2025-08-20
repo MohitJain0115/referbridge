@@ -68,8 +68,20 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
   }, [initialCandidates]);
 
   const availableCompanies = useMemo(() => {
-    const companies = new Set(initialCandidates.flatMap(c => c.targetCompanies));
-    return Array.from(companies).sort();
+    const companies = new Set(
+      initialCandidates
+        .flatMap(c => c.targetCompanies)
+        .map(name => name.trim()) // Trim whitespace
+        .filter(Boolean) // Filter out empty strings
+    );
+     const normalizedCompanies = new Map<string, string>();
+    companies.forEach(name => {
+      const normalized = name.toLowerCase();
+      if (!normalizedCompanies.has(normalized)) {
+        normalizedCompanies.set(normalized, name);
+      }
+    });
+    return Array.from(normalizedCompanies.values()).sort();
   }, [initialCandidates]);
 
   const isFiltered = useMemo(() => {
