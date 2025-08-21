@@ -421,12 +421,13 @@ export function ReferralStatusPage() {
                      {request.status === 'Referred - Awaiting Confirmation' ? (
                         <Button
                             size="sm"
-                            variant="secondary"
+                            variant="outline"
                             onClick={() => handleConfirmReferral(request)}
                             disabled={isConfirming === request.id}
+                            title="The Referrer has marked the request as Done. Please confirm by clicking this button."
                         >
-                            {isConfirming === request.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Confirm Referral
+                            {isConfirming === request.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : ""}
+                            Your Confirmation Required
                         </Button>
                      ) : (
                         <Badge variant={getStatusBadgeVariant(request.status)}>

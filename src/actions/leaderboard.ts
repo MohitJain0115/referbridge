@@ -6,8 +6,8 @@
  * - awardPointsForReferral - Confirms a referral and awards points to the referrer based on their status.
  */
 import { z } from 'zod';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import admin from 'firebase-admin';
+import 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 
 const AwardPointsInputSchema = z.object({
@@ -17,6 +17,17 @@ const AwardPointsInputSchema = z.object({
 
 type AwardPointsInput = z.infer<typeof AwardPointsInputSchema>;
 
+// Initialize Firebase Admin SDK (only once)
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+    });
+  } catch (error) {
+    console.error('Firebase Admin initialization error (leaderboard):', error);
+  }
+}
+
 export async function awardPointsForReferral(input: AwardPointsInput) {
     const validatedInput = AwardPointsInputSchema.safeParse(input);
     if (!validatedInput.success) {
@@ -24,18 +35,14 @@ export async function awardPointsForReferral(input: AwardPointsInput) {
     }
     
     const { requestId, referrerId } = validatedInput.data;
-
-    if (!db) {
-      return { success: false, message: 'Firestore database is not initialized.' };
-    }
+    const adminDb = admin.firestore();
     
     try {
-        const batch = writeBatch(db);
-        
-        const requestRef = doc(db, 'referral_requests', requestId);
-        const requestSnap = await getDoc(requestRef);
+        const batch = adminDb.batch();
+        const requestRef = adminDb.collection('referral_requests').doc(requestId);
+        const requestSnap = await requestRef.get();
 
-        if (!requestSnap.exists()) {
+        if (!requestSnap.exists) {
             return { success: false, message: 'Referral request not found.' };
         }
         
@@ -46,24 +53,39 @@ export async function awardPointsForReferral(input: AwardPointsInput) {
       
         batch.update(requestRef, { status: 'Confirmed Referral' });
 
-        const referrerProfileRef = doc(db, 'profiles', referrerId);
-        const referrerSnap = await getDoc(referrerProfileRef);
+        const referrerProfileRef = adminDb.collection('profiles').doc(referrerId);
+        const referrerSnap = await referrerProfileRef.get();
 
-        if (referrerSnap.exists()) {
-            const referrerData = referrerSnap.data();
+        if (referrerSnap.exists) {
+            const referrerData = referrerSnap.data() || {};
             const isPremium = referrerData.isPremiumReferrer === true;
 
-            const confirmedReferralsQuery = query(
-                collection(db, 'referral_requests'),
-                where('referrerId', '==', referrerId),
-                where('status', '==', 'Confirmed Referral')
-            );
-            const confirmedReferralsSnap = await getDocs(confirmedReferralsQuery);
-            const confirmedReferralCount = confirmedReferralsSnap.size + 1; // +1 for the current confirmation
+            // Count confirmed referrals for this referrer
+            let confirmedReferralCount = 0;
+            try {
+              const confirmedReferralsSnap = await adminDb
+                .collection('referral_requests')
+                .where('referrerId', '==', referrerId)
+                .where('status', '==', 'Confirmed Referral')
+                .get();
+              confirmedReferralCount = confirmedReferralsSnap.size + 1; // +1 for this confirmation
+            } catch (e: any) {
+              // Fallback when composite index is missing: filter client-side by status
+              if (e?.code === 9 || String(e?.message || '').includes('index')) {
+                const eqSnap = await adminDb
+                  .collection('referral_requests')
+                  .where('referrerId', '==', referrerId)
+                  .get();
+                const confirmed = eqSnap.docs.filter(d => d.get('status') === 'Confirmed Referral').length;
+                confirmedReferralCount = confirmed + 1;
+              } else {
+                throw e;
+              }
+            }
 
             if (isPremium) {
-                const currentPoints = referrerData.points || 0;
-                batch.update(referrerProfileRef, { points: currentPoints + 25 });
+                // Award points to premium referrers
+                batch.update(referrerProfileRef, { points: admin.firestore.FieldValue.increment(25) });
             } else {
                 if (confirmedReferralCount >= 10) {
                     batch.update(referrerProfileRef, { isPremiumReferrer: true });

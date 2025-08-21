@@ -88,9 +88,9 @@ export async function sendReferralRequestWithLimit(input: SendRequestInput) {
             .where("seekerId", "==", seekerId)
             .where("referrerId", "==", referrerId);
         const existingReqSnapshot = await existingReqQuery.get();
-        if (!existingReqSnapshot.empty) {
-            return { success: false, message: `You have already sent a request to this referrer.` };
-        }
+        // if (!existingReqSnapshot.empty) {
+        //     return { success: false, message: `You have already sent a request to this referrer.` };
+        // }
 
         // 2. Check the daily limit
         const remainingRequests = await fetchRemainingRequests(seekerId);
