@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -128,6 +127,20 @@ export function SeekerDashboard() {
                     bio: data.referrerAbout || "",
                 } as Referrer;
             });
+        
+        fetchedReferrers.sort((a, b) => {
+            const aHasCompany = a.company !== "N/A";
+            const bHasCompany = b.company !== "N/A";
+
+            if (aHasCompany && !bHasCompany) {
+                return -1; // a comes first
+            }
+            if (!aHasCompany && bHasCompany) {
+                return 1; // b comes first
+            }
+            // If both have or don't have a company, sort by name
+            return a.name.localeCompare(b.name);
+        });
         
         setAllReferrers(fetchedReferrers);
         setFilteredReferrers(fetchedReferrers);
