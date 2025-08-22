@@ -33,6 +33,9 @@ const normalizeCompanyName = (name: string): string => {
     'Microsoft': ['microsoft'],
     'Meta': ['meta', 'facebook'],
     'HCL Tech': ['hcl', 'hcltech'],
+    'Deloitte': ['deloitte'],
+    'Accenture': ['accenture'],
+    'Deutsche Bank': ['deutsche bank', 'duetsche bank'],
   };
 
   for (const standardName in commonNames) {
