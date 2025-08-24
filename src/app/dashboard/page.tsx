@@ -19,7 +19,7 @@ function MainDashboard({ view }: { view: string }) {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
         <div>
           <h1 className="text-lg font-semibold md:text-2xl font-headline">
-            {isSeeker ? 'Find a Referrer' : 'Candidate Dashboard'}
+            {isSeeker ? 'Find a Referrer' : 'Job Seeker'}
           </h1>
           <p className="text-muted-foreground">
             {isSeeker
