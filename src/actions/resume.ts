@@ -127,12 +127,29 @@ import 'firebase-admin/firestore';
 const DownloadResumeInputSchema = z.object({
   candidateId: z.string().min(1, 'Candidate ID is required'),
   downloaderId: z.string().min(1, 'Downloader ID is required'),
+  // Source context to differentiate limits between sections
+  source: z.enum(['candidates', 'requests']).optional().default('candidates'),
 });
 
 type DownloadResumeInput = z.infer<typeof DownloadResumeInputSchema>;
 
-const DOWNLOAD_LIMIT = 8;
-const TWENTY_FOUR_HOURS_IN_MS = 24 * 60 * 60 * 1000;
+// Daily limits per source (resets at 8AM IST)
+const CANDIDATES_SECTION_LIMIT = 3; // Candidate section
+const REQUESTS_SECTION_LIMIT = 6;   // Referral requests section
+
+// Compute the last reset boundary at 8:00 AM IST (Asia/Kolkata) for daily limits
+function getLastISTResetTimestamp(): admin.firestore.Timestamp {
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // +05:30, no DST
+  const nowUtc = new Date();
+  const nowIst = new Date(nowUtc.getTime() + IST_OFFSET_MS);
+  const boundaryIst = new Date(nowIst.getTime());
+  boundaryIst.setUTCHours(8, 0, 0, 0); // 08:00 in the shifted IST view
+  if (nowIst.getUTCHours() < 8) {
+    boundaryIst.setUTCDate(boundaryIst.getUTCDate() - 1);
+  }
+  const boundaryUtc = new Date(boundaryIst.getTime() - IST_OFFSET_MS);
+  return admin.firestore.Timestamp.fromDate(boundaryUtc);
+}
 
 // Initialize Firebase Admin SDK (only once)
 if (!admin.apps.length) {
@@ -159,30 +176,32 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
     };
   }
   
-  const { candidateId, downloaderId } = validatedInput.data;
+  const { candidateId, downloaderId, source } = validatedInput.data;
   console.log(`Input validated for candidateId: ${candidateId}, downloaderId: ${downloaderId}`);
 
   // Use Admin Firestore (bypasses security rules in server environment)
   const adminDb = admin.firestore();
   
   try {
-    // Check download limit
-    const twentyFourHoursAgo = admin.firestore.Timestamp.fromMillis(Date.now() - TWENTY_FOUR_HOURS_IN_MS);
+    // Check download limit (resets daily at 8AM IST)
+    const lastReset = getLastISTResetTimestamp();
+    const downloadLimit = source === 'requests' ? REQUESTS_SECTION_LIMIT : CANDIDATES_SECTION_LIMIT;
     const activityRef = adminDb.collection('downloadActivity');
     const downloadQuery = activityRef
       .where('downloaderId', '==', downloaderId)
-      .where('downloadedAt', '>=', twentyFourHoursAgo);
+      .where('downloadedAt', '>=', lastReset)
+      .where('source', '==', source);
     
     console.log('Checking download activity...');
     const activitySnapshot = await downloadQuery.get();
     const downloadCount = activitySnapshot.size;
     console.log(`Found ${downloadCount} downloads in the last 24 hours`);
 
-    if (downloadCount >= DOWNLOAD_LIMIT) {
+    if (downloadCount >= downloadLimit) {
       console.warn(`Download limit reached for user ${downloaderId}`);
       return { 
         success: false, 
-        message: `You have reached your limit of ${DOWNLOAD_LIMIT} downloads per 24 hours. Please try again later.` 
+        message: `You have reached your daily limit of ${downloadLimit} downloads for this section. Limits reset at 8:00 AM IST.` 
       };
     }
     
@@ -242,6 +261,7 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
       candidateId: candidateId,
       fileName: fileName,
       downloadedAt: admin.firestore.FieldValue.serverTimestamp(),
+      source: source,
     });
     console.log('Download activity logged successfully');
 

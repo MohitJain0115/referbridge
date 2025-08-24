@@ -20,7 +20,7 @@ import { db, firebaseReady, auth } from "@/lib/firebase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { downloadResumeWithLimit } from "@/actions/resume";
 
-const SELECTION_LIMIT = 8;
+const SELECTION_LIMIT = 3;
 
 const normalizeCompanyName = (name: string): string => {
   if (!name || typeof name !== 'string') return "";
@@ -192,6 +192,7 @@ export function CandidateGrid({ candidates: initialCandidates, showCancelAction 
         const result = await downloadResumeWithLimit({
           candidateId,
           downloaderId: auth.currentUser.uid,
+          source: showCancelAction ? 'requests' : 'candidates',
         });
         
         if (result.success && result.url) {

@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { saveAs } from 'file-saver';
 import { downloadResumeWithLimit } from "@/actions/resume";
+import { markAsReferredWithLimit } from "@/actions/referral-request";
 
 type CandidateCardProps = {
   candidate: Candidate;
@@ -58,6 +59,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
       const result = await downloadResumeWithLimit({
         candidateId: candidate.id,
         downloaderId: auth.currentUser.uid,
+        source: isFromRequestPage ? 'requests' : 'candidates',
       });
       
       if (result.success && result.url) {
@@ -89,6 +91,39 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
     } catch (error) {
       console.error("Error handling resume download:", error);
       toast({ title: "Error", description: "Could not process the resume download.", variant: "destructive" });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleMarkAsReferred = async () => {
+    if (!candidate.requestId || !firebaseReady || !db || !auth.currentUser) {
+      toast({
+        title: "Action Not Available",
+        description: "Status can only be changed on a specific referral request.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsActionLoading(true);
+    try {
+      const result = await markAsReferredWithLimit({
+        requestId: candidate.requestId,
+        referrerId: auth.currentUser.uid,
+      });
+      if (!result.success) {
+        throw new Error(result.message || 'Could not mark as referred');
+      }
+
+      setCurrentStatus('Referred - Awaiting Confirmation');
+      toast({
+        title: 'Status Updated',
+        description: `${candidate.name}'s status set to Referred - Awaiting Confirmation.`,
+      });
+    } catch (error: any) {
+      console.error('Error marking as referred:', error);
+      toast({ title: 'Update Failed', description: error.message || 'Could not update candidate status.', variant: 'destructive' });
     } finally {
       setIsActionLoading(false);
     }
@@ -257,7 +292,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
-                <DropdownMenuItem onClick={() => handleSetStatus('Referred - Awaiting Confirmation')}>
+                <DropdownMenuItem onClick={handleMarkAsReferred}>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   <span>Mark as Referred</span>
                 </DropdownMenuItem>

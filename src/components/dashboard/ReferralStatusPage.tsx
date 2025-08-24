@@ -49,7 +49,7 @@ import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db, firebaseReady } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc, writeBatch, updateDoc, onSnapshot } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
-import { awardPointsForReferral } from "@/actions/leaderboard";
+import { awardPointsForReferral, rejectReferral } from "@/actions/leaderboard";
 
 const CONFIRMATION_LIMIT = 5;
 
@@ -60,6 +60,7 @@ export function ReferralStatusPage() {
   const [isConfirming, setIsConfirming] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<ReferralRequestStatus | 'all'>('all');
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
+  const [isRejecting, setIsRejecting] = useState<string | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -154,6 +155,31 @@ export function ReferralStatusPage() {
         toast({ title: "Error", description: error.message || "Could not confirm the referral.", variant: "destructive" });
     } finally {
         setIsConfirming(null);
+    }
+  }
+
+  const handleRejectReferral = async (request: TrackedRequest) => {
+    if (!db || !currentUser) return;
+    setIsRejecting(request.id);
+    try {
+        const result = await rejectReferral({
+          requestId: request.id,
+          seekerId: currentUser.uid,
+        });
+
+        if (result.success) {
+            toast({
+                title: "Referral Rejected!",
+                description: "Thank you for rejecting. This helps us identify top referrers."
+            });
+        } else {
+            throw new Error(result.message || "Failed to reject referral via action.");
+        }
+    } catch (error: any) {
+        console.error("Error rejecting referral:", error);
+        toast({ title: "Error", description: error.message || "Could not reject the referral.", variant: "destructive" });
+    } finally {
+        setIsRejecting(null);
     }
   }
   
@@ -419,16 +445,44 @@ export function ReferralStatusPage() {
                 <TableCell>
                    <div className={cn("flex items-center gap-2", isConfirmationBlocked && request.status !== 'Referred - Awaiting Confirmation' && "blur-sm pointer-events-none")}>
                      {request.status === 'Referred - Awaiting Confirmation' ? (
+                      <div className="flex flex-col gap-2">
+                      <p>The Referrer has marked the request as done!</p>
+                    
+                      <div className="flex gap-2">
                         <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleConfirmReferral(request)}
-                            disabled={isConfirming === request.id}
-                            title="The Referrer has marked the request as Done. Please confirm by clicking this button."
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleConfirmReferral(request)}
+                          disabled={isConfirming === request.id}
+                          title="The Referrer has marked the request as Done. Please confirm if this is true."
+                          className="bg-green-500 hover:bg-green-600 text-white"
                         >
-                            {isConfirming === request.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : ""}
-                            Your Confirmation Required
+                          {isConfirming === request.id ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            ""
+                          )}
+                          Confirm
                         </Button>
+                    
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRejectReferral(request)}
+                          disabled={isRejecting === request.id}
+                          title="The Referrer has marked the request as Done. Reject if it is not true."
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                          {isRejecting === request.id ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            ""
+                          )}
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                    
                      ) : (
                         <Badge variant={getStatusBadgeVariant(request.status)}>
                             {request.status}

@@ -11,6 +11,7 @@ import { auth, db, firebaseReady } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { calculateTotalExperienceInYears } from "@/lib/utils";
+import { autoConfirmOverdueForReferrer } from "@/actions/leaderboard";
 
 function CandidateGridSkeleton() {
   return (
@@ -39,6 +40,13 @@ export function ReferralRequestsPage() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    // Opportunistic auto-confirm of overdue referrals for this referrer
+    if (currentUser) {
+      autoConfirmOverdueForReferrer({ referrerId: currentUser.uid }).catch(() => {});
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser || !db) {
