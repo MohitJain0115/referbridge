@@ -233,7 +233,15 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
     const filePath = `resumes/${candidateId}/${fileName}`;
     console.log(`Generating signed URL for file: ${filePath}`);
     
-    const bucket = admin.storage().bucket();
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+    if (!bucketName || typeof bucketName !== 'string' || bucketName.trim().length === 0) {
+      console.error('Storage bucket is not configured. Set NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET');
+      return {
+        success: false,
+        message: 'Resume downloads are not configured. Please set NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET.'
+      };
+    }
+    const bucket = admin.storage().bucket(bucketName);
     const file = bucket.file(filePath);
     
     // Check if file exists
