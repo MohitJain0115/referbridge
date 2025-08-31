@@ -39,12 +39,24 @@ export async function getEmailsForUids(uids: string[]): Promise<Record<string, s
 export async function getConfirmedReferralsCountByReferrer(uid: string): Promise<number> {
   try {
     const db = admin.firestore();
-    const snap = await db
-      .collection('referral_requests')
-      .where('referrerId', '==', uid)
-      .where('status', '==', 'Confirmed Referral')
-      .get();
-    return snap.size;
+    try {
+      const snap = await db
+        .collection('referral_requests')
+        .where('referrerId', '==', uid)
+        .where('status', '==', 'Confirmed Referral')
+        .get();
+      return snap.size;
+    } catch (e: any) {
+      // Fallback when composite index is missing: filter in memory
+      if (e?.code === 9 || String(e?.message || '').toLowerCase().includes('index')) {
+        const snap = await db
+          .collection('referral_requests')
+          .where('referrerId', '==', uid)
+          .get();
+        return snap.docs.filter(d => d.get('status') === 'Confirmed Referral').length;
+      }
+      throw e;
+    }
   } catch (e) {
     console.error('getConfirmedReferralsCountByReferrer error:', e);
     return 0;
@@ -86,6 +98,18 @@ export async function getProfilesCreatedAtForUids(uids: string[]): Promise<Recor
     console.error('getProfilesCreatedAtForUids error:', e);
   }
   return result;
+}
+
+export async function reconcileReferrerPoints(uid: string): Promise<{ uid: string; confirmed: number; pointsBefore: number; pointsAfter: number; isPremium: boolean }> {
+  const db = admin.firestore();
+  const profilesRef = db.collection('profiles').doc(uid);
+  const profileSnap = await profilesRef.get();
+  const before = (profileSnap.exists && (profileSnap.data()?.points || 0)) || 0;
+  const confirmed = await getConfirmedReferralsCountByReferrer(uid);
+  const expectedPoints = Math.max(0, confirmed - 10) * 75;
+  const isPremium = confirmed >= 10;
+  await profilesRef.set({ points: expectedPoints, isPremiumReferrer: isPremium }, { merge: true });
+  return { uid, confirmed, pointsBefore: before, pointsAfter: expectedPoints, isPremium };
 }
 
 

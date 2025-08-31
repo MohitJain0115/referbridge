@@ -228,6 +228,20 @@ export default function SeekerProfilePage() {
     }
   }, [currentUser, toast]);
 
+  // Live subscribe to points and premium so UI reflects reconciliation immediately
+  useEffect(() => {
+    if (!currentUser || !db) return;
+    const ref = doc(db, 'profiles', currentUser.uid);
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        if (typeof data.points === 'number') setPoints(data.points);
+        if (typeof data.isPremiumReferrer !== 'undefined') setIsPremium(data.isPremiumReferrer === true);
+      }
+    });
+    return () => unsub();
+  }, [currentUser]);
+
   // Fetch stats
   useEffect(() => {
     if (!currentUser || !db) return;

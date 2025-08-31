@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getEmailsForUids, getConfirmedReferralsCountByReferrer, getDownloadCountsByUser, getProfilesCreatedAtForUids } from "@/actions/admin";
+import { getEmailsForUids, getConfirmedReferralsCountByReferrer, getDownloadCountsByUser, getProfilesCreatedAtForUids, reconcileReferrerPoints } from "@/actions/admin";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function DeveloperPage() {
@@ -20,8 +20,9 @@ export function DeveloperPage() {
   const [emailsByUid, setEmailsByUid] = useState<Record<string, string>>({});
   const [activityCounts, setActivityCounts] = useState<Record<string, { downloads: number; confirmedReferrals: number }>>({});
   const [createdAtByUid, setCreatedAtByUid] = useState<Record<string, number>>({});
-  const [sortBy, setSortBy] = useState<'name' | 'email' | 'created'>('created');
+  const [sortBy, setSortBy] = useState<'name' | 'email' | 'created' | 'points' | 'confirmed'>('created');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [reconciling, setReconciling] = useState(false);
   const [nameFilter, setNameFilter] = useState("");
   const [emailFilter, setEmailFilter] = useState("");
   const [resumeFilter, setResumeFilter] = useState("");
@@ -69,7 +70,7 @@ export function DeveloperPage() {
       } catch (e) {
         console.error('getProfilesCreatedAtForUids failed', e);
       }
-      // Fetch activity counts per user (downloads + confirmed referrals)
+      // Fetch activity counts per user (downloads + confirmed referrals) via server actions (bypass security rules)
       const counts: Record<string, { downloads: number; confirmedReferrals: number }> = {};
       await Promise.all(uids.map(async (uid) => {
         try {
@@ -86,6 +87,8 @@ export function DeveloperPage() {
     });
     return () => unsub();
   }, [authorized]);
+
+  // Removed client-only listener to avoid permission issues; counts are fetched via server actions above
 
   const rows = useMemo(() => {
     return profiles.map((p) => {
@@ -135,17 +138,36 @@ export function DeveloperPage() {
       if (sortBy === 'name') comp = cmpStr(a.name || '', b.name || '');
       else if (sortBy === 'email') comp = cmpStr(a.email || '', b.email || '');
       else if (sortBy === 'created') comp = (a.created || 0) - (b.created || 0);
+      else if (sortBy === 'points') comp = (a.points || 0) - (b.points || 0);
+      else if (sortBy === 'confirmed') comp = (a.confirmedReferrals || 0) - (b.confirmedReferrals || 0);
       return sortDir === 'asc' ? comp : -comp;
     });
     return r;
   }, [filteredRows, sortBy, sortDir]);
 
-  const toggleSort = (key: 'name' | 'email' | 'created') => {
+  const toggleSort = (key: 'name' | 'email' | 'created' | 'points' | 'confirmed') => {
     if (sortBy === key) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(key);
       setSortDir('asc');
+    }
+  };
+
+  const handleRecalculateAll = async () => {
+    if (reconciling) return;
+    setReconciling(true);
+    try {
+      const uids = profiles.map(p => p.id);
+      await Promise.all(uids.map(async (uid) => {
+        try {
+          const result = await reconcileReferrerPoints(uid);
+          // Optimistically update cached points and premium flag
+          setProfiles(prev => prev.map(p => p.id === uid ? { ...p, points: result.pointsAfter, isPremiumReferrer: result.isPremium } : p));
+        } catch {}
+      }));
+    } finally {
+      setReconciling(false);
     }
   };
 
@@ -216,6 +238,11 @@ export function DeveloperPage() {
               <div className="text-xs text-muted-foreground">Total Points</div>
               <div className="text-lg font-semibold">{summary.totalPoints}</div>
             </div>
+            <div className="flex items-end">
+              <Button onClick={handleRecalculateAll} disabled={reconciling} variant="secondary">
+                {reconciling ? 'Recalculating…' : 'Recalculate points'}
+              </Button>
+            </div>
           </div>
           <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 mb-4">
             <div className="space-y-1">
@@ -273,9 +300,13 @@ export function DeveloperPage() {
                   <TableHead>
                     <button className="font-medium hover:underline" onClick={() => toggleSort('created')}>Created{sortBy === 'created' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}</button>
                   </TableHead>
-                  <TableHead className="text-right">Points</TableHead>
+                  <TableHead className="text-right">
+                    <button className="font-medium hover:underline" onClick={() => toggleSort('points')}>Points{sortBy === 'points' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}</button>
+                  </TableHead>
                   <TableHead className="text-right">Downloads</TableHead>
-                  <TableHead className="text-right">Confirmed Referrals</TableHead>
+                  <TableHead className="text-right">
+                    <button className="font-medium hover:underline" onClick={() => toggleSort('confirmed')}>Confirmed Referrals{sortBy === 'confirmed' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}</button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
