@@ -224,7 +224,7 @@ export function DeveloperPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Environment</CardTitle>
+          <CardTitle>Real-time Environment</CardTitle>
           <CardDescription>Quick info</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
