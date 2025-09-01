@@ -10,6 +10,7 @@ import { ReferralRequestsPage } from '@/components/dashboard/ReferralRequestsPag
 import { ReferralStatusPage } from '@/components/dashboard/ReferralStatusPage';
 import { LeaderboardPage } from '@/components/dashboard/LeaderboardPage';
 import { DeveloperPage } from '@/components/dashboard/DeveloperPage';
+import { ReferAndEarnPage } from '@/components/dashboard/ReferAndEarnPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +55,8 @@ export default function DashboardPage({
     content = <DeveloperPage />;
   } else if (page === 'leaderboard') {
     content = <LeaderboardPage />;
+  } else if (page === 'refer-and-earn') {
+    content = <ReferAndEarnPage />;
   } else if (page === 'requests') {
     if (view === 'referrer') {
       content = <ReferralRequestsPage />;

@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Users, Settings, Mail, ArrowRightLeft, MessageSquare, Flame } from "lucide-react";
+import { Users, Settings, Mail, ArrowRightLeft, MessageSquare, Flame, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
@@ -37,6 +37,7 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
 
   const developerItem = { name: "Developer", href: `/dashboard?view=${view}&page=developer`, icon: Flame, page: "developer", view: 'any', show: isDeveloper };
   const settingsItem = { name: "Settings", href: `/dashboard?view=${view}&page=settings`, icon: Settings, page: "settings", view: 'any', show: true };
+  const referAndEarnItem = { name: "Refer & Earn", href: `/dashboard?view=${view}&page=refer-and-earn`, icon: Gift, page: "refer-and-earn", view: 'any', show: true };
   const suggestionsItem = { name: "Suggestions", href: `/dashboard?view=${view}&page=suggestions`, icon: MessageSquare, page: "suggestions", view: 'any', show: true };
 
 
@@ -123,6 +124,18 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
           >
             <settingsItem.icon className="h-4 w-4" />
             {settingsItem.name}
+          </Link>
+       <Link
+            key={referAndEarnItem.name}
+            href={referAndEarnItem.href}
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+              referAndEarnItem.page === currentPage && "bg-muted text-primary"
+            )}
+          >
+            <referAndEarnItem.icon className="h-4 w-4" />
+            {referAndEarnItem.name}
           </Link>
     </nav>
   );
