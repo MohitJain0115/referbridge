@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getEmailsForUids, getConfirmedReferralsCountByReferrer, getDownloadCountsByUser, getProfilesCreatedAtForUids, reconcileReferrerPoints } from "@/actions/admin";
+import { getEmailsForUids, getConfirmedReferralsCountByReferrer, getDownloadCountsByUser, getProfilesCreatedAtForUids, reconcileReferrerPoints, getReferralRequestsReceivedCount, getReferralRequestsSentCount } from "@/actions/admin";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function DeveloperPage() {
@@ -18,9 +18,9 @@ export function DeveloperPage() {
   const [authorized, setAuthorized] = useState(false);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [emailsByUid, setEmailsByUid] = useState<Record<string, string>>({});
-  const [activityCounts, setActivityCounts] = useState<Record<string, { downloads: number; confirmedReferrals: number }>>({});
+  const [activityCounts, setActivityCounts] = useState<Record<string, { downloads: number; confirmedReferrals: number; requestsReceived: number; requestsSent: number }>>({});
   const [createdAtByUid, setCreatedAtByUid] = useState<Record<string, number>>({});
-  const [sortBy, setSortBy] = useState<'name' | 'email' | 'created' | 'points' | 'confirmed'>('created');
+  const [sortBy, setSortBy] = useState<'name' | 'email' | 'created' | 'points' | 'downloads' | 'requestsReceived' | 'requestsSent' | 'confirmed'>('created');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [reconciling, setReconciling] = useState(false);
   const [nameFilter, setNameFilter] = useState("");
@@ -70,18 +70,22 @@ export function DeveloperPage() {
       } catch (e) {
         console.error('getProfilesCreatedAtForUids failed', e);
       }
-      // Fetch activity counts per user (downloads + confirmed referrals) via server actions (bypass security rules)
-      const counts: Record<string, { downloads: number; confirmedReferrals: number }> = {};
+      // Fetch activity counts per user (downloads + confirmed referrals + requests) via server actions (bypass security rules)
+      const counts: Record<string, { downloads: number; confirmedReferrals: number; requestsReceived: number; requestsSent: number }> = {};
       await Promise.all(uids.map(async (uid) => {
-        try {
-          const [downloads, confirmed] = await Promise.all([
-            getDownloadCountsByUser(uid),
-            getConfirmedReferralsCountByReferrer(uid),
-          ]);
-          counts[uid] = { downloads, confirmedReferrals: confirmed };
-        } catch (e) {
-          counts[uid] = { downloads: 0, confirmedReferrals: 0 };
-        }
+        const results = await Promise.allSettled([
+          getDownloadCountsByUser(uid),
+          getConfirmedReferralsCountByReferrer(uid),
+          getReferralRequestsReceivedCount(uid),
+          getReferralRequestsSentCount(uid),
+        ]);
+        const val = <T>(i: number, fallback: T): T => results[i].status === 'fulfilled' ? (results[i] as PromiseFulfilledResult<any>).value as T : fallback;
+        counts[uid] = {
+          downloads: val<number>(0, 0),
+          confirmedReferrals: val<number>(1, 0),
+          requestsReceived: val<number>(2, 0),
+          requestsSent: val<number>(3, 0),
+        };
       }));
       setActivityCounts(counts);
     });
@@ -94,7 +98,7 @@ export function DeveloperPage() {
     return profiles.map((p) => {
       const resumeFileName = p.resumeName || p.resume?.fileName || '';
       const points = p.points || 0;
-      const activity = activityCounts[p.id] || { downloads: 0, confirmedReferrals: 0 };
+      const activity = activityCounts[p.id] || { downloads: 0, confirmedReferrals: 0, requestsReceived: 0, requestsSent: 0 };
       return {
         id: p.id,
         name: p.name || '—',
@@ -103,6 +107,8 @@ export function DeveloperPage() {
         points,
         downloads: activity.downloads,
         confirmedReferrals: activity.confirmedReferrals,
+        requestsReceived: activity.requestsReceived,
+        requestsSent: activity.requestsSent,
         created: createdAtByUid[p.id] || 0,
       };
     });
@@ -139,13 +145,16 @@ export function DeveloperPage() {
       else if (sortBy === 'email') comp = cmpStr(a.email || '', b.email || '');
       else if (sortBy === 'created') comp = (a.created || 0) - (b.created || 0);
       else if (sortBy === 'points') comp = (a.points || 0) - (b.points || 0);
+      else if (sortBy === 'downloads') comp = (a.downloads || 0) - (b.downloads || 0);
+      else if (sortBy === 'requestsReceived') comp = (a.requestsReceived || 0) - (b.requestsReceived || 0);
+      else if (sortBy === 'requestsSent') comp = (a.requestsSent || 0) - (b.requestsSent || 0);
       else if (sortBy === 'confirmed') comp = (a.confirmedReferrals || 0) - (b.confirmedReferrals || 0);
       return sortDir === 'asc' ? comp : -comp;
     });
     return r;
   }, [filteredRows, sortBy, sortDir]);
 
-  const toggleSort = (key: 'name' | 'email' | 'created' | 'points' | 'confirmed') => {
+  const toggleSort = (key: 'name' | 'email' | 'created' | 'points' | 'downloads' | 'requestsReceived' | 'requestsSent' | 'confirmed') => {
     if (sortBy === key) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -303,7 +312,15 @@ export function DeveloperPage() {
                   <TableHead className="text-right">
                     <button className="font-medium hover:underline" onClick={() => toggleSort('points')}>Points{sortBy === 'points' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}</button>
                   </TableHead>
-                  <TableHead className="text-right">Downloads</TableHead>
+                  <TableHead className="text-right">
+                    <button className="font-medium hover:underline" onClick={() => toggleSort('downloads')}>Downloads{sortBy === 'downloads' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}</button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <button className="font-medium hover:underline" onClick={() => toggleSort('requestsReceived')}>Requests Received{sortBy === 'requestsReceived' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}</button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <button className="font-medium hover:underline" onClick={() => toggleSort('requestsSent')}>Requests Sent{sortBy === 'requestsSent' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}</button>
+                  </TableHead>
                   <TableHead className="text-right">
                     <button className="font-medium hover:underline" onClick={() => toggleSort('confirmed')}>Confirmed Referrals{sortBy === 'confirmed' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}</button>
                   </TableHead>
@@ -318,12 +335,14 @@ export function DeveloperPage() {
                     <TableCell className="whitespace-nowrap">{r.created ? new Date(r.created).toLocaleString() : '—'}</TableCell>
                     <TableCell className="text-right">{r.points}</TableCell>
                     <TableCell className="text-right">{r.downloads}</TableCell>
+                    <TableCell className="text-right">{r.requestsReceived}</TableCell>
+                    <TableCell className="text-right">{r.requestsSent}</TableCell>
                     <TableCell className="text-right">{r.confirmedReferrals}</TableCell>
                   </TableRow>
                 ))}
                 {sortedRows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">No profiles found.</TableCell>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">No profiles found.</TableCell>
                   </TableRow>
                 )}
               </TableBody>

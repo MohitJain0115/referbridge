@@ -77,6 +77,54 @@ export async function getDownloadCountsByUser(uid: string): Promise<number> {
   }
 }
 
+export async function getReferralRequestsReceivedCount(uid: string): Promise<number> {
+  try {
+    const db = admin.firestore();
+    try {
+      const snap = await db
+        .collection('referral_requests')
+        .where('referrerId', '==', uid)
+        .get();
+      if (!snap.empty) return snap.size;
+    } catch (e) {
+      // ignore and try fallback
+    }
+    // Fallback: use activity collection as approximation
+    const activitySnap = await db
+      .collection('referral_requests_activity')
+      .where('referrerId', '==', uid)
+      .get();
+    return activitySnap.size;
+  } catch (e) {
+    console.error('getReferralRequestsReceivedCount error:', e);
+    return 0;
+  }
+}
+
+export async function getReferralRequestsSentCount(uid: string): Promise<number> {
+  try {
+    const db = admin.firestore();
+    try {
+      const snap = await db
+        .collection('referral_requests')
+        .where('seekerId', '==', uid)
+        .get();
+      if (!snap.empty) return snap.size;
+    } catch (e) {
+      // ignore and try fallback
+    }
+    // Fallback: use activity collection counts since every send logs an activity
+    const activitySnap = await db
+      .collection('referral_requests_activity')
+      .where('seekerId', '==', uid)
+      .get();
+    return activitySnap.size;
+  } catch (e) {
+    console.error('getReferralRequestsSentCount error:', e);
+    return 0;
+  }
+}
+
 export async function getProfilesCreatedAtForUids(uids: string[]): Promise<Record<string, number>> {
   const result: Record<string, number> = {};
   if (!uids || uids.length === 0) return result;
