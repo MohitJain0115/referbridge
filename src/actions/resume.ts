@@ -128,7 +128,7 @@ const DownloadResumeInputSchema = z.object({
   candidateId: z.string().min(1, 'Candidate ID is required'),
   downloaderId: z.string().min(1, 'Downloader ID is required'),
   // Source context to differentiate limits between sections
-  source: z.enum(['candidates', 'requests']).optional().default('candidates'),
+  source: z.enum(['candidates', 'requests', 'recruitment']).optional().default('candidates'),
 });
 
 type DownloadResumeInput = z.infer<typeof DownloadResumeInputSchema>;
@@ -192,17 +192,21 @@ export async function downloadResumeWithLimit(input: DownloadResumeInput) {
       .where('downloadedAt', '>=', lastReset)
       .where('source', '==', source);
     
-    console.log('Checking download activity...');
-    const activitySnapshot = await downloadQuery.get();
-    const downloadCount = activitySnapshot.size;
-    console.log(`Found ${downloadCount} downloads in the last 24 hours`);
+    if (source !== 'recruitment') {
+      console.log('Checking download activity...');
+      const activitySnapshot = await downloadQuery.get();
+      const downloadCount = activitySnapshot.size;
+      console.log(`Found ${downloadCount} downloads in the last 24 hours`);
 
-    if (downloadCount >= downloadLimit) {
-      console.warn(`Download limit reached for user ${downloaderId}`);
-      return { 
-        success: false, 
-        message: `You have reached your daily limit of ${downloadLimit} downloads for this section. Limits reset at 8:00 AM IST.` 
-      };
+      if (downloadCount >= downloadLimit) {
+        console.warn(`Download limit reached for user ${downloaderId}`);
+        return { 
+          success: false, 
+          message: `You have reached your daily limit of ${downloadLimit} downloads for this section. Limits reset at 8:00 AM IST.` 
+        };
+      }
+    } else {
+      console.log('Recruitment source detected: skipping download limit checks.');
     }
     
     // Fetch resume document

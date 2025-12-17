@@ -29,9 +29,10 @@ type CandidateCardProps = {
   onSelect: (candidateId: string) => void;
   onUpdateRequest?: (candidateId: string) => void;
   isFromRequestPage?: boolean;
+  downloadSource?: 'candidates' | 'requests' | 'recruitment';
 };
 
-export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest, isFromRequestPage = false }: CandidateCardProps) {
+export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest, isFromRequestPage = false, downloadSource = 'candidates' }: CandidateCardProps) {
   const { toast } = useToast();
   const [currentStatus, setCurrentStatus] = useState<Candidate['status']>(candidate.status);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
@@ -59,7 +60,7 @@ export function CandidateCard({ candidate, isSelected, onSelect, onUpdateRequest
       const result = await downloadResumeWithLimit({
         candidateId: candidate.id,
         downloaderId: auth.currentUser.uid,
-        source: isFromRequestPage ? 'requests' : 'candidates',
+        source: downloadSource ?? (isFromRequestPage ? 'requests' : 'candidates'),
       });
       
       if (result.success && result.url) {

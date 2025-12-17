@@ -18,6 +18,7 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
 
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isDeveloper, setIsDeveloper] = useState(false);
+  const isRecruitmentAccess = isDeveloper;
 
   useEffect(() => {
     if (!firebaseReady) return;
@@ -33,6 +34,7 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
     { name: "My Requests", href: "/dashboard?view=seeker&page=requests", icon: Mail, page: "requests", view: 'seeker', show: true },
     { name: "Candidates", href: "/dashboard?view=referrer", icon: Users, page: null, view: 'referrer', show: true },
     { name: "Referral Requests", href: "/dashboard?view=referrer&page=requests", icon: ArrowRightLeft, page: "requests", view: 'referrer', count: referralRequestCount, show: true },
+    { name: "Recruitment Specialist", href: "/dashboard?view=recruitment", icon: Users, page: null, view: 'recruitment', show: isRecruitmentAccess },
   ];
 
   const developerItem = { name: "Developer", href: `/dashboard?view=${view}&page=developer`, icon: Flame, page: "developer", view: 'any', show: isDeveloper };
@@ -44,7 +46,7 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
   return (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
       <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">Job Seeker</p>
-      {navItems.filter(item => item.view === 'seeker').map((item, index) => {
+      {navItems.filter(item => item.view === 'seeker' && item.show).map((item, index) => {
         return (
            <Link
             key={item.name}
@@ -62,7 +64,7 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
       })}
       
       <p className="px-3 py-2 mt-4 text-xs font-semibold text-muted-foreground">Referrer</p>
-      {navItems.filter(item => item.view === 'referrer').map((item, index) => {
+      {navItems.filter(item => (item.view === 'referrer' || item.view === 'recruitment') && item.show).map((item, index) => {
         return (
            <Link
             key={item.name}
@@ -70,7 +72,10 @@ export function DashboardNav({ onNavigate, referralRequestCount = 0 }: { onNavig
             onClick={onNavigate}
             className={cn(
               "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-               view === 'referrer' && item.page === currentPage && "bg-muted text-primary"
+               view === 'referrer' && item.view === 'referrer' && item.page === currentPage && "bg-muted text-primary" ||
+               view === 'recruitment' && item.view === 'recruitment' && item.page === currentPage && "bg-muted text-primary" ||
+               view === 'referrer' && item.view === 'referrer' && !item.page && !currentPage && "bg-muted text-primary" ||
+               view === 'recruitment' && item.view === 'recruitment' && !item.page && !currentPage && "bg-muted text-primary"
             )}
           >
             <div className="flex items-center gap-3">
