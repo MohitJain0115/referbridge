@@ -20,7 +20,7 @@ export function Navbar() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [referralRequestCount, setReferralRequestCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const router = useRouter();
   const { toast } = useToast();
 
@@ -29,13 +29,22 @@ export function Navbar() {
       setIsLoading(false);
       return;
     };
-    
+
+    // Safety timeout
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 4000);
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      clearTimeout(timeoutId);
       setCurrentUser(user);
       setIsLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -49,7 +58,7 @@ export function Navbar() {
       where('referrerId', '==', currentUser.uid),
       where('status', '==', 'Pending')
     );
-    
+
     const unsubscribe = onSnapshot(requestsQuery, (snapshot) => {
       setReferralRequestCount(snapshot.size);
     }, (error) => {
@@ -101,7 +110,7 @@ export function Navbar() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="flex flex-col p-0 w-[280px]">
-                 <SheetHeader className="sr-only">
+                <SheetHeader className="sr-only">
                   <SheetTitle>Navigation Menu</SheetTitle>
                   <SheetDescription>A list of links to navigate the application.</SheetDescription>
                 </SheetHeader>

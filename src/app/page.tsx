@@ -49,8 +49,17 @@ export default function Home() {
       return;
     }
 
+    // Safety timeout in case Firebase auth hangs
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+      }
+    }, 4000);
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      clearTimeout(timeoutId);
       if (currentUser) {
+        setLoading(false); // Unblock UI while redirecting
         router.push('/dashboard');
       } else {
         setUser(null);
@@ -58,7 +67,10 @@ export default function Home() {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      unsubscribe();
+    };
   }, [router]);
 
   return (

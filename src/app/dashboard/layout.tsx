@@ -52,7 +52,14 @@ export default function DashboardLayout({
       return;
     }
 
+    // Safety timeout
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      router.push('/login');
+    }, 4000);
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      clearTimeout(timeoutId);
       if (currentUser) {
         setUser(currentUser);
         setLoading(false);
@@ -61,7 +68,10 @@ export default function DashboardLayout({
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      unsubscribe();
+    };
   }, [router]);
 
   if (loading) {
